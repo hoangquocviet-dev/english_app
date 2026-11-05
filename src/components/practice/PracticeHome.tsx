@@ -30,7 +30,7 @@ export function PracticeHome({
   }
 
   return (
-    <div className="flex flex-col max-w-md mx-auto px-4 py-4 space-y-5 animate-fadeIn">
+    <div className="w-full flex flex-col max-w-md mx-auto px-3.5 py-4 space-y-4 animate-fadeIn">
       {/* Deck Selector Header */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-xs">
         <label className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-2">
@@ -63,15 +63,15 @@ export function PracticeHome({
         <div className="grid grid-cols-3 gap-2 mt-3.5 pt-3 border-t border-slate-100 dark:border-slate-700/60 text-center">
           <div>
             <div className="text-base font-bold text-slate-900 dark:text-slate-100">{words.length}</div>
-            <div className="text-[10px] text-slate-400 font-medium">Tổng từ</div>
+            <div className="text-[11px] text-slate-400 font-medium">Tổng từ</div>
           </div>
           <div>
             <div className="text-base font-bold text-emerald-600 dark:text-emerald-400">{masteredCount}</div>
-            <div className="text-[10px] text-slate-400 font-medium">Đã thuộc</div>
+            <div className="text-[11px] text-slate-400 font-medium">Đã thuộc</div>
           </div>
           <div>
             <div className="text-base font-bold text-amber-600 dark:text-amber-400">{learningCount + newCount}</div>
-            <div className="text-[10px] text-slate-400 font-medium">Chưa nhớ</div>
+            <div className="text-[11px] text-slate-400 font-medium">Chưa nhớ</div>
           </div>
         </div>
       </div>
@@ -102,15 +102,15 @@ export function PracticeHome({
             onClick={() => handleStart('flashcard')}
             className="w-full bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 hover:border-indigo-500/50 text-left transition-all flex items-center justify-between group shadow-xs active:scale-98"
           >
-            <div className="flex items-center gap-3.5">
-              <div className="w-11 h-11 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
                 <Layers className="w-5 h-5" />
               </div>
-              <div>
-                <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+              <div className="min-w-0 flex-1">
+                <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
                   1. Flashcard 3D Cảm ứng
                 </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">
                   Vuốt Lên lật thẻ xem nghĩa, vuốt Trái/Phải đánh giá ghi nhớ
                 </p>
               </div>
@@ -123,15 +123,15 @@ export function PracticeHome({
             onClick={() => handleStart('quiz')}
             className="w-full bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 hover:border-sky-500/50 text-left transition-all flex items-center justify-between group shadow-xs active:scale-98"
           >
-            <div className="flex items-center gap-3.5">
-              <div className="w-11 h-11 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
-              <div>
-                <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
+              <div className="min-w-0 flex-1">
+                <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors truncate">
                   2. Trắc nghiệm 4 đáp án
                 </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">
                   Luyện phản xạ nhận diện nghĩa từ vựng tức thì
                 </p>
               </div>
@@ -144,15 +144,15 @@ export function PracticeHome({
             onClick={() => handleStart('spelling')}
             className="w-full bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 hover:border-emerald-500/50 text-left transition-all flex items-center justify-between group shadow-xs active:scale-98"
           >
-            <div className="flex items-center gap-3.5">
-              <div className="w-11 h-11 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
                 <Keyboard className="w-5 h-5" />
               </div>
-              <div>
-                <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+              <div className="min-w-0 flex-1">
+                <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors truncate">
                   3. Ghép chữ cái (Duolingo Style)
                 </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">
                   Tự động phát âm chuẩn bản xứ ngay khi ghép đúng từ
                 </p>
               </div>

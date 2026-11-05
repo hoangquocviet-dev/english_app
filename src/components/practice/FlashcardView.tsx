@@ -180,7 +180,7 @@ export function FlashcardView({ words, deckName, onBack }: FlashcardViewProps) {
   const progressPercent = Math.round(((currentIndex + 1) / queue.length) * 100)
 
   return (
-    <div className="flex flex-col h-full max-w-md mx-auto px-4 py-2 select-none">
+    <div className="w-full flex flex-col h-full max-w-md mx-auto px-3.5 py-2 select-none">
       {/* Top Bar */}
       <div className="flex items-center justify-between mb-3">
         <button

@@ -107,10 +107,12 @@ export function QuizView({ words, deckName, onBack }: QuizViewProps) {
     const isCorrect = index === currentQ.correctOptionIndex
 
     if (isCorrect) {
+      if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(40)
       audioService.playSuccessChime()
       storageService.updateWordStatus(currentQ.targetWord.id, 'mastered')
       setStats((prev) => ({ ...prev, mastered: prev.mastered + 1 }))
     } else {
+      if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate([80, 50, 80])
       audioService.playErrorBuzz()
       storageService.updateWordStatus(currentQ.targetWord.id, 'learning')
       setStats((prev) => ({ ...prev, review: prev.review + 1 }))
@@ -156,7 +158,7 @@ export function QuizView({ words, deckName, onBack }: QuizViewProps) {
   const progressPercent = Math.round(((currentIndex + 1) / questions.length) * 100)
 
   return (
-    <div className="flex flex-col h-full max-w-md mx-auto px-4 py-2 select-none">
+    <div className="w-full flex flex-col h-full max-w-md mx-auto px-3.5 py-2 select-none">
       {/* Top Bar */}
       <div className="flex items-center justify-between mb-4">
         <button

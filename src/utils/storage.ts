@@ -132,10 +132,20 @@ class SafeStorageService {
       return deckId ? INITIAL_WORDS.filter((w) => w.deckId === deckId) : INITIAL_WORDS
     }
 
-    if (deckId) {
-      return words.filter((w) => w.deckId === deckId)
+    // Ensure newly added built-in words are merged into existing local storage
+    const missingBuiltIns = INITIAL_WORDS.filter(
+      (initW) => !words.some((w) => w.id === initW.id)
+    )
+    let currentWords = words
+    if (missingBuiltIns.length > 0) {
+      currentWords = [...words, ...missingBuiltIns]
+      this.set(STORAGE_KEYS.WORDS, currentWords)
     }
-    return words
+
+    if (deckId) {
+      return currentWords.filter((w) => w.deckId === deckId)
+    }
+    return currentWords
   }
 
   public addWord(word: Omit<WordItem, 'id' | 'status' | 'reviewCount'>): WordItem {

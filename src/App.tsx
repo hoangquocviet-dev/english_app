@@ -43,7 +43,7 @@ export function App() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-[100dvh] flex flex-col bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans transition-colors">
+      <div className="w-full min-h-[100dvh] flex flex-col bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans transition-colors">
         {/* Top Header */}
         <Navbar
           activeDeck={activeDeck}
@@ -54,7 +54,7 @@ export function App() {
         />
 
         {/* Main Content Area */}
-        <main className={`flex-1 flex flex-col ${activeStudyMode ? 'pb-4' : 'pb-20'}`}>
+        <main className={`w-full flex-1 flex flex-col ${activeStudyMode ? 'pb-4' : 'pb-20'}`}>
           {/* Active Study Mode Screens */}
           {activeStudyMode === 'flashcard' && activeDeck && (
             <FlashcardView

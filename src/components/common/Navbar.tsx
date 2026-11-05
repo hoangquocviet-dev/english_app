@@ -45,9 +45,9 @@ export function Navbar({ activeDeck, onOpenDeckSelector }: NavbarProps) {
 
   return (
     <header className="sticky top-0 z-40 w-full bg-slate-900/95 dark:bg-slate-900/95 bg-white/95 backdrop-blur border-b border-slate-200 dark:border-slate-800 transition-colors">
-      <div className="max-w-md mx-auto px-4 h-14 flex items-center justify-between">
+      <div className="w-full max-w-md mx-auto px-3.5 h-14 flex items-center justify-between">
         {/* Brand & Active Deck */}
-        <div className="flex items-center gap-2.5 overflow-hidden">
+        <div className="flex items-center gap-2 overflow-hidden mr-2">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-600 to-sky-500 flex items-center justify-center font-bold text-white text-base shadow-sm shrink-0">
             V
           </div>
@@ -58,7 +58,7 @@ export function Navbar({ activeDeck, onOpenDeckSelector }: NavbarProps) {
             {activeDeck && (
               <button
                 onClick={onOpenDeckSelector}
-                className="text-xs text-indigo-600 dark:text-indigo-400 font-medium truncate text-left mt-0.5 hover:underline focus:outline-none"
+                className="text-xs text-indigo-600 dark:text-indigo-400 font-medium truncate text-left mt-0.5 hover:underline focus:outline-none max-w-[130px] sm:max-w-[180px]"
               >
                 {activeDeck.name}
               </button>
@@ -67,11 +67,11 @@ export function Navbar({ activeDeck, onOpenDeckSelector }: NavbarProps) {
         </div>
 
         {/* Right Actions: Streak, Sound, Theme */}
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-1 shrink-0">
           {/* Streak indicator */}
           <div
             title={`Chuỗi học: ${streak} ngày`}
-            className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/10 dark:bg-amber-400/10 text-amber-600 dark:text-amber-400 text-xs font-semibold"
+            className="flex items-center gap-1 px-1.5 py-1 rounded-full bg-amber-500/10 dark:bg-amber-400/10 text-amber-600 dark:text-amber-400 text-xs font-semibold"
           >
             <Flame className="w-3.5 h-3.5 fill-amber-500 stroke-amber-500" />
             <span>{streak}d</span>

@@ -136,7 +136,7 @@ export function AddWordView({ decks, activeDeckId, onWordAdded }: AddWordViewPro
   }
 
   return (
-    <div className="max-w-md mx-auto px-4 py-4 space-y-5 animate-fadeIn">
+    <div className="w-full max-w-md mx-auto px-3.5 py-4 space-y-4 animate-fadeIn">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">

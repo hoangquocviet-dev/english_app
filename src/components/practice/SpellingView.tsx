@@ -127,6 +127,34 @@ export function SpellingView({ words, deckName, onBack }: SpellingViewProps) {
     setPoolTiles((prev) => [...prev, tile])
   }
 
+  // Desktop physical keyboard listener for typing tiles
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isSuccess || !currentWord) return
+
+      if (e.key === 'Backspace') {
+        e.preventDefault()
+        for (let i = placedTiles.length - 1; i >= 0; i--) {
+          const tile = placedTiles[i]
+          if (tile && !tile.tileId.startsWith('prefilled-')) {
+            handleRemovePlacedTile(i)
+            break
+          }
+        }
+      } else if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        const pressedChar = e.key.toLowerCase()
+        const matchingTile = poolTiles.find((t) => t.letter.toLowerCase() === pressedChar)
+        if (matchingTile) {
+          e.preventDefault()
+          handleSelectPoolTile(matchingTile)
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [poolTiles, placedTiles, isSuccess, currentWord])
+
   // Clear all placed tiles back to pool
   const handleClearAll = () => {
     if (!currentWord || isSuccess) return
@@ -204,6 +232,7 @@ export function SpellingView({ words, deckName, onBack }: SpellingViewProps) {
 
     if (isMatched) {
       // Correct!
+      if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(40)
       setIsSuccess(true)
       setIsWrong(false)
       audioService.playSuccessChime()
@@ -218,6 +247,7 @@ export function SpellingView({ words, deckName, onBack }: SpellingViewProps) {
       }, 1200)
     } else {
       // Wrong!
+      if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate([80, 50, 80])
       setIsWrong(true)
       audioService.playErrorBuzz()
       storageService.updateWordStatus(currentWord.id, 'learning')
@@ -270,7 +300,7 @@ export function SpellingView({ words, deckName, onBack }: SpellingViewProps) {
   const progressPercent = Math.round(((currentIndex + 1) / queue.length) * 100)
 
   return (
-    <div className="flex flex-col h-full max-w-md mx-auto px-4 py-2 select-none">
+    <div className="w-full flex flex-col h-full max-w-md mx-auto px-3.5 py-2 select-none">
       {/* Top Bar */}
       <div className="flex items-center justify-between mb-3">
         <button
