@@ -44,7 +44,7 @@ export function Navbar({ activeDeck, onOpenDeckSelector }: NavbarProps) {
   }
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-slate-900/95 dark:bg-slate-900/95 bg-white/95 backdrop-blur border-b border-slate-200 dark:border-slate-800 transition-colors">
+    <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur border-b border-slate-200 dark:border-slate-800 transition-colors">
       <div className="w-full max-w-md mx-auto px-3.5 h-14 flex items-center justify-between">
         {/* Brand & Active Deck */}
         <div className="flex items-center gap-2 overflow-hidden mr-2">

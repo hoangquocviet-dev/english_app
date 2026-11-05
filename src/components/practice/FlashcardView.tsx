@@ -134,8 +134,8 @@ export function FlashcardView({ words, deckName, onBack }: FlashcardViewProps) {
     const absY = Math.abs(y)
     const threshold = 70
 
-    // Check swipe up to flip
-    if (y < -threshold && absY > absX * 1.2) {
+    // Check swipe up or down to flip
+    if (absY > threshold && absY > absX * 1.2) {
       handleFlip()
     }
     // Check swipe right -> mastered
@@ -214,19 +214,32 @@ export function FlashcardView({ words, deckName, onBack }: FlashcardViewProps) {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        data-no-pull="true"
       >
         <div
           onClick={handleFlip}
+          data-no-pull="true"
+          data-testid="flashcard-3d"
           style={{
             transform: `translate3d(${dragOffset.x}px, ${dragOffset.y}px, 0) rotateX(${
               isFlipped ? 180 : 0
             }deg) rotateZ(${dragOffset.x * 0.05}deg)`,
             transition: isDragging ? 'none' : 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+            transformStyle: 'preserve-3d',
+            WebkitTransformStyle: 'preserve-3d',
           }}
-          className="relative w-full max-w-sm h-96 rounded-3xl cursor-pointer transform-style-3d shadow-xl border border-slate-200/80 dark:border-slate-800"
+          className="relative w-full max-w-sm h-96 rounded-3xl cursor-pointer shadow-xl border border-slate-200/80 dark:border-slate-800"
         >
           {/* FRONT CARD */}
-          <div className="absolute inset-0 backface-hidden rounded-3xl bg-white dark:bg-slate-800 p-6 flex flex-col justify-between items-center text-center">
+          <div
+            style={{
+              WebkitBackfaceVisibility: 'hidden',
+              backfaceVisibility: 'hidden',
+              transform: 'rotateX(0deg)',
+              WebkitTransform: 'rotateX(0deg)',
+            }}
+            className="absolute inset-0 rounded-3xl bg-white dark:bg-slate-800 p-6 flex flex-col justify-between items-center text-center shadow-xs select-none"
+          >
             <div className="w-full flex justify-between items-center">
               {currentWord.partOfSpeech && (
                 <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-400 uppercase tracking-wider">
@@ -236,6 +249,7 @@ export function FlashcardView({ words, deckName, onBack }: FlashcardViewProps) {
               <button
                 onClick={handleSpeak}
                 className="ml-auto w-9 h-9 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+                title="Phát âm"
               >
                 <Volume2 className="w-4 h-4" />
               </button>
@@ -253,31 +267,40 @@ export function FlashcardView({ words, deckName, onBack }: FlashcardViewProps) {
             </div>
 
             <div className="text-xs text-slate-400 dark:text-slate-500 font-medium flex items-center gap-1.5">
-              <span>Vuốt LÊN hoặc chạm để xem nghĩa</span>
+              <span>Vuốt LÊN / XUỐNG hoặc chạm để xem nghĩa</span>
             </div>
           </div>
 
           {/* BACK CARD */}
-          <div className="absolute inset-0 backface-hidden rotate-x-180 rounded-3xl bg-slate-900 dark:bg-slate-850 bg-slate-50 p-6 flex flex-col justify-between items-center text-center border-2 border-indigo-500/20">
+          <div
+            style={{
+              WebkitBackfaceVisibility: 'hidden',
+              backfaceVisibility: 'hidden',
+              transform: 'rotateX(180deg)',
+              WebkitTransform: 'rotateX(180deg)',
+            }}
+            className="absolute inset-0 rounded-3xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 p-6 flex flex-col justify-between items-center text-center border-2 border-indigo-500/30 shadow-xs select-none"
+          >
             <div className="w-full flex justify-between items-center">
-              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-500 dark:text-indigo-400 uppercase tracking-wider">
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
                 Giải nghĩa
               </span>
               <button
                 onClick={handleSpeak}
                 className="w-9 h-9 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+                title="Phát âm"
               >
                 <Volume2 className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="my-auto space-y-4 px-2">
+            <div className="my-auto space-y-4 px-2 w-full">
               <div className="text-xl font-bold text-slate-900 dark:text-slate-100 leading-snug break-words">
                 {currentWord.definition}
               </div>
 
               {currentWord.example && (
-                <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs italic text-slate-600 dark:text-slate-300 leading-relaxed text-left border-l-2 border-indigo-500">
+                <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-700/60 text-xs italic text-slate-700 dark:text-slate-200 leading-relaxed text-left border-l-4 border-indigo-500">
                   "{currentWord.example}"
                 </div>
               )}
