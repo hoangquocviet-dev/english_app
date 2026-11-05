@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --sat: env(safe-area-inset-top, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+    --sal: env(safe-area-inset-left, 0px);
+    --sar: env(safe-area-inset-right, 0px);
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    min-height: 100dvh;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    overscroll-behavior-y: none;
+  }
+
+  #root {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+/* 3D Flashcard Utilities */
+.perspective-1000 {
+  perspective: 1000px;
+  -webkit-perspective: 1000px;
+}
+
+.transform-style-3d {
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.rotate-x-180 {
+  transform: rotateX(180deg);
+}
+
+/* Safe area padding utilities */
+.pt-safe {
+  padding-top: max(1rem, var(--sat));
+}
+
+.pb-safe {
+  padding-bottom: max(1rem, var(--sab));
+}
+
+.pb-safe-nav {
+  padding-bottom: calc(4.5rem + var(--sab));
+}
+
+.pl-safe {
+  padding-left: max(1rem, var(--sal));
+}
+
+.pr-safe {
+  padding-right: max(1rem, var(--sar));
+}
+
+/* Shake animation for errors */
+@keyframes shake-x {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+
+.animate-shake {
+  animation: shake-x 0.4s ease-in-out;
+}
+
+/* Pulse success */
+@keyframes pulse-success {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.animate-pulse-success {
+  animation: pulse-success 0.3s ease-in-out;
+}
