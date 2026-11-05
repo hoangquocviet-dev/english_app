@@ -494,7 +494,7 @@ export const INITIAL_WORDS: WordItem[] = [
     id: 'comm-2',
     deckId: 'deck-communication',
     term: 'chit-chat',
-    ipa: '/ˈtʃɪt tʃæt/',
+    ipa: '/ˈtʃɪt-tʃæt/',
     definition: 'Tán gẫu, trò chuyện thân mật về những điều thường nhật',
     example: 'We had a little chit-chat before the presentation started.',
     partOfSpeech: 'noun',

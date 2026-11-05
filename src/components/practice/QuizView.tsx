@@ -199,7 +199,7 @@ export function QuizView({ words, deckName, onBack }: QuizViewProps) {
         </h2>
 
         {currentQ.targetWord.ipa && (
-          <p className="text-sm font-mono text-slate-400 dark:text-slate-500 mt-1">
+          <p className="text-sm font-sans font-medium tracking-wide text-slate-400 dark:text-slate-500 mt-1">
             {currentQ.targetWord.ipa}
           </p>
         )}

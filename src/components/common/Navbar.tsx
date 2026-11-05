@@ -1,4 +1,4 @@
-import { Flame, Moon, Sun, Volume2, VolumeX } from 'lucide-react'
+import { Flame, Moon, RotateCw, Sun, Volume2, VolumeX } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { Deck } from '../../types'
 import { audioService } from '../../utils/audio'
@@ -13,6 +13,7 @@ export function Navbar({ activeDeck, onOpenDeckSelector }: NavbarProps) {
   const [streak, setStreak] = useState(1)
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [isDark, setIsDark] = useState(true)
+  const [isReloading, setIsReloading] = useState(false)
 
   useEffect(() => {
     setStreak(storageService.getStudyStreak())
@@ -41,6 +42,19 @@ export function Navbar({ activeDeck, onOpenDeckSelector }: NavbarProps) {
       localStorage.setItem('vocab_theme', 'light')
     }
     audioService.playClick()
+  }
+
+  const handleReload = () => {
+    setIsReloading(true)
+    audioService.playClick()
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try {
+        navigator.vibrate(25)
+      } catch {}
+    }
+    setTimeout(() => {
+      window.location.reload()
+    }, 300)
   }
 
   return (
@@ -88,6 +102,16 @@ export function Navbar({ activeDeck, onOpenDeckSelector }: NavbarProps) {
             ) : (
               <VolumeX className="w-4 h-4 text-slate-400 dark:text-slate-600" />
             )}
+          </button>
+
+          {/* Reload Button */}
+          <button
+            onClick={handleReload}
+            aria-label="Tải lại trang"
+            title="Tải lại trang"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          >
+            <RotateCw className={`w-4 h-4 ${isReloading ? 'animate-spin text-indigo-600' : ''}`} />
           </button>
 
           {/* Theme Toggle */}

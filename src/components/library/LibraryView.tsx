@@ -243,7 +243,7 @@ export function LibraryView({
                     {word.term}
                   </span>
                   {word.ipa && (
-                    <span className="text-xs font-mono text-slate-400">
+                    <span className="text-xs font-sans font-medium tracking-wide text-slate-400">
                       {word.ipa}
                     </span>
                   )}

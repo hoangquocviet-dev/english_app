@@ -260,7 +260,7 @@ export function FlashcardView({ words, deckName, onBack }: FlashcardViewProps) {
                 {currentWord.term}
               </h2>
               {currentWord.ipa && (
-                <p className="text-sm font-mono text-slate-400 dark:text-slate-500 mt-2">
+                <p className="text-sm font-sans font-medium tracking-wide text-slate-400 dark:text-slate-500 mt-2">
                   {currentWord.ipa}
                 </p>
               )}

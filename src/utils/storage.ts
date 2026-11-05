@@ -137,8 +137,29 @@ class SafeStorageService {
       (initW) => !words.some((w) => w.id === initW.id)
     )
     let currentWords = words
+    let hasChanges = false
+
     if (missingBuiltIns.length > 0) {
       currentWords = [...words, ...missingBuiltIns]
+      hasChanges = true
+    }
+
+    // Sync updated term, IPA, or definition for built-in words
+    currentWords = currentWords.map((w) => {
+      const builtIn = INITIAL_WORDS.find((initW) => initW.id === w.id)
+      if (
+        builtIn &&
+        (builtIn.ipa !== w.ipa ||
+          builtIn.definition !== w.definition ||
+          builtIn.term !== w.term)
+      ) {
+        hasChanges = true
+        return { ...builtIn, status: w.status, reviewCount: w.reviewCount }
+      }
+      return w
+    })
+
+    if (hasChanges) {
       this.set(STORAGE_KEYS.WORDS, currentWords)
     }
 

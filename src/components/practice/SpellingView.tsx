@@ -356,7 +356,7 @@ export function SpellingView({ words, deckName, onBack }: SpellingViewProps) {
         </h3>
 
         {currentWord.ipa && (
-          <p className="text-sm font-mono text-indigo-600 dark:text-indigo-400 font-medium mt-1.5">
+          <p className="text-sm font-sans tracking-wide text-indigo-600 dark:text-indigo-400 font-semibold mt-1.5">
             {currentWord.ipa}
           </p>
         )}
@@ -373,16 +373,32 @@ export function SpellingView({ words, deckName, onBack }: SpellingViewProps) {
         }`}
       >
         {placedTiles.map((tile, index) => {
-          const isSpace = currentWord.term[index] === ' '
-          if (isSpace) {
+          const char = currentWord.term[index]
+          if (char === ' ') {
             return <div key={index} className="w-3" />
           }
+
+          if (char === '-') {
+            return (
+              <span
+                key={index}
+                className="px-1 text-xl font-bold text-slate-400 dark:text-slate-500 select-none flex items-center"
+              >
+                -
+              </span>
+            )
+          }
+
+          const isLongWord = currentWord.term.length > 8
+          const sizeClasses = isLongWord
+            ? 'w-8 h-11 text-base'
+            : 'w-10 h-12 text-lg'
 
           if (!tile) {
             return (
               <div
                 key={index}
-                className="w-10 h-12 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center"
+                className={`${sizeClasses} rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center`}
               />
             )
           }
@@ -394,7 +410,7 @@ export function SpellingView({ words, deckName, onBack }: SpellingViewProps) {
               key={index}
               disabled={isPrefilled || isSuccess}
               onClick={() => handleRemovePlacedTile(index)}
-              className={`w-10 h-12 rounded-xl font-bold text-lg flex items-center justify-center shadow-xs transition-transform active:scale-90 ${
+              className={`${sizeClasses} rounded-xl font-bold flex items-center justify-center shadow-xs transition-transform active:scale-90 ${
                 isSuccess
                   ? 'bg-emerald-600 text-white'
                   : isWrong

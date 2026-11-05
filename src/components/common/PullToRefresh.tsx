@@ -16,7 +16,7 @@ export function PullToRefresh({ children }: PullToRefreshProps) {
   const canPullRef = useRef(false)
   const thresholdPassedRef = useRef(false)
 
-  const THRESHOLD = 65
+  const THRESHOLD = 55
   const MAX_PULL = 110
 
   useEffect(() => {
@@ -28,19 +28,14 @@ export function PullToRefresh({ children }: PullToRefreshProps) {
       }
 
       const target = e.target as HTMLElement | null
-      // Do not hijack card swiping, buttons, or form controls
-      if (
-        target?.closest(
-          '[data-no-pull="true"], input, textarea, select, button, .cursor-pointer'
-        )
-      ) {
+      // Do not hijack card swiping or form text inputs
+      if (target?.closest('[data-no-pull="true"], input, textarea')) {
         canPullRef.current = false
         return
       }
 
       touchStartYRef.current = e.touches[0].clientY
       canPullRef.current = true
-      setIsDragging(true)
       thresholdPassedRef.current = false
     }
 
@@ -59,8 +54,9 @@ export function PullToRefresh({ children }: PullToRefreshProps) {
       const deltaY = currentY - touchStartYRef.current
 
       if (deltaY > 0) {
+        setIsDragging(true)
         // Damped logarithmic pull resistance
-        const damped = Math.min(MAX_PULL, Math.pow(deltaY, 0.82) * 1.5)
+        const damped = Math.min(MAX_PULL, Math.pow(deltaY, 0.82) * 1.6)
         setPullDistance(damped)
 
         const ready = damped >= THRESHOLD
@@ -72,16 +68,14 @@ export function PullToRefresh({ children }: PullToRefreshProps) {
           if (navigator.vibrate) {
             try {
               navigator.vibrate(15)
-            } catch {
-              // Ignore vibration errors if unsupported
-            }
+            } catch {}
           }
         } else if (!ready && thresholdPassedRef.current) {
           thresholdPassedRef.current = false
         }
 
         // Prevent native overscroll bounce if pulling down intentionally
-        if (e.cancelable && deltaY > 12) {
+        if (e.cancelable && deltaY > 10) {
           e.preventDefault()
         }
       } else {
