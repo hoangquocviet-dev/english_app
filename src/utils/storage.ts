@@ -1,4 +1,4 @@
-import { INITIAL_DECKS, INITIAL_WORDS } from '../data/initialDecks'
+import { INITIAL_DECKS } from '../data/deckMeta'
 import type { ArcadeGameId, Deck, GameHighScores, WordItem } from '../types'
 
 const CURRENT_SEED_VERSION = 6
@@ -25,9 +25,30 @@ export interface DailyProgress {
 
 export interface StudyPreferences {
   shuffle: boolean
+  batchSize: number // 0 = all cards, >0 = max cards per study session
 }
 
 class SafeStorageService {
+  // O(1) In-Memory Caches (eliminates repeated JSON.parse on large 1,000-10,000+ word banks)
+  private decksCache: Deck[] | null = null
+  private wordsCache: WordItem[] | null = null
+  private wordsByDeckCache = new Map<string, WordItem[]>()
+  private flushTimerId: number | null = null
+  private wordsDirty = false
+  private seedPromise: Promise<boolean> | null = null
+
+  constructor() {
+    if (typeof window !== 'undefined') {
+      const flushNow = () => {
+        this.flushPendingWrites()
+      }
+      window.addEventListener('pagehide', flushNow)
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) flushNow()
+      })
+    }
+  }
+
   private isLocalStorageAvailable(): boolean {
     try {
       if (typeof window === 'undefined' || !window.localStorage) return false
@@ -42,12 +63,10 @@ class SafeStorageService {
 
   private getTodayKey(): string {
     const now = new Date()
-    // Adjust by 4 hours backwards so midnight to 4:00 AM counts as previous study day
     const adjustedTime = new Date(now.getTime() - 4 * 60 * 60 * 1000)
     return `${adjustedTime.getFullYear()}-${adjustedTime.getMonth() + 1}-${adjustedTime.getDate()}`
   }
 
-  // Generic safe get
   private get<T>(key: string, fallback: T): T {
     if (!this.isLocalStorageAvailable()) return fallback
     try {
@@ -66,7 +85,6 @@ class SafeStorageService {
     }
   }
 
-  // Generic safe set
   private set<T>(key: string, value: T): boolean {
     if (!this.isLocalStorageAvailable()) return false
     try {
@@ -78,22 +96,56 @@ class SafeStorageService {
     }
   }
 
-  // DECKS CRUD
+  private commitWordsCache(nextWords: WordItem[], immediate = false): void {
+    this.wordsCache = nextWords
+    this.wordsByDeckCache.clear()
+    this.wordsDirty = true
+
+    if (immediate || typeof window === 'undefined') {
+      this.flushPendingWrites()
+      return
+    }
+
+    if (this.flushTimerId !== null) {
+      window.clearTimeout(this.flushTimerId)
+    }
+    this.flushTimerId = window.setTimeout(() => {
+      this.flushTimerId = null
+      this.flushPendingWrites()
+    }, 60)
+  }
+
+  public flushPendingWrites(): void {
+    if (!this.wordsDirty || !this.wordsCache) return
+    if (this.flushTimerId !== null && typeof window !== 'undefined') {
+      window.clearTimeout(this.flushTimerId)
+      this.flushTimerId = null
+    }
+    this.wordsDirty = false
+    this.set(STORAGE_KEYS.WORDS, this.wordsCache)
+  }
+
+  // DECKS CRUD (In-memory cached)
   public getDecks(): Deck[] {
+    if (this.decksCache) return this.decksCache
+
     const decks = this.get<Deck[]>(STORAGE_KEYS.DECKS, [])
     if (!decks || decks.length === 0) {
+      this.decksCache = INITIAL_DECKS
       this.set(STORAGE_KEYS.DECKS, INITIAL_DECKS)
       return INITIAL_DECKS
     }
-    // Ensure built-in decks are always included
-    const missingBuiltIns = INITIAL_DECKS.filter(
-      (initD) => !decks.some((d) => d.id === initD.id)
-    )
+
+    const existingIds = new Set(decks.map((d) => d.id))
+    const missingBuiltIns = INITIAL_DECKS.filter((initD) => !existingIds.has(initD.id))
     if (missingBuiltIns.length > 0) {
       const merged = [...INITIAL_DECKS, ...decks.filter((d) => !d.isBuiltIn)]
+      this.decksCache = merged
       this.set(STORAGE_KEYS.DECKS, merged)
       return merged
     }
+
+    this.decksCache = decks
     return decks
   }
 
@@ -106,7 +158,9 @@ class SafeStorageService {
       isBuiltIn: false,
       createdAt: Date.now(),
     }
-    this.set(STORAGE_KEYS.DECKS, [...decks, newDeck])
+    const nextDecks = [...decks, newDeck]
+    this.decksCache = nextDecks
+    this.set(STORAGE_KEYS.DECKS, nextDecks)
     return newDeck
   }
 
@@ -117,11 +171,12 @@ class SafeStorageService {
       return false
     }
     const updatedDecks = decks.filter((d) => d.id !== deckId)
+    this.decksCache = updatedDecks
     this.set(STORAGE_KEYS.DECKS, updatedDecks)
 
     const words = this.getWords()
     const updatedWords = words.filter((w) => w.deckId !== deckId)
-    this.set(STORAGE_KEYS.WORDS, updatedWords)
+    this.commitWordsCache(updatedWords, true)
 
     const activeDeckId = this.getActiveDeckId()
     if (activeDeckId === deckId) {
@@ -145,57 +200,93 @@ class SafeStorageService {
     this.set(STORAGE_KEYS.ACTIVE_DECK, deckId)
   }
 
-  // WORDS CRUD
-  public getWords(deckId?: string): WordItem[] {
-    const words = this.get<WordItem[]>(STORAGE_KEYS.WORDS, [])
-    const deletedBuiltIns = new Set(this.get<string[]>(STORAGE_KEYS.DELETED_BUILTINS, []))
+  // LAZY SEED HYDRATION (Zero-KB startup for returning users; non-blocking O(N) sync on seed bump)
+  public needsSeedSync(): boolean {
+    const words = this.getWords()
     const savedSeedVersion = this.get<number>(STORAGE_KEYS.SEED_VERSION, 0)
+    return words.length === 0 || savedSeedVersion < CURRENT_SEED_VERSION
+  }
 
-    if (!words || words.length === 0) {
-      this.set(STORAGE_KEYS.WORDS, INITIAL_WORDS)
-      this.set(STORAGE_KEYS.SEED_VERSION, CURRENT_SEED_VERSION)
-      return deckId ? INITIAL_WORDS.filter((w) => w.deckId === deckId) : INITIAL_WORDS
+  public ensureSeedLoaded(): Promise<boolean> {
+    if (!this.needsSeedSync()) {
+      return Promise.resolve(false)
     }
+    if (this.seedPromise) return this.seedPromise
 
-    let currentWords = words
-    let hasChanges = false
+    this.seedPromise = (async () => {
+      try {
+        const { INITIAL_WORDS } = await import('../data/initialDecks')
+        const existing = this.getWords()
+        const deletedBuiltIns = new Set(this.get<string[]>(STORAGE_KEYS.DELETED_BUILTINS, []))
 
-    // Merge newly added built-in words (respecting user deletions)
-    const missingBuiltIns = INITIAL_WORDS.filter(
-      (initW) => !deletedBuiltIns.has(initW.id) && !words.some((w) => w.id === initW.id)
-    )
-
-    if (missingBuiltIns.length > 0) {
-      currentWords = [...words, ...missingBuiltIns]
-      hasChanges = true
-    }
-
-    // Only run built-in metadata sync once per seed version bump so user edits are preserved
-    if (savedSeedVersion < CURRENT_SEED_VERSION) {
-      currentWords = currentWords.map((w) => {
-        const builtIn = INITIAL_WORDS.find((initW) => initW.id === w.id)
-        if (
-          builtIn &&
-          (builtIn.ipa !== w.ipa ||
-            builtIn.definition !== w.definition ||
-            builtIn.term !== w.term)
-        ) {
-          hasChanges = true
-          return { ...builtIn, status: w.status, reviewCount: w.reviewCount, lastReviewed: w.lastReviewed }
+        if (existing.length === 0) {
+          this.commitWordsCache(INITIAL_WORDS, true)
+          this.set(STORAGE_KEYS.SEED_VERSION, CURRENT_SEED_VERSION)
+          return true
         }
-        return w
-      })
-      this.set(STORAGE_KEYS.SEED_VERSION, CURRENT_SEED_VERSION)
+
+        // O(N) Map/Set merge instead of O(N^2) array scans
+        const existingIdSet = new Set(existing.map((w) => w.id))
+        const builtInMap = new Map(INITIAL_WORDS.map((w) => [w.id, w]))
+
+        const missingBuiltIns = INITIAL_WORDS.filter(
+          (initW) => !deletedBuiltIns.has(initW.id) && !existingIdSet.has(initW.id)
+        )
+
+        const syncedExisting = existing.map((w) => {
+          const builtIn = builtInMap.get(w.id)
+          if (
+            builtIn &&
+            (builtIn.ipa !== w.ipa ||
+              builtIn.definition !== w.definition ||
+              builtIn.term !== w.term ||
+              builtIn.example !== w.example)
+          ) {
+            return {
+              ...builtIn,
+              status: w.status,
+              reviewCount: w.reviewCount,
+              lastReviewed: w.lastReviewed,
+            }
+          }
+          return w
+        })
+
+        const merged =
+          missingBuiltIns.length > 0 ? [...syncedExisting, ...missingBuiltIns] : syncedExisting
+
+        this.commitWordsCache(merged, true)
+        this.set(STORAGE_KEYS.SEED_VERSION, CURRENT_SEED_VERSION)
+        return true
+      } catch (e) {
+        console.error('[Storage] Failed to lazy-load seed vocabulary:', e)
+        return false
+      } finally {
+        this.seedPromise = null
+      }
+    })()
+
+    return this.seedPromise
+  }
+
+  // O(1) IN-MEMORY WORDS READ
+  public getWords(deckId?: string): WordItem[] {
+    if (!this.wordsCache) {
+      this.wordsCache = this.get<WordItem[]>(STORAGE_KEYS.WORDS, [])
     }
 
-    if (hasChanges) {
-      this.set(STORAGE_KEYS.WORDS, currentWords)
+    if (!deckId) {
+      return this.wordsCache
     }
 
-    if (deckId) {
-      return currentWords.filter((w) => w.deckId === deckId)
+    const cachedDeckWords = this.wordsByDeckCache.get(deckId)
+    if (cachedDeckWords) {
+      return cachedDeckWords
     }
-    return currentWords
+
+    const filtered = this.wordsCache.filter((w) => w.deckId === deckId)
+    this.wordsByDeckCache.set(deckId, filtered)
+    return filtered
   }
 
   public addWord(word: Omit<WordItem, 'id' | 'status' | 'reviewCount'>): WordItem {
@@ -206,61 +297,75 @@ class SafeStorageService {
       status: 'new',
       reviewCount: 0,
     }
-    this.set(STORAGE_KEYS.WORDS, [newWord, ...words])
+    this.commitWordsCache([newWord, ...words], true)
     return newWord
   }
 
   public updateWord(updatedWord: WordItem): void {
     const words = this.getWords()
     const updated = words.map((w) => (w.id === updatedWord.id ? updatedWord : w))
-    this.set(STORAGE_KEYS.WORDS, updated)
+    this.commitWordsCache(updated, true)
   }
 
   public deleteWord(id: string): void {
     const words = this.getWords()
-    const isBuiltIn = INITIAL_WORDS.some((w) => w.id === id)
-    if (isBuiltIn) {
+    // Custom/imported words always start with 'w-'; built-in IDs use deck prefixes
+    if (!id.startsWith('w-')) {
       const deleted = this.get<string[]>(STORAGE_KEYS.DELETED_BUILTINS, [])
       if (!deleted.includes(id)) {
         this.set(STORAGE_KEYS.DELETED_BUILTINS, [...deleted, id])
       }
     }
     const updated = words.filter((w) => w.id !== id)
-    this.set(STORAGE_KEYS.WORDS, updated)
+    this.commitWordsCache(updated, true)
   }
 
-  public updateWordStatus(id: string, status: WordItem['status'], countActivity: boolean = true): void {
+  public updateWordStatus(
+    id: string,
+    status: WordItem['status'],
+    countActivity: boolean = true
+  ): void {
     const words = this.getWords()
+    const now = Date.now()
     const updated = words.map((w) => {
       if (w.id === id) {
         return {
           ...w,
           status,
           reviewCount: status === 'mastered' ? w.reviewCount : w.reviewCount + 1,
-          lastReviewed: Date.now(),
+          lastReviewed: now,
         }
       }
       return w
     })
-    this.set(STORAGE_KEYS.WORDS, updated)
+    // Debounced disk flush keeps rapid flashcard swipes & game combos 60fps smooth
+    this.commitWordsCache(updated, false)
     if (countActivity) {
       this.recordDailyActivity(true)
     }
   }
 
-  public resetDeckProgress(deckId: string): void {
-    // Also restore any deleted built-in words belonging to this deck
-    const deckBuiltInIds = new Set(
-      INITIAL_WORDS.filter((w) => w.deckId === deckId).map((w) => w.id)
-    )
-    if (deckBuiltInIds.size > 0) {
-      const deleted = this.get<string[]>(STORAGE_KEYS.DELETED_BUILTINS, [])
-      const filteredDeleted = deleted.filter((id) => !deckBuiltInIds.has(id))
-      this.set(STORAGE_KEYS.DELETED_BUILTINS, filteredDeleted)
+  public async resetDeckProgress(deckId: string): Promise<void> {
+    const deleted = this.get<string[]>(STORAGE_KEYS.DELETED_BUILTINS, [])
+    let baseWords = this.getWords()
+
+    if (deleted.length > 0) {
+      try {
+        const { INITIAL_WORDS } = await import('../data/initialDecks')
+        const deckBuiltIns = INITIAL_WORDS.filter((w) => w.deckId === deckId)
+        const deckBuiltInIds = new Set(deckBuiltIns.map((w) => w.id))
+        const filteredDeleted = deleted.filter((id) => !deckBuiltInIds.has(id))
+        this.set(STORAGE_KEYS.DELETED_BUILTINS, filteredDeleted)
+
+        const existingIds = new Set(baseWords.map((w) => w.id))
+        const restored = deckBuiltIns.filter((w) => !existingIds.has(w.id))
+        if (restored.length > 0) {
+          baseWords = [...baseWords, ...restored]
+        }
+      } catch {}
     }
 
-    const words = this.getWords()
-    const updated = words.map((w) => {
+    const updated = baseWords.map((w) => {
       if (w.deckId === deckId) {
         return {
           ...w,
@@ -271,7 +376,7 @@ class SafeStorageService {
       }
       return w
     })
-    this.set(STORAGE_KEYS.WORDS, updated)
+    this.commitWordsCache(updated, true)
   }
 
   // IMPORT BULK
@@ -303,7 +408,7 @@ class SafeStorageService {
     }
 
     if (newWordsList.length > 0) {
-      this.set(STORAGE_KEYS.WORDS, [...newWordsList, ...allWords])
+      this.commitWordsCache([...newWordsList, ...allWords], true)
     }
 
     return {
@@ -314,9 +419,11 @@ class SafeStorageService {
 
   // STUDY PREFERENCES
   public getStudyPreferences(): StudyPreferences {
-    return this.get<StudyPreferences>(STORAGE_KEYS.STUDY_PREFS, {
-      shuffle: false,
-    })
+    const raw = this.get<Partial<StudyPreferences>>(STORAGE_KEYS.STUDY_PREFS, {})
+    return {
+      shuffle: Boolean(raw.shuffle),
+      batchSize: typeof raw.batchSize === 'number' ? raw.batchSize : 25,
+    }
   }
 
   public setStudyPreferences(prefs: StudyPreferences): void {
@@ -346,7 +453,6 @@ class SafeStorageService {
     const adjustedTime = new Date(now.getTime() - 4 * 60 * 60 * 1000)
     const todayKey = `${adjustedTime.getFullYear()}-${adjustedTime.getMonth() + 1}-${adjustedTime.getDate()}`
 
-    // Update daily review counter
     if (incrementWordCount) {
       const currentDaily = this.getDailyProgress()
       this.set(STORAGE_KEYS.DAILY_PROGRESS, {
@@ -405,11 +511,13 @@ class SafeStorageService {
   }
 
   // RESET TO FACTORY DEFAULTS
-  public resetToDefaults(): void {
+  public async resetToDefaults(): Promise<void> {
     if (!this.isLocalStorageAvailable()) return
+    const { INITIAL_WORDS } = await import('../data/initialDecks')
     this.set(STORAGE_KEYS.DELETED_BUILTINS, [])
+    this.decksCache = INITIAL_DECKS
     this.set(STORAGE_KEYS.DECKS, INITIAL_DECKS)
-    this.set(STORAGE_KEYS.WORDS, INITIAL_WORDS)
+    this.commitWordsCache(INITIAL_WORDS, true)
     this.set(STORAGE_KEYS.ACTIVE_DECK, INITIAL_DECKS[0].id)
     this.set(STORAGE_KEYS.SEED_VERSION, CURRENT_SEED_VERSION)
   }

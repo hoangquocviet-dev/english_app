@@ -1,7 +1,6 @@
 import confetti from 'canvas-confetti'
 import { ArrowLeft, Crosshair, Heart, Pause, Play, RotateCcw, Trophy, Volume2 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { INITIAL_WORDS } from '../../data/initialDecks'
 import type { WordItem } from '../../types'
 import { formatArcadeMeaning } from '../../utils/arcadeText'
 import { audioService } from '../../utils/audio'
@@ -144,7 +143,7 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
 
     const combined = [...words]
     const seen = new Set(words.map((w) => w.term.toLowerCase()))
-    for (const iw of INITIAL_WORDS) {
+    for (const iw of storageService.getWords()) {
       if (iw.term.length <= 22 && iw.definition.length <= 115 && !seen.has(iw.term.toLowerCase())) {
         seen.add(iw.term.toLowerCase())
         combined.push(iw)

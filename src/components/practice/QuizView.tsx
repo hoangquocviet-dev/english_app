@@ -1,6 +1,5 @@
 import { ArrowLeft, Check, Volume2, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { INITIAL_WORDS } from '../../data/initialDecks'
 import type { StudySessionStats, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
 import { storageService } from '../../utils/storage'
@@ -33,29 +32,56 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 function buildQuestions(sourceWords: WordItem[], fullDeckWords: WordItem[]): QuizQuestion[] {
-  const distractorCandidates = [...fullDeckWords, ...sourceWords, ...INITIAL_WORDS]
+  const rawPool =
+    fullDeckWords.length >= 6
+      ? [...fullDeckWords, ...sourceWords]
+      : [...fullDeckWords, ...sourceWords, ...storageService.getWords().slice(0, 40)]
+
+  // Pre-deduplicate candidate pool once in O(N) instead of O(N^2) per question
+  const seenDefs = new Set<string>()
+  const uniqueCandidates: Array<{ termLower: string; def: string; defLower: string }> = []
+  for (const w of rawPool) {
+    const def = w.definition.trim()
+    const defLower = def.toLowerCase()
+    if (!seenDefs.has(defLower)) {
+      seenDefs.add(defLower)
+      uniqueCandidates.push({
+        termLower: w.term.trim().toLowerCase(),
+        def,
+        defLower,
+      })
+    }
+  }
 
   const generated: QuizQuestion[] = sourceWords.map((targetWord) => {
     const correctDef = targetWord.definition.trim()
+    const correctLower = correctDef.toLowerCase()
     const targetTermLower = targetWord.term.trim().toLowerCase()
 
-    const seenDefs = new Set<string>([correctDef.toLowerCase()])
-    const uniqueDistractors: string[] = []
+    // Fast O(1) random sampling of 3 distinct distractors
+    const picked: string[] = []
+    const pickedLower = new Set<string>([correctLower])
+    const poolLen = uniqueCandidates.length
 
-    for (const candidate of distractorCandidates) {
-      if (candidate.term.trim().toLowerCase() === targetTermLower) continue
-      const def = candidate.definition.trim()
-      const defLower = def.toLowerCase()
-      if (!seenDefs.has(defLower)) {
-        seenDefs.add(defLower)
-        uniqueDistractors.push(def)
+    for (let attempts = 0; attempts < 24 && picked.length < 3 && poolLen > 1; attempts++) {
+      const cand = uniqueCandidates[Math.floor(Math.random() * poolLen)]
+      if (cand.termLower !== targetTermLower && !pickedLower.has(cand.defLower)) {
+        pickedLower.add(cand.defLower)
+        picked.push(cand.def)
       }
     }
 
-    const shuffledDistractors = shuffleArray(uniqueDistractors).slice(0, 3)
+    if (picked.length < 3) {
+      for (const cand of uniqueCandidates) {
+        if (picked.length >= 3) break
+        if (cand.termLower !== targetTermLower && !pickedLower.has(cand.defLower)) {
+          pickedLower.add(cand.defLower)
+          picked.push(cand.def)
+        }
+      }
+    }
 
-    const rawOptions = [correctDef, ...shuffledDistractors]
-    const shuffledOptions = shuffleArray(rawOptions)
+    const shuffledOptions = shuffleArray([correctDef, ...picked])
     const correctIndex = shuffledOptions.indexOf(correctDef)
 
     return {
@@ -210,8 +236,9 @@ export function QuizView({ words, allDeckWords, deckId, deckName, onBack }: Quiz
         stats={sessionStats}
         onContinueRemaining={(rem) => resetQuiz(rem)}
         onResetDeck={() => {
-          storageService.resetDeckProgress(deckId)
-          resetQuiz(storageService.getWords(deckId))
+          void storageService.resetDeckProgress(deckId).then(() => {
+            resetQuiz(storageService.getWords(deckId))
+          })
         }}
         onBackToHome={onBack}
       />

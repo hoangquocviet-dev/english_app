@@ -1,14 +1,17 @@
-import { Check, FileText, Pencil, Plus, RotateCcw, Search, Trash2, Volume2, X } from 'lucide-react'
-import { useState } from 'react'
+import { Check, FileText, Globe, Pencil, Plus, RotateCcw, Search, Trash2, Volume2, X } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Deck, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
 import { storageService } from '../../utils/storage'
 import { ImportExportModal } from './ImportExportModal'
 
+const PAGE_SIZE = 30
+
 interface LibraryViewProps {
   decks: Deck[]
   activeDeck: Deck
   words: WordItem[]
+  allWords: WordItem[]
   onSelectDeck: (deckId: string) => void
   onDataChanged: () => void
   onGoToAddWord: () => void
@@ -18,15 +21,19 @@ export function LibraryView({
   decks,
   activeDeck,
   words,
+  allWords,
   onSelectDeck,
   onDataChanged,
   onGoToAddWord,
 }: LibraryViewProps) {
   const [searchQuery, setSearchQuery] = useState('')
+  const [searchAllDecks, setSearchAllDecks] = useState(false)
   const [statusFilter, setStatusFilter] = useState<'all' | 'mastered' | 'review'>('all')
+  const [visibleLimit, setVisibleLimit] = useState(PAGE_SIZE)
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false)
   const [isCreatingDeck, setIsCreatingDeck] = useState(false)
   const [newDeckName, setNewDeckName] = useState('')
+  const loadMoreRef = useRef<HTMLDivElement | null>(null)
 
   // Edit Word Modal State
   const [editingWord, setEditingWord] = useState<WordItem | null>(null)
@@ -45,18 +52,48 @@ export function LibraryView({
     onConfirm: () => void
   } | null>(null)
 
-  const filteredWords = words.filter((w) => {
-    const matchesSearch =
-      w.term.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      w.definition.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (w.ipa && w.ipa.toLowerCase().includes(searchQuery.toLowerCase()))
+  const sourceWords = searchAllDecks ? allWords : words
 
-    if (!matchesSearch) return false
+  const filteredWords = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase()
+    return sourceWords.filter((w) => {
+      if (q) {
+        const matchesSearch =
+          w.term.toLowerCase().includes(q) ||
+          w.definition.toLowerCase().includes(q) ||
+          (w.ipa && w.ipa.toLowerCase().includes(q))
+        if (!matchesSearch) return false
+      }
 
-    if (statusFilter === 'mastered') return w.status === 'mastered'
-    if (statusFilter === 'review') return w.status === 'learning' || w.status === 'new'
-    return true
-  })
+      if (statusFilter === 'mastered') return w.status === 'mastered'
+      if (statusFilter === 'review') return w.status === 'learning' || w.status === 'new'
+      return true
+    })
+  }, [sourceWords, searchQuery, statusFilter])
+
+  const visibleWords = useMemo(
+    () => filteredWords.slice(0, visibleLimit),
+    [filteredWords, visibleLimit]
+  )
+  const hasMore = visibleLimit < filteredWords.length
+
+  // Progressive infinite scroll: mount only 30 DOM cards at a time so 1,000-10,000+ words never lag!
+  useEffect(() => {
+    const el = loadMoreRef.current
+    if (!el || !hasMore) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setVisibleLimit((prev) => prev + PAGE_SIZE)
+        }
+      },
+      { rootMargin: '280px' }
+    )
+
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [hasMore, filteredWords.length])
 
   const handleCreateDeck = (e: React.FormEvent) => {
     e.preventDefault()
@@ -109,10 +146,11 @@ export function LibraryView({
       confirmLabel: 'Đặt lại',
       isDanger: false,
       onConfirm: () => {
-        storageService.resetDeckProgress(activeDeck.id)
-        audioService.playSuccessChime()
-        onDataChanged()
-        setConfirmAction(null)
+        void storageService.resetDeckProgress(activeDeck.id).then(() => {
+          audioService.playSuccessChime()
+          onDataChanged()
+          setConfirmAction(null)
+        })
       },
     })
   }
@@ -152,13 +190,30 @@ export function LibraryView({
     onDataChanged()
   }
 
-  const masteredTotal = words.filter((w) => w.status === 'mastered').length
-  const allLibraryWords = storageService.getWords()
-  const allMasteredTotal = allLibraryWords.filter((w) => w.status === 'mastered').length
-  const deckCountMap = allLibraryWords.reduce<Record<string, number>>((acc, w) => {
-    acc[w.deckId] = (acc[w.deckId] || 0) + 1
-    return acc
-  }, {})
+  const masteredTotal = useMemo(
+    () => sourceWords.filter((w) => w.status === 'mastered').length,
+    [sourceWords]
+  )
+  const allMasteredTotal = useMemo(
+    () => allWords.filter((w) => w.status === 'mastered').length,
+    [allWords]
+  )
+  const deckCountMap = useMemo(
+    () =>
+      allWords.reduce<Record<string, number>>((acc, w) => {
+        acc[w.deckId] = (acc[w.deckId] || 0) + 1
+        return acc
+      }, {}),
+    [allWords]
+  )
+  const deckNameMap = useMemo(
+    () =>
+      decks.reduce<Record<string, string>>((acc, d) => {
+        acc[d.id] = d.name
+        return acc
+      }, {}),
+    [decks]
+  )
 
   return (
     <div className="w-full max-w-md mx-auto px-3.5 py-4 space-y-4 animate-fadeIn">
@@ -168,11 +223,11 @@ export function LibraryView({
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Kho từ vựng</h2>
             <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-600 dark:text-indigo-400">
-              {allLibraryWords.length} từ
+              {allWords.length.toLocaleString()} từ
             </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Tổng {decks.length} bộ chủ đề • Đã thuộc toàn kho: {allMasteredTotal}/{allLibraryWords.length} từ
+            Tổng {decks.length} bộ chủ đề • Đã thuộc toàn kho: {allMasteredTotal}/{allWords.length.toLocaleString()} từ
           </p>
         </div>
         <button
@@ -228,9 +283,13 @@ export function LibraryView({
             return (
               <div
                 key={deck.id}
-                onClick={() => onSelectDeck(deck.id)}
+                onClick={() => {
+                  setSearchAllDecks(false)
+                  setVisibleLimit(PAGE_SIZE)
+                  onSelectDeck(deck.id)
+                }}
                 className={`p-3.5 rounded-2xl border min-w-44 cursor-pointer transition-all shrink-0 flex flex-col justify-between ${
-                  isSelected
+                  isSelected && !searchAllDecks
                     ? 'bg-indigo-600 text-white border-indigo-600 shadow-md'
                     : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 hover:border-slate-300'
                 }`}
@@ -238,7 +297,9 @@ export function LibraryView({
                 <div className="flex items-start justify-between gap-1 mb-2">
                   <span
                     className={`text-xs font-bold leading-snug line-clamp-2 ${
-                      isSelected ? 'text-white' : 'text-slate-900 dark:text-slate-100'
+                      isSelected && !searchAllDecks
+                        ? 'text-white'
+                        : 'text-slate-900 dark:text-slate-100'
                     }`}
                   >
                     {deck.name}
@@ -273,40 +334,76 @@ export function LibraryView({
 
       {/* Word Search & Status Filter */}
       <div className="space-y-3 pt-1">
-        <div className="relative">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={`Tìm kiếm trong "${activeDeck.name}"...`}
-            className="w-full py-2.5 pl-9 pr-8 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-2xs"
-          />
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value)
+                setVisibleLimit(PAGE_SIZE)
+              }}
+              placeholder={
+                searchAllDecks
+                  ? `Tìm trên toàn bộ ${allWords.length.toLocaleString()} từ...`
+                  : `Tìm kiếm trong "${activeDeck.name}"...`
+              }
+              className="w-full py-2.5 pl-9 pr-8 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-2xs"
+            />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            {searchQuery && (
+              <button
+                onClick={() => {
+                  setSearchQuery('')
+                  setVisibleLimit(PAGE_SIZE)
+                }}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              audioService.playClick()
+              setSearchAllDecks((prev) => !prev)
+              setVisibleLimit(PAGE_SIZE)
+            }}
+            className={`px-3 rounded-xl border text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-colors ${
+              searchAllDecks
+                ? 'bg-indigo-600 text-white border-indigo-600'
+                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800'
+            }`}
+            title="Bật để tra cứu trên toàn bộ các bộ từ"
+          >
+            <Globe className="w-3.5 h-3.5" />
+            <span>Toàn kho</span>
+          </button>
         </div>
 
         {/* Filter Pills + Reset Progress */}
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex gap-1.5">
             <button
-              onClick={() => setStatusFilter('all')}
+              onClick={() => {
+                setStatusFilter('all')
+                setVisibleLimit(PAGE_SIZE)
+              }}
               className={`py-1.5 px-2.5 rounded-xl text-xs font-semibold transition-all ${
                 statusFilter === 'all'
                   ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
               }`}
             >
-              Tất cả ({words.length})
+              Tất cả ({sourceWords.length})
             </button>
             <button
-              onClick={() => setStatusFilter('mastered')}
+              onClick={() => {
+                setStatusFilter('mastered')
+                setVisibleLimit(PAGE_SIZE)
+              }}
               className={`py-1.5 px-2.5 rounded-xl text-xs font-semibold transition-all ${
                 statusFilter === 'mastered'
                   ? 'bg-emerald-600 text-white'
@@ -316,113 +413,148 @@ export function LibraryView({
               Đã thuộc ({masteredTotal})
             </button>
             <button
-              onClick={() => setStatusFilter('review')}
+              onClick={() => {
+                setStatusFilter('review')
+                setVisibleLimit(PAGE_SIZE)
+              }}
               className={`py-1.5 px-2.5 rounded-xl text-xs font-semibold transition-all ${
                 statusFilter === 'review'
                   ? 'bg-amber-600 text-white'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
               }`}
             >
-              Cần ôn ({words.length - masteredTotal})
+              Cần ôn ({sourceWords.length - masteredTotal})
             </button>
           </div>
 
-          <button
-            onClick={handleResetProgress}
-            title="Đặt lại tiến độ học của bộ từ này"
-            className="py-1.5 px-2.5 rounded-xl text-[11px] font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 bg-slate-100 dark:bg-slate-800 flex items-center gap-1 transition-colors"
-          >
-            <RotateCcw className="w-3 h-3" />
-            <span>Đặt lại</span>
-          </button>
+          {!searchAllDecks && (
+            <button
+              onClick={handleResetProgress}
+              title="Đặt lại tiến độ học của bộ từ này"
+              className="py-1.5 px-2.5 rounded-xl text-[11px] font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 bg-slate-100 dark:bg-slate-800 flex items-center gap-1 transition-colors"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>Đặt lại</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Words List */}
+      {/* Words List (Windowed progressive rendering for zero lag at 10,000+ words) */}
       <div className="space-y-2.5">
         {filteredWords.length === 0 ? (
           <div className="bg-slate-50 dark:bg-slate-800/40 rounded-2xl p-8 text-center border border-dashed border-slate-200 dark:border-slate-800">
             <p className="text-xs text-slate-400 mb-3 font-medium">
               Không tìm thấy từ vựng nào phù hợp.
             </p>
-            <button
-              onClick={onGoToAddWord}
-              className="py-2 px-3 rounded-xl bg-indigo-600 text-white font-medium text-xs inline-flex items-center gap-1 shadow-xs"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Thêm từ mới</span>
-            </button>
+            {!searchAllDecks && searchQuery.trim() ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchAllDecks(true)
+                  setVisibleLimit(PAGE_SIZE)
+                }}
+                className="py-2 px-3 rounded-xl bg-indigo-600 text-white font-medium text-xs inline-flex items-center gap-1.5 shadow-xs"
+              >
+                <Globe className="w-3.5 h-3.5" />
+                <span>Tìm "{searchQuery.trim()}" trên toàn kho ({allWords.length.toLocaleString()} từ)</span>
+              </button>
+            ) : (
+              <button
+                onClick={onGoToAddWord}
+                className="py-2 px-3 rounded-xl bg-indigo-600 text-white font-medium text-xs inline-flex items-center gap-1 shadow-xs"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Thêm từ mới</span>
+              </button>
+            )}
           </div>
         ) : (
-          filteredWords.map((word) => {
-            const isMastered = word.status === 'mastered'
-            return (
-              <div
-                key={word.id}
-                className="p-3.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 flex items-start justify-between gap-2 shadow-2xs hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center flex-wrap gap-1.5 mb-1">
-                    <span className="font-bold text-slate-900 dark:text-slate-100 text-sm">
-                      {word.term}
-                    </span>
-                    {word.ipa && (
-                      <span className="text-xs font-sans font-medium tracking-wide text-slate-400">
-                        {word.ipa}
+          <>
+            {visibleWords.map((word) => {
+              const isMastered = word.status === 'mastered'
+              return (
+                <div
+                  key={word.id}
+                  className="p-3.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 flex items-start justify-between gap-2 shadow-2xs hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center flex-wrap gap-1.5 mb-1">
+                      <span className="font-bold text-slate-900 dark:text-slate-100 text-sm">
+                        {word.term}
                       </span>
+                      {word.ipa && (
+                        <span className="text-xs font-sans font-medium tracking-wide text-slate-400">
+                          {word.ipa}
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleToggleWordStatus(word)}
+                        title="Chạm để đổi trạng thái Đã thuộc / Cần ôn"
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition-colors ${
+                          isMastered
+                            ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                            : word.status === 'learning'
+                            ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                            : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+                        }`}
+                      >
+                        {isMastered ? 'Đã thuộc' : word.status === 'learning' ? 'Đang ôn' : 'Mới'}
+                      </button>
+                      {searchAllDecks && deckNameMap[word.deckId] && (
+                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 truncate max-w-40">
+                          {deckNameMap[word.deckId]}
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed break-words">
+                      {word.definition}
+                    </p>
+                    {word.example && (
+                      <p className="text-[11px] text-slate-400 italic mt-1 line-clamp-2">
+                        "{word.example}"
+                      </p>
                     )}
-                    <button
-                      type="button"
-                      onClick={() => handleToggleWordStatus(word)}
-                      title="Chạm để đổi trạng thái Đã thuộc / Cần ôn"
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition-colors ${
-                        isMastered
-                          ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-                          : word.status === 'learning'
-                          ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
-                          : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
-                      }`}
-                    >
-                      {isMastered ? 'Đã thuộc' : word.status === 'learning' ? 'Đang ôn' : 'Mới'}
-                    </button>
                   </div>
 
-                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed break-words">
-                    {word.definition}
-                  </p>
-                  {word.example && (
-                    <p className="text-[11px] text-slate-400 italic mt-1 line-clamp-2">
-                      "{word.example}"
-                    </p>
-                  )}
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    <button
+                      onClick={() => audioService.speak(word.term)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                      title="Nghe phát âm"
+                    >
+                      <Volume2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => openEditModal(word)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-sky-500 transition-colors"
+                      title="Sửa thẻ từ"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteWord(word)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 transition-colors"
+                      title="Xóa từ"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
+              )
+            })}
 
-                <div className="flex items-center gap-0.5 shrink-0">
-                  <button
-                    onClick={() => audioService.speak(word.term)}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-                    title="Nghe phát âm"
-                  >
-                    <Volume2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => openEditModal(word)}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-sky-500 transition-colors"
-                    title="Sửa thẻ từ"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteWord(word)}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 transition-colors"
-                    title="Xóa từ"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+            {hasMore && (
+              <div
+                ref={loadMoreRef}
+                className="py-3 text-center text-xs font-medium text-slate-400 dark:text-slate-500"
+              >
+                Đang hiển thị {visibleWords.length} / {filteredWords.length.toLocaleString()} thẻ • Cuộn xuống để tải tiếp...
               </div>
-            )
-          })
+            )}
+          </>
         )}
       </div>
 

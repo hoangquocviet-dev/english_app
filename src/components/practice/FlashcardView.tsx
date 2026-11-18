@@ -256,8 +256,9 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
         stats={sessionStats}
         onContinueRemaining={(rem) => startSessionWithWords(rem)}
         onResetDeck={() => {
-          storageService.resetDeckProgress(deckId)
-          startSessionWithWords(storageService.getWords(deckId))
+          void storageService.resetDeckProgress(deckId).then(() => {
+            startSessionWithWords(storageService.getWords(deckId))
+          })
         }}
         onBackToHome={onBack}
       />

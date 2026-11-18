@@ -376,8 +376,9 @@ export function SpellingView({ words, deckId, deckName, onBack }: SpellingViewPr
         stats={sessionStats}
         onContinueRemaining={(rem) => startSessionWithWords(rem)}
         onResetDeck={() => {
-          storageService.resetDeckProgress(deckId)
-          startSessionWithWords(storageService.getWords(deckId))
+          void storageService.resetDeckProgress(deckId).then(() => {
+            startSessionWithWords(storageService.getWords(deckId))
+          })
         }}
         onBackToHome={onBack}
       />

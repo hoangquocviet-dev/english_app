@@ -22,9 +22,12 @@ interface PracticeHomeProps {
   decks: Deck[]
   activeDeck: Deck
   words: WordItem[]
+  isSeedLoading?: boolean
   dailyProgress: DailyProgress
   shuffleEnabled: boolean
+  batchSize: number
   onToggleShuffle: () => void
+  onChangeBatchSize: (size: number) => void
   onSelectDeck: (deckId: string) => void
   onResetDeck: (deckId: string) => void
   onStartMode: (mode: StudyMode) => void
@@ -35,9 +38,12 @@ export function PracticeHome({
   decks,
   activeDeck,
   words,
+  isSeedLoading = false,
   dailyProgress,
   shuffleEnabled,
+  batchSize,
   onToggleShuffle,
+  onChangeBatchSize,
   onSelectDeck,
   onResetDeck,
   onStartMode,
@@ -213,18 +219,27 @@ export function PracticeHome({
 
       {/* Empty State / Completed 100% State / Active Study Modes */}
       {words.length === 0 ? (
-        <div className="bg-slate-50 dark:bg-slate-800/40 rounded-2xl p-6 text-center border border-dashed border-slate-200 dark:border-slate-700">
-          <p className="text-sm text-slate-500 dark:text-slate-400 mb-3 font-medium">
-            Bộ từ này hiện chưa có thẻ từ vựng nào.
-          </p>
-          <button
-            onClick={onGoToAddWord}
-            className="py-2.5 px-4 rounded-xl bg-indigo-600 text-white font-medium text-xs inline-flex items-center gap-1.5 shadow-sm active:scale-95 transition-transform"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Thêm từ vựng ngay</span>
-          </button>
-        </div>
+        isSeedLoading ? (
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 text-center border border-slate-200 dark:border-slate-800 flex flex-col items-center gap-3">
+            <div className="w-6 h-6 rounded-full border-3 border-indigo-500/30 border-t-indigo-500 animate-spin" />
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              Đang đồng bộ kho từ vựng thông minh...
+            </p>
+          </div>
+        ) : (
+          <div className="bg-slate-50 dark:bg-slate-800/40 rounded-2xl p-6 text-center border border-dashed border-slate-200 dark:border-slate-700">
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-3 font-medium">
+              Bộ từ này hiện chưa có thẻ từ vựng nào.
+            </p>
+            <button
+              onClick={onGoToAddWord}
+              className="py-2.5 px-4 rounded-xl bg-indigo-600 text-white font-medium text-xs inline-flex items-center gap-1.5 shadow-sm active:scale-95 transition-transform"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Thêm từ vựng ngay</span>
+            </button>
+          </div>
+        )
       ) : unmasteredCount === 0 ? (
         /* All Cards Mastered & Hidden State */
         <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 text-center border border-emerald-500/30 shadow-xs space-y-3 animate-fadeIn">
@@ -251,28 +266,56 @@ export function PracticeHome({
         </div>
       ) : (
         <div className="space-y-3">
-          {/* Header & Shuffle Toggle */}
-          <div className="flex items-center justify-between gap-2 px-1">
+          {/* Header & Shuffle + Batch Size Controls */}
+          <div className="flex items-center justify-between gap-2 px-1 flex-wrap">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              Chọn chế độ học ({unmasteredCount} thẻ cần học)
+              Chọn chế độ học ({unmasteredCount} thẻ)
             </span>
 
-            <button
-              type="button"
-              onClick={() => {
-                audioService.playClick()
-                onToggleShuffle()
-              }}
-              className={`py-1.5 px-3 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all active:scale-95 ${
-                shuffleEnabled
-                  ? 'bg-indigo-500/15 border-indigo-500/40 text-indigo-600 dark:text-indigo-400'
-                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400'
-              }`}
-              title="Trộn ngẫu nhiên thứ tự thẻ chưa thuộc"
-            >
-              <Shuffle className="w-3.5 h-3.5" />
-              <span>Trộn thẻ</span>
-            </button>
+            <div className="flex items-center gap-1.5">
+              {unmasteredCount > 25 && (
+                <div className="inline-flex rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 p-0.5 text-[11px] font-semibold">
+                  {[
+                    { label: '25 thẻ', value: 25 },
+                    { label: '50 thẻ', value: 50 },
+                    { label: 'Tất cả', value: 0 },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => {
+                        audioService.playClick()
+                        onChangeBatchSize(opt.value)
+                      }}
+                      className={`px-2 py-1 rounded-lg transition-colors ${
+                        batchSize === opt.value
+                          ? 'bg-indigo-600 text-white'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  audioService.playClick()
+                  onToggleShuffle()
+                }}
+                className={`py-1.5 px-2.5 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all active:scale-95 ${
+                  shuffleEnabled
+                    ? 'bg-indigo-500/15 border-indigo-500/40 text-indigo-600 dark:text-indigo-400'
+                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400'
+                }`}
+                title="Trộn ngẫu nhiên thứ tự thẻ chưa thuộc"
+              >
+                <Shuffle className="w-3.5 h-3.5" />
+                <span>Trộn</span>
+              </button>
+            </div>
           </div>
 
           {/* Mode 1: Flashcard 3D */}

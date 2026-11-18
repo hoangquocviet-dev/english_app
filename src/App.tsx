@@ -1,4 +1,4 @@
-import { type ComponentType, lazy, Suspense, useCallback, useState } from 'react'
+import { type ComponentType, lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { BottomNav } from './components/common/BottomNav'
 import { ErrorBoundary } from './components/common/ErrorBoundary'
 import { Navbar } from './components/common/Navbar'
@@ -94,6 +94,7 @@ export function App() {
   const [dailyProgress, setDailyProgress] = useState(() => storageService.getDailyProgress())
   const [studyPrefs, setStudyPrefs] = useState(() => storageService.getStudyPreferences())
   const [highScores, setHighScores] = useState(() => storageService.getHighScores())
+  const [isSeedLoading, setIsSeedLoading] = useState(() => storageService.needsSeedSync())
 
   const refreshData = useCallback(() => {
     const loadedDecks = storageService.getDecks()
@@ -108,6 +109,21 @@ export function App() {
     setDailyProgress(storageService.getDailyProgress())
     setHighScores(storageService.getHighScores())
   }, [])
+
+  // Lazy non-blocking background hydration for 1,000+ built-in vocabulary words
+  useEffect(() => {
+    let active = true
+    void storageService.ensureSeedLoaded().then((changed) => {
+      if (!active) return
+      if (changed) {
+        refreshData()
+      }
+      setIsSeedLoading(false)
+    })
+    return () => {
+      active = false
+    }
+  }, [refreshData])
 
   const handleSelectDeck = (deckId: string) => {
     storageService.setActiveDeckId(deckId)
@@ -126,12 +142,19 @@ export function App() {
   }
 
   const handleResetDeck = (deckId: string) => {
-    storageService.resetDeckProgress(deckId)
-    refreshData()
+    void storageService.resetDeckProgress(deckId).then(() => {
+      refreshData()
+    })
   }
 
   const handleToggleShuffle = () => {
     const next = { ...studyPrefs, shuffle: !studyPrefs.shuffle }
+    setStudyPrefs(next)
+    storageService.setStudyPreferences(next)
+  }
+
+  const handleChangeBatchSize = (batchSize: number) => {
+    const next = { ...studyPrefs, batchSize }
     setStudyPrefs(next)
     storageService.setStudyPreferences(next)
   }
@@ -143,6 +166,9 @@ export function App() {
 
     if (studyPrefs.shuffle) {
       targetList = shuffleWords(targetList)
+    }
+    if (studyPrefs.batchSize > 0 && targetList.length > studyPrefs.batchSize) {
+      targetList = targetList.slice(0, studyPrefs.batchSize)
     }
 
     setSessionWords(targetList)
@@ -266,9 +292,12 @@ export function App() {
                       decks={decks}
                       activeDeck={activeDeck}
                       words={words}
+                      isSeedLoading={isSeedLoading}
                       dailyProgress={dailyProgress}
                       shuffleEnabled={studyPrefs.shuffle}
+                      batchSize={studyPrefs.batchSize}
                       onToggleShuffle={handleToggleShuffle}
+                      onChangeBatchSize={handleChangeBatchSize}
                       onSelectDeck={handleSelectDeck}
                       onResetDeck={handleResetDeck}
                       onStartMode={handleStartMode}
@@ -310,6 +339,7 @@ export function App() {
                       decks={decks}
                       activeDeck={activeDeck}
                       words={words}
+                      allWords={allWords}
                       onSelectDeck={handleSelectDeck}
                       onDataChanged={refreshData}
                       onGoToAddWord={() => setActiveTab('add')}

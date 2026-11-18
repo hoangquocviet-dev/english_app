@@ -29,8 +29,9 @@ export class ErrorBoundary extends Component<Props, State> {
 
   private handleReset = (): void => {
     if (window.confirm('Khôi phục toàn bộ dữ liệu mẫu ban đầu để khắc phục lỗi?')) {
-      storageService.resetToDefaults()
-      window.location.reload()
+      void storageService.resetToDefaults().then(() => {
+        window.location.reload()
+      })
     }
   }
 

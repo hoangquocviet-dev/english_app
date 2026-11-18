@@ -1,7 +1,6 @@
 import confetti from 'canvas-confetti'
 import { ArrowLeft, Check, Flame, Heart, Pause, Play, RotateCcw, Trophy, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { INITIAL_WORDS } from '../../data/initialDecks'
 import type { WordItem } from '../../types'
 import { formatArcadeMeaning } from '../../utils/arcadeText'
 import { audioService } from '../../utils/audio'
@@ -48,7 +47,7 @@ function buildBlitzPool(words: WordItem[]): WordItem[] {
 
   if (unique.length >= 8) return unique
 
-  for (const iw of INITIAL_WORDS) {
+  for (const iw of storageService.getWords()) {
     if (iw.term.length > 28) continue
     const formatted = { ...iw, definition: formatArcadeMeaning(iw.definition, 92) }
     const tk = formatted.term.trim().toLowerCase()

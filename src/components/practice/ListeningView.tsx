@@ -1,6 +1,5 @@
 import { ArrowLeft, Check, Headphones, Volume2, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { INITIAL_WORDS } from '../../data/initialDecks'
 import type { StudySessionStats, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
 import { storageService } from '../../utils/storage'
@@ -42,28 +41,47 @@ function buildListeningQuestions(
   sourceWords: WordItem[],
   fullDeckWords: WordItem[]
 ): ListeningQuestion[] {
-  const fullPool: ListeningOption[] = [
-    ...fullDeckWords.map((w) => ({ id: w.id, term: w.term, definition: w.definition })),
-    ...sourceWords.map((w) => ({ id: w.id, term: w.term, definition: w.definition })),
-    ...INITIAL_WORDS.map((w) => ({ id: w.id, term: w.term, definition: w.definition })),
-  ]
+  const rawList =
+    fullDeckWords.length >= 6
+      ? [...fullDeckWords, ...sourceWords]
+      : [...fullDeckWords, ...sourceWords, ...storageService.getWords().slice(0, 40)]
 
-  // Deduplicate pool by normalized term
+  // Deduplicate pool once in O(N)
   const seenTerms = new Set<string>()
-  const uniquePool: ListeningOption[] = []
-  for (const item of fullPool) {
-    const key = item.term.trim().toLowerCase()
-    if (!seenTerms.has(key)) {
-      seenTerms.add(key)
-      uniquePool.push(item)
+  const uniquePool: Array<ListeningOption & { termKey: string }> = []
+  for (const w of rawList) {
+    const termKey = w.term.trim().toLowerCase()
+    if (!seenTerms.has(termKey)) {
+      seenTerms.add(termKey)
+      uniquePool.push({ id: w.id, term: w.term, definition: w.definition, termKey })
     }
   }
 
+  const poolLen = uniquePool.length
+
   const generated: ListeningQuestion[] = sourceWords.map((targetWord) => {
     const targetKey = targetWord.term.trim().toLowerCase()
-    const distractors = shuffleArray(
-      uniquePool.filter((item) => item.term.trim().toLowerCase() !== targetKey)
-    ).slice(0, 3)
+    const picked: ListeningOption[] = []
+    const pickedKeys = new Set<string>([targetKey])
+
+    // Fast O(1) random sampling of 3 distractors
+    for (let attempts = 0; attempts < 24 && picked.length < 3 && poolLen > 1; attempts++) {
+      const cand = uniquePool[Math.floor(Math.random() * poolLen)]
+      if (!pickedKeys.has(cand.termKey)) {
+        pickedKeys.add(cand.termKey)
+        picked.push({ id: cand.id, term: cand.term, definition: cand.definition })
+      }
+    }
+
+    if (picked.length < 3) {
+      for (const cand of uniquePool) {
+        if (picked.length >= 3) break
+        if (!pickedKeys.has(cand.termKey)) {
+          pickedKeys.add(cand.termKey)
+          picked.push({ id: cand.id, term: cand.term, definition: cand.definition })
+        }
+      }
+    }
 
     const correctOpt: ListeningOption = {
       id: targetWord.id,
@@ -71,7 +89,7 @@ function buildListeningQuestions(
       definition: targetWord.definition,
     }
 
-    const shuffledOptions = shuffleArray([correctOpt, ...distractors])
+    const shuffledOptions = shuffleArray([correctOpt, ...picked])
     const correctOptionIndex = shuffledOptions.findIndex(
       (o) => o.term.trim().toLowerCase() === targetKey
     )
@@ -252,8 +270,9 @@ export function ListeningView({
         stats={sessionStats}
         onContinueRemaining={(rem) => resetListening(rem)}
         onResetDeck={() => {
-          storageService.resetDeckProgress(deckId)
-          resetListening(storageService.getWords(deckId))
+          void storageService.resetDeckProgress(deckId).then(() => {
+            resetListening(storageService.getWords(deckId))
+          })
         }}
         onBackToHome={onBack}
       />

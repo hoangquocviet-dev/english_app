@@ -1,6 +1,5 @@
 import { AlertCircle, ArrowRight, Check, Loader2, Plus, Search, Sparkles, Volume2 } from 'lucide-react'
 import { useState } from 'react'
-import { INITIAL_WORDS } from '../../data/initialDecks'
 import type { Deck, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
 import { storageService } from '../../utils/storage'
@@ -45,9 +44,9 @@ export function AddWordView({
     setEnglishHint('')
 
     try {
-      const localMatch = INITIAL_WORDS.find(
-        (w) => w.term.trim().toLowerCase() === cleanTerm
-      )
+      const localMatch = storageService
+        .getWords()
+        .find((w) => w.term.trim().toLowerCase() === cleanTerm)
 
       const [dictRes, transRes] = await Promise.allSettled([
         fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(cleanTerm)}`),
