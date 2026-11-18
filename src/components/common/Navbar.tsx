@@ -141,7 +141,7 @@ export function Navbar({
             onClick={toggleSound}
             aria-label="Bật/Tắt âm thanh"
             title={soundEnabled ? 'Đang bật âm thanh (Chạm để tắt)' : 'Đang tắt âm thanh (Chạm để bật)'}
-            className="w-7.5 h-8 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             {soundEnabled ? (
               <Volume2 className="w-4 h-4" />
@@ -155,7 +155,7 @@ export function Navbar({
             onClick={handleReload}
             aria-label="Tải lại trang"
             title="Tải lại trang"
-            className="w-7.5 h-8 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <RotateCw className={`w-4 h-4 ${isReloading ? 'animate-spin text-indigo-600' : ''}`} />
           </button>
@@ -165,7 +165,7 @@ export function Navbar({
             onClick={toggleTheme}
             aria-label="Đổi giao diện sáng/tối"
             title="Đổi giao diện Sáng / Tối"
-            className="w-7.5 h-8 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             {isDark ? (
               <Sun className="w-4 h-4 text-amber-400" />

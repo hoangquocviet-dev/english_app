@@ -164,7 +164,7 @@ function buildClozeQuestions(
 export function ClozeView({
   words,
   allDeckWords,
-  deckId: _deckId,
+  deckId,
   deckName,
   onBack,
 }: ClozeViewProps) {
@@ -311,7 +311,7 @@ export function ClozeView({
       mode: 'cloze',
       deckName,
       remainingWords: storageService
-        .getWords(currentQ?.targetWord.deckId)
+        .getWords(deckId)
         .filter((w) => w.status !== 'mastered'),
     }
 
@@ -327,10 +327,14 @@ export function ClozeView({
           setStats({ mastered: 0, review: 0 })
         }}
         onResetDeck={() => {
-          if (currentQ) {
-            void storageService.resetDeckProgress(currentQ.targetWord.deckId)
-          }
-          onBack()
+          void storageService.resetDeckProgress(deckId).then(() => {
+            setQuestions(buildClozeQuestions(storageService.getWords(deckId), allDeckWords))
+            setCurrentIndex(0)
+            setSelectedOption(null)
+            setIsLocked(false)
+            setIsCompleted(false)
+            setStats({ mastered: 0, review: 0 })
+          })
         }}
         onBackToHome={onBack}
       />
