@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useState } from 'react'
+import { type ComponentType, lazy, Suspense, useCallback, useState } from 'react'
 import { BottomNav } from './components/common/BottomNav'
 import { ErrorBoundary } from './components/common/ErrorBoundary'
 import { Navbar } from './components/common/Navbar'
@@ -7,33 +7,54 @@ import { ALL_DECKS_ID, ArcadeHub } from './components/games/ArcadeHub'
 import { PracticeHome } from './components/practice/PracticeHome'
 import type { ActiveTab, ArcadeGameId, Deck, StudyMode, WordItem } from './types'
 import { audioService } from './utils/audio'
+import { forceReloadApp } from './utils/reload'
 import { storageService } from './utils/storage'
 
-const FlashcardView = lazy(() =>
+function lazyWithRetry<T extends ComponentType<any>>(
+  importer: () => Promise<{ default: T }>
+) {
+  return lazy(async () => {
+    try {
+      return await importer()
+    } catch (err) {
+      if (typeof window !== 'undefined') {
+        const key = 'vocabflow_chunk_reload_at'
+        const lastReload = Number(window.sessionStorage.getItem(key) || '0')
+        if (Date.now() - lastReload > 10000) {
+          window.sessionStorage.setItem(key, String(Date.now()))
+          await forceReloadApp()
+        }
+      }
+      throw err
+    }
+  })
+}
+
+const FlashcardView = lazyWithRetry(() =>
   import('./components/practice/FlashcardView').then((m) => ({ default: m.FlashcardView }))
 )
-const QuizView = lazy(() =>
+const QuizView = lazyWithRetry(() =>
   import('./components/practice/QuizView').then((m) => ({ default: m.QuizView }))
 )
-const SpellingView = lazy(() =>
+const SpellingView = lazyWithRetry(() =>
   import('./components/practice/SpellingView').then((m) => ({ default: m.SpellingView }))
 )
-const ListeningView = lazy(() =>
+const ListeningView = lazyWithRetry(() =>
   import('./components/practice/ListeningView').then((m) => ({ default: m.ListeningView }))
 )
-const SkyDefenderGame = lazy(() =>
+const SkyDefenderGame = lazyWithRetry(() =>
   import('./components/games/SkyDefenderGame').then((m) => ({ default: m.SkyDefenderGame }))
 )
-const SpeedMatchGame = lazy(() =>
+const SpeedMatchGame = lazyWithRetry(() =>
   import('./components/games/SpeedMatchGame').then((m) => ({ default: m.SpeedMatchGame }))
 )
-const BlitzGame = lazy(() =>
+const BlitzGame = lazyWithRetry(() =>
   import('./components/games/BlitzGame').then((m) => ({ default: m.BlitzGame }))
 )
-const AddWordView = lazy(() =>
+const AddWordView = lazyWithRetry(() =>
   import('./components/add/AddWordView').then((m) => ({ default: m.AddWordView }))
 )
-const LibraryView = lazy(() =>
+const LibraryView = lazyWithRetry(() =>
   import('./components/library/LibraryView').then((m) => ({ default: m.LibraryView }))
 )
 

@@ -1,5 +1,6 @@
 import { AlertCircle, ArrowRight, Check, Loader2, Plus, Search, Sparkles, Volume2 } from 'lucide-react'
 import { useState } from 'react'
+import { INITIAL_WORDS } from '../../data/initialDecks'
 import type { Deck, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
 import { storageService } from '../../utils/storage'
@@ -44,6 +45,10 @@ export function AddWordView({
     setEnglishHint('')
 
     try {
+      const localMatch = INITIAL_WORDS.find(
+        (w) => w.term.trim().toLowerCase() === cleanTerm
+      )
+
       const [dictRes, transRes] = await Promise.allSettled([
         fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(cleanTerm)}`),
         fetch(
@@ -51,51 +56,64 @@ export function AddWordView({
         ),
       ])
 
-      let foundDict = false
+      let nextIpa = ''
+      let nextPos = localMatch?.partOfSpeech || (cleanTerm.includes(' ') ? 'phrase' : 'noun')
+      let nextHint = ''
+      let nextExample = ''
 
       if (dictRes.status === 'fulfilled' && dictRes.value.ok) {
         const data = await dictRes.value.json()
         if (Array.isArray(data) && data.length > 0) {
-          foundDict = true
-          const entry = data[0]
-
-          const phonetic =
-            entry.phonetic ||
-            entry.phonetics?.find((p: { text?: string }) => p.text)?.text ||
-            ''
-          if (phonetic) {
-            setIpa(phonetic.startsWith('/') ? phonetic : `/${phonetic}/`)
+          const posMap: Record<string, string> = {
+            adjective: 'adj',
+            adverb: 'adv',
+            verb: 'verb',
+            noun: 'noun',
           }
 
-          if (entry.meanings && entry.meanings.length > 0) {
-            const firstMeaning = entry.meanings[0]
-            if (firstMeaning.partOfSpeech) {
-              const posMap: Record<string, string> = {
-                adjective: 'adj',
-                adverb: 'adv',
-                verb: 'verb',
-                noun: 'noun',
+          for (const entry of data) {
+            if (!nextIpa) {
+              const ph =
+                entry.phonetic ||
+                entry.phonetics?.find((p: { text?: string }) => p.text?.trim())?.text?.trim() ||
+                ''
+              if (ph) {
+                nextIpa = ph.startsWith('/') ? ph : `/${ph}/`
               }
-              setPartOfSpeech(posMap[firstMeaning.partOfSpeech] || 'phrase')
             }
 
-            const firstDefObj = firstMeaning.definitions?.[0]
-            if (firstDefObj?.definition) {
-              setEnglishHint(firstDefObj.definition)
-            }
+            if (Array.isArray(entry.meanings)) {
+              for (const m of entry.meanings) {
+                if (m.partOfSpeech && nextPos === 'noun' && m.partOfSpeech !== 'noun') {
+                  nextPos = posMap[m.partOfSpeech] || nextPos
+                } else if (m.partOfSpeech && entry === data[0] && m === entry.meanings[0]) {
+                  nextPos = posMap[m.partOfSpeech] || 'phrase'
+                }
 
-            const defWithExample = firstMeaning.definitions?.find(
-              (d: { example?: string }) => d.example
-            )
-            if (defWithExample?.example) {
-              setExample(defWithExample.example)
+                if (Array.isArray(m.definitions)) {
+                  if (!nextHint && m.definitions[0]?.definition) {
+                    nextHint = m.definitions[0].definition
+                  }
+                  if (!nextExample) {
+                    const foundEx = m.definitions.find(
+                      (d: { example?: string }) => d.example?.trim()
+                    )
+                    if (foundEx?.example) {
+                      nextExample = foundEx.example.trim()
+                    }
+                  }
+                }
+              }
             }
           }
         }
       }
 
-      // Auto-fill Vietnamese suggestion if available and user hasn't typed one yet
-      let foundVi = false
+      // Enrich missing IPA or example from built-in curated dictionary when available
+      if (!nextIpa && localMatch?.ipa) nextIpa = localMatch.ipa
+      if (!nextExample && localMatch?.example) nextExample = localMatch.example
+
+      let nextViDef = ''
       if (transRes.status === 'fulfilled' && transRes.value.ok) {
         const transData = await transRes.value.json()
         const translatedText = transData?.responseData?.translatedText
@@ -104,20 +122,33 @@ export function AddWordView({
           typeof translatedText === 'string' &&
           translatedText.trim().toLowerCase() !== cleanTerm
         ) {
-          foundVi = true
-          if (!definition.trim()) {
-            setDefinition(translatedText.trim())
-          }
+          nextViDef = translatedText.trim()
         }
+      }
+      if (!nextViDef && localMatch?.definition) {
+        nextViDef = localMatch.definition
+      }
+
+      setIpa(nextIpa)
+      setPartOfSpeech(nextPos)
+      setEnglishHint(nextHint)
+      setExample(nextExample)
+      if (nextViDef) {
+        setDefinition(nextViDef)
       }
 
       audioService.speak(cleanTerm)
 
-      if (foundDict || foundVi) {
+      const filledParts: string[] = []
+      if (nextIpa) filledParts.push('phiên âm')
+      if (nextViDef) filledParts.push('nghĩa tiếng Việt')
+      if (nextExample) filledParts.push('câu ví dụ')
+
+      if (filledParts.length > 0 || nextHint) {
         setSuccessMsg(
-          foundVi
-            ? 'Đã tự động điền phiên âm, gợi ý nghĩa tiếng Việt và câu ví dụ!'
-            : 'Đã tra cứu xong phiên âm và ví dụ! Mời bạn nhập nghĩa tiếng Việt.'
+          filledParts.length > 0
+            ? `Đã tự động điền ${filledParts.join(', ')}!`
+            : 'Đã lấy gợi ý giải nghĩa! Mời bạn nhập nghĩa tiếng Việt.'
         )
       } else {
         setErrorMsg('Chưa tìm thấy từ này trên từ điển tự động. Bạn có thể tự nhập bên dưới.')
