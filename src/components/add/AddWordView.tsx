@@ -256,7 +256,7 @@ export function AddWordView({
                   handleLookup()
                 }
               }}
-              placeholder="Ví dụ: resilient, breakthrough..."
+              placeholder="Ví dụ: resilient, agile..."
               className="flex-1 py-2.5 px-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
             <button

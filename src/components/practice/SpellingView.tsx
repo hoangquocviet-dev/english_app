@@ -390,9 +390,9 @@ export function SpellingView({ words, deckId, deckName, onBack }: SpellingViewPr
   const progressPercent = Math.round(((currentIndex + 1) / queue.length) * 100)
   const termLen = currentWord.term.length
   const sizeClasses =
-    termLen > 16
+    termLen > 14
       ? 'w-7 h-9 text-xs sm:w-8 sm:h-10 sm:text-sm'
-      : termLen > 8
+      : termLen >= 8
       ? 'w-8 h-10 text-sm sm:w-9 sm:h-11 sm:text-base'
       : 'w-10 h-12 text-lg'
 

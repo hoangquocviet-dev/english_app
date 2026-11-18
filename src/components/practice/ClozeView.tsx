@@ -500,7 +500,7 @@ export function ClozeView({
       {/* Bottom Footer Info */}
       <div className="mt-3 text-center">
         <span className="text-[11px] text-slate-400 font-medium">
-          Mẹo: Nhấn phím 1, 2, 3, 4 trên bàn phím hoặc chạm để chọn đáp án
+          Mẹo: Chạm hoặc nhấn phím 1, 2, 3, 4 để chọn đáp án
         </span>
       </div>
     </div>
