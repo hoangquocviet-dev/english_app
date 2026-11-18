@@ -108,13 +108,15 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
     wordDeckQueue: [] as WordItem[],
   })
 
-  // Build full playable word pool
+  // Build full playable word pool (prefer concise terms <= 22 chars for crisp fighter labels)
   const getPlayablePool = useCallback((): WordItem[] => {
+    const concise = words.filter((w) => w.term.length <= 22)
+    if (concise.length >= 6) return concise
     if (words.length >= 4) return words
     const combined = [...words]
     const seen = new Set(words.map((w) => w.term.toLowerCase()))
     for (const iw of INITIAL_WORDS) {
-      if (!seen.has(iw.term.toLowerCase())) {
+      if (iw.term.length <= 22 && !seen.has(iw.term.toLowerCase())) {
         seen.add(iw.term.toLowerCase())
         combined.push(iw)
       }

@@ -364,8 +364,13 @@ export function SpellingView({ words, deckId, deckName, onBack }: SpellingViewPr
   if (!currentWord) return null
 
   const progressPercent = Math.round(((currentIndex + 1) / queue.length) * 100)
-  const isLongWord = currentWord.term.length > 8
-  const sizeClasses = isLongWord ? 'w-8 h-10 text-sm sm:w-9 sm:h-11 sm:text-base' : 'w-10 h-12 text-lg'
+  const termLen = currentWord.term.length
+  const sizeClasses =
+    termLen > 16
+      ? 'w-7 h-9 text-xs sm:w-8 sm:h-10 sm:text-sm'
+      : termLen > 8
+      ? 'w-8 h-10 text-sm sm:w-9 sm:h-11 sm:text-base'
+      : 'w-10 h-12 text-lg'
 
   // Group character indices into non-breaking word segments separated by spaces
   const wordGroups: number[][] = []

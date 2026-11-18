@@ -153,15 +153,26 @@ export function LibraryView({
   }
 
   const masteredTotal = words.filter((w) => w.status === 'mastered').length
+  const allLibraryWords = storageService.getWords()
+  const allMasteredTotal = allLibraryWords.filter((w) => w.status === 'mastered').length
+  const deckCountMap = allLibraryWords.reduce<Record<string, number>>((acc, w) => {
+    acc[w.deckId] = (acc[w.deckId] || 0) + 1
+    return acc
+  }, {})
 
   return (
     <div className="w-full max-w-md mx-auto px-3.5 py-4 space-y-4 animate-fadeIn">
       {/* Top Header & Sync Button */}
       <div className="flex items-center justify-between gap-2">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Kho từ vựng</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Kho từ vựng</h2>
+            <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-600 dark:text-indigo-400">
+              {allLibraryWords.length} từ
+            </span>
+          </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Quản lý, chỉnh sửa thẻ từ và đồng bộ file Markdown
+            Tổng {decks.length} bộ chủ đề • Đã thuộc toàn kho: {allMasteredTotal}/{allLibraryWords.length} từ
           </p>
         </div>
         <button
@@ -176,7 +187,7 @@ export function LibraryView({
       {/* Decks Horizontal Carousel */}
       <div className="space-y-2">
         <div className="flex items-center justify-between text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-1">
-          <span>Danh sách bộ từ ({decks.length})</span>
+          <span>Danh sách bộ từ ({decks.length} bộ)</span>
           <button
             onClick={() => setIsCreatingDeck((prev) => !prev)}
             className="text-indigo-600 dark:text-indigo-400 font-bold flex items-center gap-1 hover:underline lowercase first-letter:uppercase"
@@ -212,7 +223,7 @@ export function LibraryView({
         <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-none">
           {decks.map((deck) => {
             const isSelected = deck.id === activeDeck.id
-            const deckWordCount = storageService.getWords(deck.id).length
+            const deckWordCount = deckCountMap[deck.id] || 0
 
             return (
               <div
