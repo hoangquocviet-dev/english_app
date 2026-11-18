@@ -1,5 +1,5 @@
 import { INITIAL_DECKS, INITIAL_WORDS } from '../data/initialDecks'
-import type { Deck, StudyFilter, WordItem } from '../types'
+import type { Deck, WordItem } from '../types'
 
 const CURRENT_SEED_VERSION = 3
 
@@ -23,7 +23,6 @@ export interface DailyProgress {
 }
 
 export interface StudyPreferences {
-  filter: StudyFilter
   shuffle: boolean
 }
 
@@ -315,7 +314,6 @@ class SafeStorageService {
   // STUDY PREFERENCES
   public getStudyPreferences(): StudyPreferences {
     return this.get<StudyPreferences>(STORAGE_KEYS.STUDY_PREFS, {
-      filter: 'all',
       shuffle: false,
     })
   }

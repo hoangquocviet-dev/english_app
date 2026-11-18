@@ -7,6 +7,7 @@ import { StudySummary } from './StudySummary'
 
 interface SpellingViewProps {
   words: WordItem[]
+  deckId: string
   deckName: string
   onBack: () => void
 }
@@ -64,7 +65,7 @@ function createTilesForWord(term: string): {
   return { pool: shuffled, placed: newPlaced }
 }
 
-export function SpellingView({ words, deckName, onBack }: SpellingViewProps) {
+export function SpellingView({ words, deckId, deckName, onBack }: SpellingViewProps) {
   const [queue, setQueue] = useState<QueuedSpelling[]>(() =>
     words.map((w) => ({ word: w, repetitionCount: 0 }))
   )
@@ -78,7 +79,6 @@ export function SpellingView({ words, deckName, onBack }: SpellingViewProps) {
   const [isSuccess, setIsSuccess] = useState(false)
   const [isWrong, setIsWrong] = useState(false)
   const [stats, setStats] = useState({ mastered: 0, review: 0 })
-  const [missedWordsMap, setMissedWordsMap] = useState<Record<string, WordItem>>({})
   const [isCompleted, setIsCompleted] = useState(false)
 
   const currentItem = queue[currentIndex]
@@ -137,7 +137,6 @@ export function SpellingView({ words, deckName, onBack }: SpellingViewProps) {
         audioService.playErrorBuzz()
         storageService.updateWordStatus(currentWord.id, 'learning')
         setStats((prev) => ({ ...prev, review: prev.review + 1 }))
-        setMissedWordsMap((prev) => ({ ...prev, [currentWord.id]: currentWord }))
 
         if (currentItem.repetitionCount < 3) {
           setQueue((prev) => [
@@ -305,7 +304,6 @@ export function SpellingView({ words, deckName, onBack }: SpellingViewProps) {
 
     storageService.updateWordStatus(currentWord.id, 'learning')
     setStats((prev) => ({ ...prev, review: prev.review + 1 }))
-    setMissedWordsMap((prev) => ({ ...prev, [currentWord.id]: currentWord }))
 
     let updatedQueue = queue
     if (currentItem.repetitionCount < 3) {
@@ -333,26 +331,31 @@ export function SpellingView({ words, deckName, onBack }: SpellingViewProps) {
     }
     setCurrentIndex(0)
     setStats({ mastered: 0, review: 0 })
-    setMissedWordsMap({})
     setIsSuccess(false)
     setIsWrong(false)
     setIsCompleted(false)
   }
 
   if (isCompleted) {
+    const remainingList = storageService
+      .getWords(deckId)
+      .filter((w) => w.status !== 'mastered')
     const sessionStats: StudySessionStats = {
       totalWords: words.length,
       masteredCount: stats.mastered,
       reviewCount: stats.review,
       mode: 'spelling',
       deckName,
-      missedWords: Object.values(missedWordsMap),
+      remainingWords: remainingList,
     }
     return (
       <StudySummary
         stats={sessionStats}
-        onRestart={() => startSessionWithWords(words)}
-        onPracticeMissed={(missed) => startSessionWithWords(missed)}
+        onContinueRemaining={(rem) => startSessionWithWords(rem)}
+        onResetDeck={() => {
+          storageService.resetDeckProgress(deckId)
+          startSessionWithWords(storageService.getWords(deckId))
+        }}
         onBackToHome={onBack}
       />
     )

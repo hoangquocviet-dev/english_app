@@ -1,7 +1,5 @@
 export type StudyMode = 'flashcard' | 'quiz' | 'spelling' | 'listening'
 
-export type StudyFilter = 'all' | 'unmastered'
-
 export type ActiveTab = 'practice' | 'add' | 'library'
 
 export type StudyStatus = 'new' | 'learning' | 'mastered'
@@ -34,7 +32,7 @@ export interface StudySessionStats {
   reviewCount: number
   mode: StudyMode
   deckName: string
-  missedWords?: WordItem[]
+  remainingWords?: WordItem[]
 }
 
 export interface SpellingTile {

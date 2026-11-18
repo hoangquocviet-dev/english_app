@@ -8,6 +8,8 @@ import { StudySummary } from './StudySummary'
 
 interface ListeningViewProps {
   words: WordItem[]
+  allDeckWords: WordItem[]
+  deckId: string
   deckName: string
   onBack: () => void
 }
@@ -36,8 +38,12 @@ function shuffleArray<T>(array: T[]): T[] {
   return arr
 }
 
-function buildListeningQuestions(sourceWords: WordItem[]): ListeningQuestion[] {
+function buildListeningQuestions(
+  sourceWords: WordItem[],
+  fullDeckWords: WordItem[]
+): ListeningQuestion[] {
   const fullPool: ListeningOption[] = [
+    ...fullDeckWords.map((w) => ({ id: w.id, term: w.term, definition: w.definition })),
     ...sourceWords.map((w) => ({ id: w.id, term: w.term, definition: w.definition })),
     ...INITIAL_WORDS.map((w) => ({ id: w.id, term: w.term, definition: w.definition })),
   ]
@@ -81,16 +87,21 @@ function buildListeningQuestions(sourceWords: WordItem[]): ListeningQuestion[] {
   return shuffleArray(generated)
 }
 
-export function ListeningView({ words, deckName, onBack }: ListeningViewProps) {
+export function ListeningView({
+  words,
+  allDeckWords,
+  deckId,
+  deckName,
+  onBack,
+}: ListeningViewProps) {
   const [questions, setQuestions] = useState<ListeningQuestion[]>(() =>
-    buildListeningQuestions(words)
+    buildListeningQuestions(words, allDeckWords)
   )
   const [currentIndex, setCurrentIndex] = useState(0)
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
   const [isLocked, setIsLocked] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const [stats, setStats] = useState({ mastered: 0, review: 0 })
-  const [missedWordsMap, setMissedWordsMap] = useState<Record<string, WordItem>>({})
   const [isCompleted, setIsCompleted] = useState(false)
 
   const currentQ = questions[currentIndex]
@@ -140,10 +151,6 @@ export function ListeningView({ words, deckName, onBack }: ListeningViewProps) {
         audioService.playErrorBuzz()
         storageService.updateWordStatus(currentQ.targetWord.id, 'learning')
         setStats((prev) => ({ ...prev, review: prev.review + 1 }))
-        setMissedWordsMap((prev) => ({
-          ...prev,
-          [currentQ.targetWord.id]: currentQ.targetWord,
-        }))
 
         if (currentQ.repetitionCount < 2) {
           wasRequeued = true
@@ -197,29 +204,34 @@ export function ListeningView({ words, deckName, onBack }: ListeningViewProps) {
   }, [isLocked, isCompleted, currentQ, playAudio, handleSelect])
 
   const resetListening = (sourceWords: WordItem[]) => {
-    setQuestions(buildListeningQuestions(sourceWords))
+    setQuestions(buildListeningQuestions(sourceWords, allDeckWords))
     setCurrentIndex(0)
     setSelectedOption(null)
     setIsLocked(false)
     setStats({ mastered: 0, review: 0 })
-    setMissedWordsMap({})
     setIsCompleted(false)
   }
 
   if (isCompleted) {
+    const remainingList = storageService
+      .getWords(deckId)
+      .filter((w) => w.status !== 'mastered')
     const sessionStats: StudySessionStats = {
       totalWords: words.length,
       masteredCount: stats.mastered,
       reviewCount: stats.review,
       mode: 'listening',
       deckName,
-      missedWords: Object.values(missedWordsMap),
+      remainingWords: remainingList,
     }
     return (
       <StudySummary
         stats={sessionStats}
-        onRestart={() => resetListening(words)}
-        onPracticeMissed={(missed) => resetListening(missed)}
+        onContinueRemaining={(rem) => resetListening(rem)}
+        onResetDeck={() => {
+          storageService.resetDeckProgress(deckId)
+          resetListening(storageService.getWords(deckId))
+        }}
         onBackToHome={onBack}
       />
     )

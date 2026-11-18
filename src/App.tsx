@@ -10,7 +10,7 @@ import { ListeningView } from './components/practice/ListeningView'
 import { PracticeHome } from './components/practice/PracticeHome'
 import { QuizView } from './components/practice/QuizView'
 import { SpellingView } from './components/practice/SpellingView'
-import type { ActiveTab, Deck, StudyFilter, StudyMode, WordItem } from './types'
+import type { ActiveTab, Deck, StudyMode, WordItem } from './types'
 import { audioService } from './utils/audio'
 import { storageService } from './utils/storage'
 
@@ -57,10 +57,9 @@ export function App() {
     setWords(storageService.getWords(deckId))
   }
 
-  const handleChangeFilter = (filter: StudyFilter) => {
-    const next = { ...studyPrefs, filter }
-    setStudyPrefs(next)
-    storageService.setStudyPreferences(next)
+  const handleResetDeck = (deckId: string) => {
+    storageService.resetDeckProgress(deckId)
+    refreshData()
   }
 
   const handleToggleShuffle = () => {
@@ -70,13 +69,10 @@ export function App() {
   }
 
   const handleStartMode = (mode: StudyMode) => {
-    let targetList = words
-    if (studyPrefs.filter === 'unmastered') {
-      const unmastered = words.filter((w) => w.status !== 'mastered')
-      if (unmastered.length > 0) {
-        targetList = unmastered
-      }
-    }
+    // Strictly exclude words already marked as mastered until user resets the deck
+    const freshWords = storageService.getWords(activeDeckId)
+    let targetList = freshWords.filter((w) => w.status !== 'mastered')
+    if (targetList.length === 0) return
 
     if (studyPrefs.shuffle) {
       targetList = shuffleWords(targetList)
@@ -121,6 +117,7 @@ export function App() {
             {activeStudyMode === 'flashcard' && activeDeck && (
               <FlashcardView
                 words={sessionWords}
+                deckId={activeDeck.id}
                 deckName={activeDeck.name}
                 onBack={handleExitStudy}
               />
@@ -129,6 +126,8 @@ export function App() {
             {activeStudyMode === 'quiz' && activeDeck && (
               <QuizView
                 words={sessionWords}
+                allDeckWords={words}
+                deckId={activeDeck.id}
                 deckName={activeDeck.name}
                 onBack={handleExitStudy}
               />
@@ -137,6 +136,7 @@ export function App() {
             {activeStudyMode === 'spelling' && activeDeck && (
               <SpellingView
                 words={sessionWords}
+                deckId={activeDeck.id}
                 deckName={activeDeck.name}
                 onBack={handleExitStudy}
               />
@@ -145,6 +145,8 @@ export function App() {
             {activeStudyMode === 'listening' && activeDeck && (
               <ListeningView
                 words={sessionWords}
+                allDeckWords={words}
+                deckId={activeDeck.id}
                 deckName={activeDeck.name}
                 onBack={handleExitStudy}
               />
@@ -159,11 +161,10 @@ export function App() {
                     activeDeck={activeDeck}
                     words={words}
                     dailyProgress={dailyProgress}
-                    studyFilter={studyPrefs.filter}
                     shuffleEnabled={studyPrefs.shuffle}
-                    onChangeFilter={handleChangeFilter}
                     onToggleShuffle={handleToggleShuffle}
                     onSelectDeck={handleSelectDeck}
+                    onResetDeck={handleResetDeck}
                     onStartMode={handleStartMode}
                     onGoToAddWord={() => setActiveTab('add')}
                   />

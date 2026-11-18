@@ -8,6 +8,8 @@ import { StudySummary } from './StudySummary'
 
 interface QuizViewProps {
   words: WordItem[]
+  allDeckWords: WordItem[]
+  deckId: string
   deckName: string
   onBack: () => void
 }
@@ -30,8 +32,9 @@ function shuffleArray<T>(array: T[]): T[] {
   return arr
 }
 
-function buildQuestions(sourceWords: WordItem[]): QuizQuestion[] {
+function buildQuestions(sourceWords: WordItem[], fullDeckWords: WordItem[]): QuizQuestion[] {
   const distractorPool = [
+    ...fullDeckWords.map((w) => w.definition),
     ...sourceWords.map((w) => w.definition),
     ...INITIAL_WORDS.map((w) => w.definition),
   ]
@@ -59,13 +62,14 @@ function buildQuestions(sourceWords: WordItem[]): QuizQuestion[] {
   return shuffleArray(generated)
 }
 
-export function QuizView({ words, deckName, onBack }: QuizViewProps) {
-  const [questions, setQuestions] = useState<QuizQuestion[]>(() => buildQuestions(words))
+export function QuizView({ words, allDeckWords, deckId, deckName, onBack }: QuizViewProps) {
+  const [questions, setQuestions] = useState<QuizQuestion[]>(() =>
+    buildQuestions(words, allDeckWords)
+  )
   const [currentIndex, setCurrentIndex] = useState(0)
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
   const [isLocked, setIsLocked] = useState(false)
   const [stats, setStats] = useState({ mastered: 0, review: 0 })
-  const [missedWordsMap, setMissedWordsMap] = useState<Record<string, WordItem>>({})
   const [isCompleted, setIsCompleted] = useState(false)
 
   const currentQ = questions[currentIndex]
@@ -105,10 +109,6 @@ export function QuizView({ words, deckName, onBack }: QuizViewProps) {
         audioService.playErrorBuzz()
         storageService.updateWordStatus(currentQ.targetWord.id, 'learning')
         setStats((prev) => ({ ...prev, review: prev.review + 1 }))
-        setMissedWordsMap((prev) => ({
-          ...prev,
-          [currentQ.targetWord.id]: currentQ.targetWord,
-        }))
 
         // Re-queue missed word once with re-shuffled options
         if (currentQ.repetitionCount < 2) {
@@ -160,29 +160,34 @@ export function QuizView({ words, deckName, onBack }: QuizViewProps) {
   }, [isLocked, isCompleted, currentQ, handleSelect])
 
   const resetQuiz = (sourceWords: WordItem[]) => {
-    setQuestions(buildQuestions(sourceWords))
+    setQuestions(buildQuestions(sourceWords, allDeckWords))
     setCurrentIndex(0)
     setSelectedOption(null)
     setIsLocked(false)
     setStats({ mastered: 0, review: 0 })
-    setMissedWordsMap({})
     setIsCompleted(false)
   }
 
   if (isCompleted) {
+    const remainingList = storageService
+      .getWords(deckId)
+      .filter((w) => w.status !== 'mastered')
     const sessionStats: StudySessionStats = {
       totalWords: words.length,
       masteredCount: stats.mastered,
       reviewCount: stats.review,
       mode: 'quiz',
       deckName,
-      missedWords: Object.values(missedWordsMap),
+      remainingWords: remainingList,
     }
     return (
       <StudySummary
         stats={sessionStats}
-        onRestart={() => resetQuiz(words)}
-        onPracticeMissed={(missed) => resetQuiz(missed)}
+        onContinueRemaining={(rem) => resetQuiz(rem)}
+        onResetDeck={() => {
+          storageService.resetDeckProgress(deckId)
+          resetQuiz(storageService.getWords(deckId))
+        }}
         onBackToHome={onBack}
       />
     )

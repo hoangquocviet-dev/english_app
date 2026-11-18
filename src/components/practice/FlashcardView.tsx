@@ -7,6 +7,7 @@ import { StudySummary } from './StudySummary'
 
 interface FlashcardViewProps {
   words: WordItem[]
+  deckId: string
   deckName: string
   onBack: () => void
 }
@@ -23,7 +24,7 @@ interface HistoryEntry {
   wasRequeued: boolean
 }
 
-export function FlashcardView({ words, deckName, onBack }: FlashcardViewProps) {
+export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardViewProps) {
   const [queue, setQueue] = useState<QueuedWord[]>(() =>
     words.map((w) => ({ word: w, repetitionCount: 0 }))
   )
@@ -31,7 +32,6 @@ export function FlashcardView({ words, deckName, onBack }: FlashcardViewProps) {
   const [isFlipped, setIsFlipped] = useState(false)
   const [stats, setStats] = useState({ mastered: 0, review: 0 })
   const [history, setHistory] = useState<HistoryEntry[]>([])
-  const [missedWordsMap, setMissedWordsMap] = useState<Record<string, WordItem>>({})
   const [isCompleted, setIsCompleted] = useState(false)
 
   // Touch gesture state
@@ -79,7 +79,6 @@ export function FlashcardView({ words, deckName, onBack }: FlashcardViewProps) {
         audioService.playClick()
         storageService.updateWordStatus(currentWord.id, 'learning')
         setStats((prev) => ({ ...prev, review: prev.review + 1 }))
-        setMissedWordsMap((prev) => ({ ...prev, [currentWord.id]: currentWord }))
 
         // Re-queue only if repetition count < 3
         if (currentItem.repetitionCount < 3) {
@@ -220,26 +219,30 @@ export function FlashcardView({ words, deckName, onBack }: FlashcardViewProps) {
     setCurrentIndex(0)
     setStats({ mastered: 0, review: 0 })
     setHistory([])
-    setMissedWordsMap({})
     setIsFlipped(false)
     setIsCompleted(false)
   }
 
   if (isCompleted) {
-    const missedList = Object.values(missedWordsMap)
+    const remainingList = storageService
+      .getWords(deckId)
+      .filter((w) => w.status !== 'mastered')
     const sessionStats: StudySessionStats = {
       totalWords: words.length,
       masteredCount: stats.mastered,
       reviewCount: stats.review,
       mode: 'flashcard',
       deckName,
-      missedWords: missedList,
+      remainingWords: remainingList,
     }
     return (
       <StudySummary
         stats={sessionStats}
-        onRestart={() => startSessionWithWords(words)}
-        onPracticeMissed={(missed) => startSessionWithWords(missed)}
+        onContinueRemaining={(rem) => startSessionWithWords(rem)}
+        onResetDeck={() => {
+          storageService.resetDeckProgress(deckId)
+          startSessionWithWords(storageService.getWords(deckId))
+        }}
         onBackToHome={onBack}
       />
     )
