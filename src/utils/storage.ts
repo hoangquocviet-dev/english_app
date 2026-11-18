@@ -1,7 +1,7 @@
 import { INITIAL_DECKS, INITIAL_WORDS } from '../data/initialDecks'
 import type { ArcadeGameId, Deck, GameHighScores, WordItem } from '../types'
 
-const CURRENT_SEED_VERSION = 4
+const CURRENT_SEED_VERSION = 5
 
 const STORAGE_KEYS = {
   DECKS: 'vocabflow_decks',

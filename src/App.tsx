@@ -269,6 +269,7 @@ export function App() {
 
                   {activeTab === 'add' && (
                     <AddWordView
+                      key={activeDeck.id}
                       decks={decks}
                       activeDeckId={activeDeck.id}
                       onWordAdded={(addedDeckId) => {

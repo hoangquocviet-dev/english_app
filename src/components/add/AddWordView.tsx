@@ -17,7 +17,10 @@ export function AddWordView({
   onWordAdded,
   onGoToPractice,
 }: AddWordViewProps) {
-  const [selectedDeckId, setSelectedDeckId] = useState(activeDeckId)
+  const [rawSelectedDeckId, setSelectedDeckId] = useState(activeDeckId)
+  const selectedDeckId = decks.some((d) => d.id === rawSelectedDeckId)
+    ? rawSelectedDeckId
+    : activeDeckId
   const [term, setTerm] = useState('')
   const [ipa, setIpa] = useState('')
   const [partOfSpeech, setPartOfSpeech] = useState('noun')

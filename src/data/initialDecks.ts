@@ -5970,8 +5970,8 @@ export const INITIAL_WORDS: WordItem[] = [
   {
     "id": "cs-162",
     "deckId": "deck-cs-foundations",
-    "term": "PPP (Point-to-Point Protocol)",
-    "definition": "Giao thức kết nối Internet tin cậy thông qua Modem",
+    "term": "Point-to-Point Protocol",
+    "definition": "Giao thức kết nối điểm-điểm (PPP) truyền dữ liệu tin cậy qua mạng",
     "partOfSpeech": "phrase",
     "status": "new",
     "reviewCount": 0
@@ -5979,8 +5979,8 @@ export const INITIAL_WORDS: WordItem[] = [
   {
     "id": "cs-163",
     "deckId": "deck-cs-foundations",
-    "term": "RAM (Read-Only Memory)",
-    "definition": "Bộ nhớ khả biến cho phép truy xuất đọc-ghi ngẫu nhiên đến bất kỳ vị trí nào trong bộ nhớ",
+    "term": "Random Access Memory",
+    "definition": "Bộ nhớ truy xuất ngẫu nhiên (RAM) khả biến cho phép đọc-ghi tốc độ cao",
     "partOfSpeech": "phrase",
     "status": "new",
     "reviewCount": 0

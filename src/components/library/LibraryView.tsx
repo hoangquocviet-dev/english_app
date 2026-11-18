@@ -563,14 +563,18 @@ export function LibraryView({
       )}
 
       {/* Sync Modal */}
-      <ImportExportModal
-        isOpen={isSyncModalOpen}
-        onClose={() => setIsSyncModalOpen(false)}
-        activeDeck={activeDeck}
-        decks={decks}
-        words={words}
-        onDataChanged={onDataChanged}
-      />
+      {isSyncModalOpen && (
+        <ImportExportModal
+          key={activeDeck.id}
+          isOpen={isSyncModalOpen}
+          onClose={() => setIsSyncModalOpen(false)}
+          activeDeck={activeDeck}
+          decks={decks}
+          words={words}
+          onSelectDeck={onSelectDeck}
+          onDataChanged={onDataChanged}
+        />
+      )}
     </div>
   )
 }

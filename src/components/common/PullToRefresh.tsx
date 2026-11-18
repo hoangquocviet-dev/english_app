@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { audioService } from '../../utils/audio'
+import { forceReloadApp } from '../../utils/reload'
 
 interface PullToRefreshProps {
   children: React.ReactNode
@@ -104,8 +105,8 @@ export function PullToRefresh({ children }: PullToRefreshProps) {
 
         // Brief delay for visual satisfaction before reload
         setTimeout(() => {
-          window.location.reload()
-        }, 400)
+          void forceReloadApp()
+        }, 320)
       } else {
         setPullDistance(0)
         setIsReady(false)

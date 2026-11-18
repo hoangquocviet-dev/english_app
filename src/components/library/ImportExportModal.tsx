@@ -11,6 +11,7 @@ interface ImportExportModalProps {
   activeDeck: Deck
   decks: Deck[]
   words: WordItem[]
+  onSelectDeck: (deckId: string) => void
   onDataChanged: () => void
 }
 
@@ -20,14 +21,20 @@ export function ImportExportModal({
   activeDeck,
   decks,
   words,
+  onSelectDeck,
   onDataChanged,
 }: ImportExportModalProps) {
   const [activeTab, setActiveTab] = useState<'export' | 'import'>('export')
   const [importText, setImportText] = useState('')
-  const [targetDeckId, setTargetDeckId] = useState(activeDeck.id)
+  const [rawTargetDeckId, setTargetDeckId] = useState(activeDeck.id)
   const [newDeckName, setNewDeckName] = useState('')
   const [isCopied, setIsCopied] = useState(false)
   const [importReport, setImportReport] = useState<{ added: number; skipped: number } | null>(null)
+
+  const targetDeckId =
+    rawTargetDeckId === 'new' || decks.some((d) => d.id === rawTargetDeckId)
+      ? rawTargetDeckId
+      : activeDeck.id
 
   if (!isOpen) return null
 
@@ -91,6 +98,10 @@ export function ImportExportModal({
     const { added, skipped } = storageService.importWords(finalDeckId, result.words)
 
     setImportReport({ added, skipped })
+    setImportText('')
+    setNewDeckName('')
+    setTargetDeckId(finalDeckId)
+    onSelectDeck(finalDeckId)
     audioService.playSuccessChime()
     onDataChanged()
   }

@@ -3,6 +3,7 @@ import { ArrowLeft, Clock, Flame, Pause, Play, RotateCcw, Trophy, Zap } from 'lu
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { INITIAL_WORDS } from '../../data/initialDecks'
 import type { WordItem } from '../../types'
+import { formatArcadeMeaning } from '../../utils/arcadeText'
 import { audioService } from '../../utils/audio'
 import { storageService } from '../../utils/storage'
 
@@ -40,8 +41,10 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 function buildPlayablePool(words: WordItem[]): WordItem[] {
-  const concise = words.filter((w) => w.term.length <= 28 && w.definition.length <= 95)
-  const base = concise.length >= 10 ? concise : words
+  const normalized = words
+    .filter((w) => w.term.length <= 32)
+    .map((w) => ({ ...w, definition: formatArcadeMeaning(w.definition, 88) }))
+  const base = normalized.length >= 8 ? normalized : words.map((w) => ({ ...w, definition: formatArcadeMeaning(w.definition, 88) }))
 
   // Deduplicate by term + definition so pairs on board are always unambiguous
   const unique: WordItem[] = []
@@ -61,13 +64,14 @@ function buildPlayablePool(words: WordItem[]): WordItem[] {
   if (unique.length >= 10) return unique
 
   for (const iw of INITIAL_WORDS) {
-    if (iw.term.length > 28 || iw.definition.length > 95) continue
-    const tk = iw.term.trim().toLowerCase()
-    const dk = iw.definition.trim().toLowerCase()
+    if (iw.term.length > 28) continue
+    const formatted = { ...iw, definition: formatArcadeMeaning(iw.definition, 88) }
+    const tk = formatted.term.trim().toLowerCase()
+    const dk = formatted.definition.trim().toLowerCase()
     if (!seenTerms.has(tk) && !seenDefs.has(dk)) {
       seenTerms.add(tk)
       seenDefs.add(dk)
-      unique.push(iw)
+      unique.push(formatted)
     }
     if (unique.length >= 20) break
   }

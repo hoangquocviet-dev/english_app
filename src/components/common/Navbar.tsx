@@ -2,6 +2,7 @@ import { Flame, Moon, RotateCw, Sun, Volume2, VolumeX } from 'lucide-react'
 import { useState } from 'react'
 import type { Deck } from '../../types'
 import { audioService } from '../../utils/audio'
+import { forceReloadApp } from '../../utils/reload'
 
 interface NavbarProps {
   activeDeck: Deck | null
@@ -18,14 +19,14 @@ export function Navbar({ activeDeck, streak, onGoHome, onOpenDeckSelector }: Nav
   const [isReloading, setIsReloading] = useState(false)
 
   const toggleSound = () => {
-    const next = !soundEnabled
+    const next = !audioService.getSoundEnabled()
     setSoundEnabled(next)
     audioService.setSoundEnabled(next)
     if (next) audioService.playClick()
   }
 
   const toggleTheme = () => {
-    const nextDark = !isDark
+    const nextDark = !document.documentElement.classList.contains('dark')
     setIsDark(nextDark)
     if (nextDark) {
       document.documentElement.classList.add('dark')
@@ -46,8 +47,8 @@ export function Navbar({ activeDeck, streak, onGoHome, onOpenDeckSelector }: Nav
       } catch {}
     }
     setTimeout(() => {
-      window.location.reload()
-    }, 300)
+      void forceReloadApp()
+    }, 250)
   }
 
   return (

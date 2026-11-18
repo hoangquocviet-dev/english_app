@@ -1,5 +1,5 @@
 import { ArrowLeft, Check, Volume2, X } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { INITIAL_WORDS } from '../../data/initialDecks'
 import type { StudySessionStats, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
@@ -33,18 +33,25 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 function buildQuestions(sourceWords: WordItem[], fullDeckWords: WordItem[]): QuizQuestion[] {
-  const distractorPool = [
-    ...fullDeckWords.map((w) => w.definition),
-    ...sourceWords.map((w) => w.definition),
-    ...INITIAL_WORDS.map((w) => w.definition),
-  ]
+  const distractorCandidates = [...fullDeckWords, ...sourceWords, ...INITIAL_WORDS]
 
   const generated: QuizQuestion[] = sourceWords.map((targetWord) => {
     const correctDef = targetWord.definition.trim()
-    const availableDistractors = distractorPool.filter(
-      (def) => def.trim().toLowerCase() !== correctDef.toLowerCase()
-    )
-    const uniqueDistractors = Array.from(new Set(availableDistractors))
+    const targetTermLower = targetWord.term.trim().toLowerCase()
+
+    const seenDefs = new Set<string>([correctDef.toLowerCase()])
+    const uniqueDistractors: string[] = []
+
+    for (const candidate of distractorCandidates) {
+      if (candidate.term.trim().toLowerCase() === targetTermLower) continue
+      const def = candidate.definition.trim()
+      const defLower = def.toLowerCase()
+      if (!seenDefs.has(defLower)) {
+        seenDefs.add(defLower)
+        uniqueDistractors.push(def)
+      }
+    }
+
     const shuffledDistractors = shuffleArray(uniqueDistractors).slice(0, 3)
 
     const rawOptions = [correctDef, ...shuffledDistractors]
@@ -71,6 +78,21 @@ export function QuizView({ words, allDeckWords, deckId, deckName, onBack }: Quiz
   const [isLocked, setIsLocked] = useState(false)
   const [stats, setStats] = useState({ mastered: 0, review: 0 })
   const [isCompleted, setIsCompleted] = useState(false)
+  const transitionTimerRef = useRef<number | null>(null)
+
+  const clearTransitionTimer = useCallback(() => {
+    if (transitionTimerRef.current !== null) {
+      window.clearTimeout(transitionTimerRef.current)
+      transitionTimerRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      clearTransitionTimer()
+      audioService.stopSpeech()
+    }
+  }, [clearTransitionTimer])
 
   const currentQ = questions[currentIndex]
 
@@ -130,7 +152,9 @@ export function QuizView({ words, allDeckWords, deckId, deckName, onBack }: Quiz
       const delay = isCorrect ? 800 : 1700
       const nextTotal = questions.length + (wasRequeued ? 1 : 0)
 
-      setTimeout(() => {
+      clearTransitionTimer()
+      transitionTimerRef.current = window.setTimeout(() => {
+        transitionTimerRef.current = null
         if (currentIndex + 1 >= nextTotal) {
           setIsCompleted(true)
         } else {
@@ -140,7 +164,7 @@ export function QuizView({ words, allDeckWords, deckId, deckName, onBack }: Quiz
         }
       }, delay)
     },
-    [isLocked, currentQ, questions.length, currentIndex]
+    [isLocked, currentQ, questions.length, currentIndex, clearTransitionTimer]
   )
 
   // Desktop keyboard shortcuts 1, 2, 3, 4
@@ -160,6 +184,7 @@ export function QuizView({ words, allDeckWords, deckId, deckName, onBack }: Quiz
   }, [isLocked, isCompleted, currentQ, handleSelect])
 
   const resetQuiz = (sourceWords: WordItem[]) => {
+    clearTransitionTimer()
     setQuestions(buildQuestions(sourceWords, allDeckWords))
     setCurrentIndex(0)
     setSelectedOption(null)
@@ -295,7 +320,7 @@ export function QuizView({ words, allDeckWords, deckId, deckName, onBack }: Quiz
                 <span className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-xs font-semibold text-slate-500 dark:text-slate-400 shrink-0">
                   {idx + 1}
                 </span>
-                <span className="leading-snug break-words">{option}</span>
+                <span className="leading-snug break-words line-clamp-3">{option}</span>
               </div>
 
               {isLocked && isCorrect && <Check className="w-5 h-5 text-emerald-500 shrink-0 ml-2" />}

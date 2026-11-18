@@ -1,5 +1,5 @@
 import { ArrowLeft, Check, Headphones, Volume2, X } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { INITIAL_WORDS } from '../../data/initialDecks'
 import type { StudySessionStats, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
@@ -103,6 +103,24 @@ export function ListeningView({
   const [isPlaying, setIsPlaying] = useState(false)
   const [stats, setStats] = useState({ mastered: 0, review: 0 })
   const [isCompleted, setIsCompleted] = useState(false)
+  const transitionTimerRef = useRef<number | null>(null)
+  const mountedRef = useRef(true)
+
+  const clearTransitionTimer = useCallback(() => {
+    if (transitionTimerRef.current !== null) {
+      window.clearTimeout(transitionTimerRef.current)
+      transitionTimerRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+      clearTransitionTimer()
+      audioService.stopSpeech()
+    }
+  }, [clearTransitionTimer])
 
   const currentQ = questions[currentIndex]
 
@@ -111,7 +129,9 @@ export function ListeningView({
       if (!currentQ) return
       setIsPlaying(true)
       await audioService.speak(currentQ.targetWord.term, rate)
-      setIsPlaying(false)
+      if (mountedRef.current) {
+        setIsPlaying(false)
+      }
     },
     [currentQ]
   )
@@ -173,7 +193,9 @@ export function ListeningView({
       const delay = isCorrect ? 1000 : 1850
       const nextTotal = questions.length + (wasRequeued ? 1 : 0)
 
-      setTimeout(() => {
+      clearTransitionTimer()
+      transitionTimerRef.current = window.setTimeout(() => {
+        transitionTimerRef.current = null
         if (currentIndex + 1 >= nextTotal) {
           setIsCompleted(true)
         } else {
@@ -183,7 +205,7 @@ export function ListeningView({
         }
       }, delay)
     },
-    [isLocked, currentQ, questions.length, currentIndex]
+    [isLocked, currentQ, questions.length, currentIndex, clearTransitionTimer]
   )
 
   useEffect(() => {
@@ -204,6 +226,7 @@ export function ListeningView({
   }, [isLocked, isCompleted, currentQ, playAudio, handleSelect])
 
   const resetListening = (sourceWords: WordItem[]) => {
+    clearTransitionTimer()
     setQuestions(buildListeningQuestions(sourceWords, allDeckWords))
     setCurrentIndex(0)
     setSelectedOption(null)

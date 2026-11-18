@@ -3,6 +3,7 @@ import { ArrowLeft, Check, Flame, Heart, Pause, Play, RotateCcw, Trophy, X } fro
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { INITIAL_WORDS } from '../../data/initialDecks'
 import type { WordItem } from '../../types'
+import { formatArcadeMeaning } from '../../utils/arcadeText'
 import { audioService } from '../../utils/audio'
 import { storageService } from '../../utils/storage'
 
@@ -27,8 +28,13 @@ function getDurationForRound(round: number): number {
 }
 
 function buildBlitzPool(words: WordItem[]): WordItem[] {
-  const concise = words.filter((w) => w.term.length <= 28 && w.definition.length <= 95)
-  const base = concise.length >= 8 ? concise : words
+  const normalized = words
+    .filter((w) => w.term.length <= 32)
+    .map((w) => ({ ...w, definition: formatArcadeMeaning(w.definition, 92) }))
+  const base =
+    normalized.length >= 6
+      ? normalized
+      : words.map((w) => ({ ...w, definition: formatArcadeMeaning(w.definition, 92) }))
 
   const unique: WordItem[] = []
   const seen = new Set<string>()
@@ -43,10 +49,12 @@ function buildBlitzPool(words: WordItem[]): WordItem[] {
   if (unique.length >= 8) return unique
 
   for (const iw of INITIAL_WORDS) {
-    const tk = iw.term.trim().toLowerCase()
-    if (iw.term.length <= 28 && iw.definition.length <= 95 && !seen.has(tk)) {
+    if (iw.term.length > 28) continue
+    const formatted = { ...iw, definition: formatArcadeMeaning(iw.definition, 92) }
+    const tk = formatted.term.trim().toLowerCase()
+    if (!seen.has(tk)) {
       seen.add(tk)
-      unique.push(iw)
+      unique.push(formatted)
     }
     if (unique.length >= 18) break
   }

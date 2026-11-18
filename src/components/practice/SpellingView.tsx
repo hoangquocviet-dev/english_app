@@ -1,5 +1,5 @@
 import { ArrowLeft, Check, HelpCircle, Lightbulb, RotateCcw, Volume2 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { SpellingTile, StudySessionStats, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
 import { storageService } from '../../utils/storage'
@@ -37,8 +37,8 @@ function createTilesForWord(term: string): {
   const newPlaced: Array<SpellingTile | null> = []
 
   termChars.forEach((char, index) => {
-    const isPunctuationOrSpace = /[\s\-'.]/.test(char)
-    if (isPunctuationOrSpace) {
+    const isSymbolOrSpace = /[^a-zA-Z0-9]/.test(char)
+    if (isSymbolOrSpace) {
       newPlaced.push({
         tileId: `prefilled-${index}`,
         letter: char,
@@ -66,39 +66,72 @@ function createTilesForWord(term: string): {
 }
 
 export function SpellingView({ words, deckId, deckName, onBack }: SpellingViewProps) {
-  const [queue, setQueue] = useState<QueuedSpelling[]>(() =>
-    words.map((w) => ({ word: w, repetitionCount: 0 }))
-  )
+  const initialQueue = words.map((w) => ({ word: w, repetitionCount: 0 }))
+  const initialTiles = words[0] ? createTilesForWord(words[0].term) : { pool: [], placed: [] }
+
+  const [queue, setQueue] = useState<QueuedSpelling[]>(() => initialQueue)
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [poolTiles, setPoolTiles] = useState<SpellingTile[]>(() =>
-    words[0] ? createTilesForWord(words[0].term).pool : []
-  )
-  const [placedTiles, setPlacedTiles] = useState<Array<SpellingTile | null>>(() =>
-    words[0] ? createTilesForWord(words[0].term).placed : []
+  const [poolTiles, setPoolTiles] = useState<SpellingTile[]>(() => initialTiles.pool)
+  const [placedTiles, setPlacedTiles] = useState<Array<SpellingTile | null>>(
+    () => initialTiles.placed
   )
   const [isSuccess, setIsSuccess] = useState(false)
   const [isWrong, setIsWrong] = useState(false)
   const [stats, setStats] = useState({ mastered: 0, review: 0 })
   const [isCompleted, setIsCompleted] = useState(false)
 
+  const queueRef = useRef<QueuedSpelling[]>(queue)
+  const poolRef = useRef<SpellingTile[]>(poolTiles)
+  const placedRef = useRef<Array<SpellingTile | null>>(placedTiles)
+  const transitionTimerRef = useRef<number | null>(null)
+
+  const commitQueue = useCallback((next: QueuedSpelling[]) => {
+    queueRef.current = next
+    setQueue(next)
+  }, [])
+
+  const commitTiles = useCallback(
+    (nextPool: SpellingTile[], nextPlaced: Array<SpellingTile | null>) => {
+      poolRef.current = nextPool
+      placedRef.current = nextPlaced
+      setPoolTiles(nextPool)
+      setPlacedTiles(nextPlaced)
+    },
+    []
+  )
+
+  const clearTransitionTimer = useCallback(() => {
+    if (transitionTimerRef.current !== null) {
+      window.clearTimeout(transitionTimerRef.current)
+      transitionTimerRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      clearTransitionTimer()
+      audioService.stopSpeech()
+    }
+  }, [clearTransitionTimer])
+
   const currentItem = queue[currentIndex]
   const currentWord = currentItem?.word
 
   const advanceToIndex = useCallback(
-    (nextIdx: number, currentQueue: QueuedSpelling[]) => {
-      if (nextIdx >= currentQueue.length) {
+    (nextIdx: number) => {
+      const latestQueue = queueRef.current
+      if (nextIdx >= latestQueue.length) {
         setIsCompleted(true)
       } else {
-        const nextWord = currentQueue[nextIdx].word
+        const nextWord = latestQueue[nextIdx].word
         const { pool, placed } = createTilesForWord(nextWord.term)
         setCurrentIndex(nextIdx)
-        setPoolTiles(pool)
-        setPlacedTiles(placed)
+        commitTiles(pool, placed)
         setIsSuccess(false)
         setIsWrong(false)
       }
     },
-    []
+    [commitTiles]
   )
 
   const evaluateAnswer = useCallback(
@@ -121,11 +154,10 @@ export function SpellingView({ words, deckId, deckName, onBack }: SpellingViewPr
         setStats((prev) => ({ ...prev, mastered: prev.mastered + 1 }))
         audioService.speak(currentWord.term)
 
-        setTimeout(() => {
-          setQueue((latestQueue) => {
-            advanceToIndex(currentIndex + 1, latestQueue)
-            return latestQueue
-          })
+        clearTransitionTimer()
+        transitionTimerRef.current = window.setTimeout(() => {
+          transitionTimerRef.current = null
+          advanceToIndex(currentIndex + 1)
         }, 1200)
       } else {
         if (typeof navigator !== 'undefined' && navigator.vibrate) {
@@ -139,60 +171,54 @@ export function SpellingView({ words, deckId, deckName, onBack }: SpellingViewPr
         setStats((prev) => ({ ...prev, review: prev.review + 1 }))
 
         if (currentItem.repetitionCount < 3) {
-          setQueue((prev) => [
-            ...prev,
+          commitQueue([
+            ...queueRef.current,
             { word: currentWord, repetitionCount: currentItem.repetitionCount + 1 },
           ])
         }
       }
     },
-    [currentWord, currentItem, currentIndex, advanceToIndex]
+    [currentWord, currentItem, currentIndex, advanceToIndex, clearTransitionTimer, commitQueue]
   )
 
   const handleSelectPoolTile = useCallback(
     (tile: SpellingTile) => {
       if (isSuccess) return
+      const prevPlaced = placedRef.current
+      const firstEmptyIndex = prevPlaced.findIndex((slot) => slot === null)
+      if (firstEmptyIndex === -1) return
+
       audioService.playClick()
       setIsWrong(false)
 
-      setPlacedTiles((prevPlaced) => {
-        const firstEmptyIndex = prevPlaced.findIndex((slot) => slot === null)
-        if (firstEmptyIndex === -1) return prevPlaced
+      const nextPlaced = [...prevPlaced]
+      nextPlaced[firstEmptyIndex] = tile
+      const nextPool = poolRef.current.filter((t) => t.tileId !== tile.tileId)
 
-        const nextPlaced = [...prevPlaced]
-        nextPlaced[firstEmptyIndex] = tile
+      commitTiles(nextPool, nextPlaced)
 
-        setPoolTiles((prevPool) => prevPool.filter((t) => t.tileId !== tile.tileId))
-
-        const isFullyFilled = nextPlaced.every((slot) => slot !== null)
-        if (isFullyFilled) {
-          evaluateAnswer(nextPlaced as SpellingTile[])
-        }
-
-        return nextPlaced
-      })
+      if (nextPlaced.every((slot) => slot !== null)) {
+        evaluateAnswer(nextPlaced as SpellingTile[])
+      }
     },
-    [isSuccess, evaluateAnswer]
+    [isSuccess, commitTiles, evaluateAnswer]
   )
 
   const handleRemovePlacedTile = useCallback(
     (index: number) => {
       if (isSuccess) return
-      const tile = placedTiles[index]
+      const tile = placedRef.current[index]
       if (!tile || tile.tileId.startsWith('prefilled-')) return
 
       audioService.playClick()
       setIsWrong(false)
 
-      setPlacedTiles((prev) => {
-        const next = [...prev]
-        next[index] = null
-        return next
-      })
-
-      setPoolTiles((prev) => [...prev, tile])
+      const nextPlaced = [...placedRef.current]
+      nextPlaced[index] = null
+      const nextPool = [...poolRef.current, tile]
+      commitTiles(nextPool, nextPlaced)
     },
-    [isSuccess, placedTiles]
+    [isSuccess, commitTiles]
   )
 
   // Give 1-letter smart hint
@@ -202,8 +228,10 @@ export function SpellingView({ words, deckId, deckName, onBack }: SpellingViewPr
     setIsWrong(false)
 
     const targetChars = currentWord.term.split('')
-    // Find first slot that is empty OR has wrong letter
-    const targetSlotIndex = placedTiles.findIndex(
+    const nextPlaced = [...placedRef.current]
+    let currentPool = [...poolRef.current]
+
+    const targetSlotIndex = nextPlaced.findIndex(
       (slot, idx) =>
         slot === null || slot.letter.toLowerCase() !== targetChars[idx].toLowerCase()
     )
@@ -211,8 +239,6 @@ export function SpellingView({ words, deckId, deckName, onBack }: SpellingViewPr
     if (targetSlotIndex === -1) return
 
     const neededChar = targetChars[targetSlotIndex].toLowerCase()
-    let currentPool = [...poolTiles]
-    const nextPlaced = [...placedTiles]
 
     // If that slot currently holds a wrong tile, return it to pool first
     const existingWrongTile = nextPlaced[targetSlotIndex]
@@ -242,8 +268,7 @@ export function SpellingView({ words, deckId, deckName, onBack }: SpellingViewPr
     currentPool = currentPool.filter((t) => t.tileId !== matchingTile!.tileId)
     nextPlaced[targetSlotIndex] = matchingTile
 
-    setPoolTiles(currentPool)
-    setPlacedTiles(nextPlaced)
+    commitTiles(currentPool, nextPlaced)
 
     if (nextPlaced.every((slot) => slot !== null)) {
       evaluateAnswer(nextPlaced as SpellingTile[])
@@ -257,8 +282,8 @@ export function SpellingView({ words, deckId, deckName, onBack }: SpellingViewPr
 
       if (e.key === 'Backspace') {
         e.preventDefault()
-        for (let i = placedTiles.length - 1; i >= 0; i--) {
-          const tile = placedTiles[i]
+        for (let i = placedRef.current.length - 1; i >= 0; i--) {
+          const tile = placedRef.current[i]
           if (tile && !tile.tileId.startsWith('prefilled-')) {
             handleRemovePlacedTile(i)
             break
@@ -266,7 +291,7 @@ export function SpellingView({ words, deckId, deckName, onBack }: SpellingViewPr
         }
       } else if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
         const pressedChar = e.key.toLowerCase()
-        const matchingTile = poolTiles.find((t) => t.letter.toLowerCase() === pressedChar)
+        const matchingTile = poolRef.current.find((t) => t.letter.toLowerCase() === pressedChar)
         if (matchingTile) {
           e.preventDefault()
           handleSelectPoolTile(matchingTile)
@@ -276,15 +301,14 @@ export function SpellingView({ words, deckId, deckName, onBack }: SpellingViewPr
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [poolTiles, placedTiles, isSuccess, currentWord, handleRemovePlacedTile, handleSelectPoolTile])
+  }, [isSuccess, currentWord, handleRemovePlacedTile, handleSelectPoolTile])
 
   const handleClearAll = () => {
     if (!currentWord || isSuccess) return
     audioService.playClick()
     setIsWrong(false)
     const { pool, placed } = createTilesForWord(currentWord.term)
-    setPlacedTiles(placed)
-    setPoolTiles(pool)
+    commitTiles(pool, placed)
   }
 
   const handleReveal = () => {
@@ -297,37 +321,36 @@ export function SpellingView({ words, deckId, deckName, onBack }: SpellingViewPr
       originalIndex: index,
     }))
 
-    setPoolTiles([])
-    setPlacedTiles(completedTiles)
+    commitTiles([], completedTiles)
     setIsWrong(false)
     setIsSuccess(true)
 
     storageService.updateWordStatus(currentWord.id, 'learning')
     setStats((prev) => ({ ...prev, review: prev.review + 1 }))
 
-    let updatedQueue = queue
     if (currentItem.repetitionCount < 3) {
-      updatedQueue = [
-        ...queue,
+      commitQueue([
+        ...queueRef.current,
         { word: currentWord, repetitionCount: currentItem.repetitionCount + 1 },
-      ]
-      setQueue(updatedQueue)
+      ])
     }
 
     audioService.speak(currentWord.term)
 
-    setTimeout(() => {
-      advanceToIndex(currentIndex + 1, updatedQueue)
+    clearTransitionTimer()
+    transitionTimerRef.current = window.setTimeout(() => {
+      transitionTimerRef.current = null
+      advanceToIndex(currentIndex + 1)
     }, 1500)
   }
 
   const startSessionWithWords = (targetWords: WordItem[]) => {
+    clearTransitionTimer()
     const newQueue = targetWords.map((w) => ({ word: w, repetitionCount: 0 }))
-    setQueue(newQueue)
+    commitQueue(newQueue)
     if (targetWords[0]) {
       const { pool, placed } = createTilesForWord(targetWords[0].term)
-      setPoolTiles(pool)
-      setPlacedTiles(placed)
+      commitTiles(pool, placed)
     }
     setCurrentIndex(0)
     setStats({ mastered: 0, review: 0 })
@@ -460,7 +483,7 @@ export function SpellingView({ words, deckId, deckName, onBack }: SpellingViewPr
           </div>
         </div>
 
-        <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 leading-snug break-words px-2">
+        <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 leading-snug break-words px-2">
           {currentWord.definition}
         </h3>
 
@@ -487,13 +510,13 @@ export function SpellingView({ words, deckId, deckName, onBack }: SpellingViewPr
               const char = currentWord.term[index]
               const tile = placedTiles[index]
 
-              if (char === '-') {
+              if (/[^a-zA-Z0-9]/.test(char)) {
                 return (
                   <span
                     key={index}
-                    className="px-0.5 text-xl font-bold text-slate-400 dark:text-slate-500 select-none flex items-center"
+                    className="px-0.5 text-lg font-bold text-slate-400 dark:text-slate-500 select-none flex items-center"
                   >
-                    -
+                    {char}
                   </span>
                 )
               }

@@ -35,12 +35,19 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
   const [isCompleted, setIsCompleted] = useState(false)
 
   // Touch gesture state
-  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null)
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null)
+  const ignoreClickUntilRef = useRef(0)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
 
   const currentItem = queue[currentIndex]
   const currentWord = currentItem?.word
+
+  useEffect(() => {
+    return () => {
+      audioService.stopSpeech()
+    }
+  }, [])
 
   // Auto pronounce word on card appear (respects global mute)
   useEffect(() => {
@@ -176,7 +183,6 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
     touchStartRef.current = {
       x: touch.clientX,
       y: touch.clientY,
-      time: Date.now(),
     }
     setIsDragging(true)
   }
@@ -196,6 +202,11 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
     const absY = Math.abs(y)
     const threshold = 70
 
+    if (absX > 12 || absY > 12) {
+      // Suppress synthetic click right after swipe/drag so card never double-flips
+      ignoreClickUntilRef.current = performance.now() + 360
+    }
+
     // Swipe up or down to flip
     if (absY > threshold && absY > absX * 1.2) {
       handleFlip()
@@ -212,6 +223,11 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
     setDragOffset({ x: 0, y: 0 })
     setIsDragging(false)
     touchStartRef.current = null
+  }
+
+  const handleCardClick = () => {
+    if (performance.now() < ignoreClickUntilRef.current) return
+    handleFlip()
   }
 
   const startSessionWithWords = (targetWords: WordItem[]) => {
@@ -324,7 +340,7 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
         )}
 
         <div
-          onClick={handleFlip}
+          onClick={handleCardClick}
           data-no-pull="true"
           data-testid="flashcard-3d"
           style={{
@@ -422,8 +438,12 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
               </div>
             </div>
 
-            <div className="my-auto space-y-4 px-1 w-full">
-              <div className="text-xl font-bold text-slate-900 dark:text-slate-100 leading-snug break-words">
+            <div className="my-auto space-y-3 px-1 w-full max-h-64 overflow-y-auto">
+              <div
+                className={`font-bold text-slate-900 dark:text-slate-100 leading-snug break-words ${
+                  currentWord.definition.length > 125 ? 'text-base sm:text-lg' : 'text-xl'
+                }`}
+              >
                 {currentWord.definition}
               </div>
 

@@ -3,6 +3,7 @@ import { ArrowLeft, Crosshair, Heart, Pause, Play, RotateCcw, Trophy, Volume2 } 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { INITIAL_WORDS } from '../../data/initialDecks'
 import type { WordItem } from '../../types'
+import { formatArcadeMeaning } from '../../utils/arcadeText'
 import { audioService } from '../../utils/audio'
 import { storageService } from '../../utils/storage'
 
@@ -918,7 +919,7 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
             <span className="truncate">Mục tiêu cần bắn hạ ({deckName})</span>
           </div>
           <div className="text-sm font-bold text-white leading-snug line-clamp-2 mt-0.5">
-            {targetWord ? targetWord.definition : 'Đang dò mục tiêu...'}
+            {targetWord ? formatArcadeMeaning(targetWord.definition, 102) : 'Đang dò mục tiêu...'}
           </div>
         </div>
         {targetWord && (

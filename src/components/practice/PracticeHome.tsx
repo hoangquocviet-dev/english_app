@@ -15,6 +15,7 @@ import {
 import { useState } from 'react'
 import type { Deck, StudyMode, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
+import { forceReloadApp } from '../../utils/reload'
 import type { DailyProgress } from '../../utils/storage'
 
 interface PracticeHomeProps {
@@ -199,7 +200,7 @@ export function PracticeHome({
                   navigator.vibrate(25)
                 } catch {}
               }
-              window.location.reload()
+              void forceReloadApp()
             }}
             className="py-2 px-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-900/60 dark:hover:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-center gap-1.5 border border-slate-200 dark:border-slate-700/80 transition-all active:scale-98"
             title="Tải lại toàn bộ ứng dụng"
