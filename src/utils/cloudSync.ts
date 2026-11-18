@@ -265,6 +265,8 @@ class CloudSyncManager {
           s: w.status,
           r: w.reviewCount,
           ...(w.lastReviewed ? { t: w.lastReviewed } : {}),
+          ...(typeof w.srsLevel === 'number' ? { l: w.srsLevel } : {}),
+          ...(typeof w.nextReview === 'number' ? { n: w.nextReview } : {}),
         }
       }
     }

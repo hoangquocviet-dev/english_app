@@ -3,6 +3,8 @@ import {
   BookOpen,
   CheckCircle2,
   ChevronRight,
+  Clock,
+  FileText,
   Flame,
   Headphones,
   Keyboard,
@@ -33,7 +35,7 @@ interface PracticeHomeProps {
   onChangeDailyGoal: (goal: number) => void
   onSelectDeck: (deckId: string) => void
   onResetDeck: (deckId: string) => void
-  onStartMode: (mode: StudyMode, onlyLearning?: boolean) => void
+  onStartMode: (mode: StudyMode, filterMode?: 'all' | 'learning' | 'due') => void
   onGoToAddWord: () => void
   onGoToLibrary: () => void
 }
@@ -56,13 +58,34 @@ export function PracticeHome({
   onGoToLibrary,
 }: PracticeHomeProps) {
   const [showResetConfirm, setShowResetConfirm] = useState(false)
-  const [onlyLearning, setOnlyLearning] = useState(false)
+  const [filterMode, setFilterMode] = useState<'all' | 'learning' | 'due'>('all')
 
   const masteredCount = words.filter((w) => w.status === 'mastered').length
   const learningCount = words.filter((w) => w.status === 'learning').length
   const unmasteredCount = words.length - masteredCount
-  const effectiveOnlyLearning = onlyLearning && learningCount > 0
-  const activePoolCount = effectiveOnlyLearning ? learningCount : unmasteredCount
+
+  const [now] = useState(() => Date.now())
+  const dueReviewCount = words.filter(
+    (w) => w.status === 'mastered' && (!w.nextReview || w.nextReview <= now)
+  ).length
+
+  let effectiveFilterMode: 'all' | 'learning' | 'due' = 'all'
+  let activePoolCount = unmasteredCount
+
+  if (filterMode === 'due' && dueReviewCount > 0) {
+    effectiveFilterMode = 'due'
+    activePoolCount = dueReviewCount
+  } else if (filterMode === 'learning' && learningCount > 0) {
+    effectiveFilterMode = 'learning'
+    activePoolCount = learningCount
+  } else if (unmasteredCount === 0 && dueReviewCount > 0) {
+    effectiveFilterMode = 'due'
+    activePoolCount = dueReviewCount
+  } else {
+    effectiveFilterMode = 'all'
+    activePoolCount = unmasteredCount
+  }
+
   const masteryPercent = words.length > 0 ? Math.round((masteredCount / words.length) * 100) : 0
 
   const dailyPercent = Math.min(
@@ -81,7 +104,7 @@ export function PracticeHome({
   const handleStart = (mode: StudyMode) => {
     if (activePoolCount === 0) return
     audioService.playClick()
-    onStartMode(mode, effectiveOnlyLearning)
+    onStartMode(mode, effectiveFilterMode)
   }
 
   const handleConfirmReset = () => {
@@ -157,7 +180,7 @@ export function PracticeHome({
           <select
             value={activeDeck.id}
             onChange={(e) => {
-              setOnlyLearning(false)
+              setFilterMode('all')
               onSelectDeck(e.target.value)
             }}
             className="w-full py-2.5 px-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-semibold text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500 pr-10"
@@ -269,8 +292,8 @@ export function PracticeHome({
             </button>
           </div>
         )
-      ) : unmasteredCount === 0 ? (
-        /* All Cards Mastered & Hidden State */
+      ) : unmasteredCount === 0 && dueReviewCount === 0 ? (
+        /* All Cards Mastered & None Due */
         <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 text-center border border-emerald-500/30 shadow-xs space-y-3 animate-fadeIn">
           <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 text-emerald-500 flex items-center justify-center mx-auto">
             <Trophy className="w-7 h-7" />
@@ -279,7 +302,7 @@ export function PracticeHome({
             Bạn đã thuộc hết {words.length}/{words.length} thẻ!
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-            Các thẻ đã vuốt <strong>Đã thuộc</strong> đã được ẩn đi để không hiện lặp lại nữa. Bạn có thể chuyển sang học chủ đề khác, hoặc bấm nút Reset bên dưới nếu muốn hiện lại toàn bộ thẻ để ôn từ đầu.
+            Các thẻ đã vuốt <strong>Đã thuộc</strong> đã được ẩn đi để không hiện lặp lại nữa. Hệ thống ôn tập ngắt quãng (SRS) sẽ tự động nhắc lại khi đến hạn. Bạn có thể chuyển sang học chủ đề khác, hoặc bấm nút Reset bên dưới nếu muốn hiện lại toàn bộ thẻ để ôn từ đầu.
           </p>
           <button
             type="button"
@@ -295,23 +318,87 @@ export function PracticeHome({
         </div>
       ) : (
         <div className="space-y-3">
-          {/* Clean Row 1: Section Label + Hard-Words Filter + Shuffle */}
-          <div className="flex items-center justify-between gap-1.5 px-0.5">
-            <span className="text-[11px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide truncate">
+          {/* SRS Due Notification Banner */}
+          {effectiveFilterMode === 'due' && (
+            <div className="rounded-2xl p-3.5 bg-indigo-500/10 border border-indigo-500/25 flex items-center gap-2.5 animate-fadeIn">
+              <Clock className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+              <p className="text-xs text-indigo-700 dark:text-indigo-300 leading-snug">
+                Đang ôn tập ngắt quãng (SRS) cho <strong>{dueReviewCount} thẻ</strong> đã đến chu kỳ nhắc lại để củng cố trí nhớ dài hạn.
+              </p>
+            </div>
+          )}
+
+          {/* Clean Header: Section Label + Shuffle Toggle */}
+          <div className="flex items-center justify-between gap-2 px-0.5">
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
               Chế độ học ({activePoolCount} thẻ)
             </span>
 
-            <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                audioService.playClick()
+                onToggleShuffle()
+              }}
+              className={`py-1 px-2.5 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all active:scale-95 ${
+                shuffleEnabled
+                  ? 'bg-indigo-500/15 border-indigo-500/40 text-indigo-600 dark:text-indigo-400'
+                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400'
+              }`}
+              title="Trộn ngẫu nhiên thứ tự thẻ chưa thuộc"
+            >
+              <Shuffle className="w-3.5 h-3.5 shrink-0" />
+              <span>Trộn</span>
+            </button>
+          </div>
+
+          {/* Dedicated Filter Pills Row (Eliminates horizontal squishing on 360px) */}
+          {(dueReviewCount > 0 || learningCount > 0) && (
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  audioService.playClick()
+                  setFilterMode('all')
+                }}
+                className={`py-1.5 px-3 rounded-xl text-xs font-semibold border whitespace-nowrap transition-all active:scale-95 ${
+                  effectiveFilterMode === 'all'
+                    ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-transparent shadow-2xs'
+                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300'
+                }`}
+              >
+                Tất cả ({unmasteredCount})
+              </button>
+
+              {dueReviewCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    audioService.playClick()
+                    setFilterMode((prev) => (prev === 'due' ? 'all' : 'due'))
+                  }}
+                  title="Ôn tập ngắt quãng (SRS): các thẻ đã thuộc đến chu kỳ cần nhắc lại"
+                  className={`py-1.5 px-3 rounded-xl text-xs font-semibold border flex items-center gap-1.5 whitespace-nowrap transition-all active:scale-95 ${
+                    effectiveFilterMode === 'due'
+                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
+                      : 'bg-white dark:bg-slate-800 border-indigo-500/35 text-indigo-600 dark:text-indigo-400'
+                  }`}
+                >
+                  <Clock className="w-3.5 h-3.5 shrink-0" />
+                  <span>Đến hạn ({dueReviewCount})</span>
+                </button>
+              )}
+
               {learningCount > 0 && (
                 <button
                   type="button"
                   onClick={() => {
                     audioService.playClick()
-                    setOnlyLearning((prev) => !prev)
+                    setFilterMode((prev) => (prev === 'learning' ? 'all' : 'learning'))
                   }}
                   title="Chỉ lọc riêng những từ bạn từng trả lời sai hoặc đánh dấu Chưa nhớ"
-                  className={`py-1.5 px-2.5 rounded-xl text-xs font-semibold border flex items-center gap-1 whitespace-nowrap transition-all active:scale-95 ${
-                    effectiveOnlyLearning
+                  className={`py-1.5 px-3 rounded-xl text-xs font-semibold border flex items-center gap-1.5 whitespace-nowrap transition-all active:scale-95 ${
+                    effectiveFilterMode === 'learning'
                       ? 'bg-amber-500 text-white border-amber-500 shadow-2xs'
                       : 'bg-white dark:bg-slate-800 border-amber-500/35 text-amber-600 dark:text-amber-400'
                   }`}
@@ -320,25 +407,8 @@ export function PracticeHome({
                   <span>Từ khó ({learningCount})</span>
                 </button>
               )}
-
-              <button
-                type="button"
-                onClick={() => {
-                  audioService.playClick()
-                  onToggleShuffle()
-                }}
-                className={`py-1.5 px-2.5 rounded-xl text-xs font-semibold border flex items-center gap-1.5 whitespace-nowrap transition-all active:scale-95 ${
-                  shuffleEnabled
-                    ? 'bg-indigo-500/15 border-indigo-500/40 text-indigo-600 dark:text-indigo-400'
-                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400'
-                }`}
-                title="Trộn ngẫu nhiên thứ tự thẻ chưa thuộc"
-              >
-                <Shuffle className="w-3.5 h-3.5 shrink-0" />
-                <span>Trộn</span>
-              </button>
             </div>
-          </div>
+          )}
 
           {/* Clean Row 2: Full-width Segmented Batch Selector when > 25 cards */}
           {activePoolCount > 25 && (
@@ -449,12 +519,35 @@ export function PracticeHome({
                   <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors truncate">
                     4. Luyện nghe phản xạ
                   </h4>
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-violet-500/15 text-violet-600 dark:text-violet-400 shrink-0">
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">
+                  Nghe phát âm chuẩn & chậm 0.6x để nhận diện từ vựng bằng tai
+                </p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-slate-400 shrink-0 ml-2 group-hover:translate-x-1 transition-transform" />
+          </button>
+
+          {/* Mode 5: Cloze Test Mode */}
+          <button
+            onClick={() => handleStart('cloze')}
+            className="w-full bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 hover:border-amber-500/50 text-left transition-all flex items-center justify-between group shadow-xs active:scale-98"
+          >
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                <FileText className="w-5 h-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors truncate">
+                    5. Điền từ vào câu (Cloze Test)
+                  </h4>
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 shrink-0">
                     MỚI
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">
-                  Nghe phát âm chuẩn & chậm 0.6x để nhận diện từ vựng bằng tai
+                  Luyện phản xạ điền từ đúng ngữ cảnh thực tế, tự động phát âm cả câu
                 </p>
               </div>
             </div>

@@ -44,6 +44,9 @@ const SpellingView = lazyWithRetry(() =>
 const ListeningView = lazyWithRetry(() =>
   import('./components/practice/ListeningView').then((m) => ({ default: m.ListeningView }))
 )
+const ClozeView = lazyWithRetry(() =>
+  import('./components/practice/ClozeView').then((m) => ({ default: m.ClozeView }))
+)
 const SkyDefenderGame = lazyWithRetry(() =>
   import('./components/games/SkyDefenderGame').then((m) => ({ default: m.SkyDefenderGame }))
 )
@@ -187,11 +190,24 @@ export function App() {
     setDailyProgress(nextDaily)
   }
 
-  const handleStartMode = (mode: StudyMode, onlyLearning = false) => {
+  const handleStartMode = (
+    mode: StudyMode,
+    filterMode: 'all' | 'learning' | 'due' = 'all'
+  ) => {
     const freshWords = storageService.getWords(activeDeckId)
-    let targetList = freshWords.filter((w) =>
-      onlyLearning ? w.status === 'learning' : w.status !== 'mastered'
-    )
+    const now = Date.now()
+    let targetList: WordItem[]
+
+    if (filterMode === 'due') {
+      targetList = freshWords.filter(
+        (w) => w.status === 'mastered' && (!w.nextReview || w.nextReview <= now)
+      )
+    } else if (filterMode === 'learning') {
+      targetList = freshWords.filter((w) => w.status === 'learning')
+    } else {
+      targetList = freshWords.filter((w) => w.status !== 'mastered')
+    }
+
     if (targetList.length === 0) return
 
     if (studyPrefs.shuffle) {
@@ -311,6 +327,16 @@ export function App() {
 
               {activeStudyMode === 'listening' && activeDeck && (
                 <ListeningView
+                  words={sessionWords}
+                  allDeckWords={words}
+                  deckId={activeDeck.id}
+                  deckName={activeDeck.name}
+                  onBack={handleExitStudy}
+                />
+              )}
+
+              {activeStudyMode === 'cloze' && activeDeck && (
+                <ClozeView
                   words={sessionWords}
                   allDeckWords={words}
                   deckId={activeDeck.id}

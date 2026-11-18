@@ -1,4 +1,4 @@
-export type StudyMode = 'flashcard' | 'quiz' | 'spelling' | 'listening'
+export type StudyMode = 'flashcard' | 'quiz' | 'spelling' | 'listening' | 'cloze'
 
 export type ArcadeGameId = 'sky-defender' | 'speed-match' | 'blitz-2s'
 
@@ -20,6 +20,8 @@ export interface WordItem {
   status: StudyStatus
   reviewCount: number
   lastReviewed?: number
+  srsLevel?: number
+  nextReview?: number
 }
 
 export interface Deck {
@@ -57,6 +59,8 @@ export interface BuiltInWordProgress {
   s: StudyStatus
   r: number
   t?: number
+  l?: number
+  n?: number
 }
 
 export interface LeaderboardEntry {

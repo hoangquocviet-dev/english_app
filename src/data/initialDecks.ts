@@ -2539,7 +2539,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Mỗi class chỉ làm đúng một nhiệm vụ duy nhất",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Apply the Single Responsibility principle so each class has only one reason to change."
   },
   {
     "id": "cc-2",
@@ -2549,7 +2550,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Mở cho mở rộng, đóng cho sửa đổi",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The Open-Closed Principle ensures modules are open for extension but closed for modification."
   },
   {
     "id": "cc-3",
@@ -2559,7 +2561,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Class con phải thay thế được class cha",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Violating the Liskov Substitution principle leads to unexpected runtime errors in derived classes."
   },
   {
     "id": "cc-4",
@@ -2569,7 +2572,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Chia nhỏ interface thay vì dùng interface quá lớn",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Use Interface Segregation to keep client interfaces small, cohesive, and focused."
   },
   {
     "id": "cc-5",
@@ -2579,7 +2583,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Phụ thuộc vào abstraction chứ không phụ thuộc class cụ thể",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "High-level architectural layers should follow Dependency Inversion by relying on abstractions."
   },
   {
     "id": "cc-6",
@@ -2589,7 +2594,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tiêm phụ thuộc từ bên ngoài vào class",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "We use Dependency Injection to supply mock database instances during automated unit testing."
   },
   {
     "id": "cc-7",
@@ -2599,7 +2605,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Đảm bảo class chỉ có duy nhất một instance",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The Singleton Pattern restricts class instantiation to a single global access point."
   },
   {
     "id": "cc-8",
@@ -2609,7 +2616,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Ủy quyền khởi tạo đối tượng cho class con",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Use the Factory Pattern to encapsulate complex object creation logic across platforms."
   },
   {
     "id": "cc-9",
@@ -2619,7 +2627,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tự động thông báo cho các bên theo dõi khi có thay đổi",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The Observer Pattern notifies all subscribed listeners whenever state transitions occur."
   },
   {
     "id": "cc-10",
@@ -2629,7 +2638,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Cho phép hoán đổi linh hoạt các thuật toán cùng nhóm",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "We implement the Strategy Pattern to swap payment calculation algorithms at runtime."
   },
   {
     "id": "cc-11",
@@ -2639,7 +2649,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Nợ kỹ thuật (hậu quả của việc code ẩu để kịp tiến độ)",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Refactoring messy prototypes prevents mounting Technical Debt in future sprint cycles."
   },
   {
     "id": "cc-12",
@@ -2649,7 +2660,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Dấu hiệu bất thường trong code báo hiệu thiết kế kém",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Having a method exceed one hundred lines is an obvious Code Smell."
   },
   {
     "id": "cc-13",
@@ -2659,7 +2671,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Khả năng bảo trì và nâng cấp code trong tương lai",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Writing modular functions with clear boundaries dramatically boosts long-term Maintainability."
   },
   {
     "id": "cc-14",
@@ -2669,7 +2682,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Không khuyến khích sử dụng nữa (sẽ bỏ ở bản sau)",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Engineers must deprecate the legacy authentication endpoints before the scheduled sunset."
   },
   {
     "id": "cc-15",
@@ -2679,7 +2693,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Đoạn code khung mẫu lặp đi lặp lại nhiều nơi",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Modern web frameworks eliminate repetitive boilerplate code with smart decorators."
   },
   {
     "id": "cc-16",
@@ -2689,7 +2704,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tái cấu trúc code (cải thiện thiết kế không đổi hành vi)",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Take time to refactor this deeply nested conditional block to improve readability."
   },
   {
     "id": "cc-17",
@@ -2699,7 +2715,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tính đóng gói trong lập trình hướng đối tượng",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Encapsulation safeguards internal object fields from unauthorized direct modifications."
   },
   {
     "id": "cc-18",
@@ -2709,7 +2726,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tính đa hình",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Object-oriented polymorphism allows diverse subclasses to respond to identical method invocations."
   },
   {
     "id": "cc-19",
@@ -2719,7 +2737,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tính kế thừa",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Prefer flexible object composition over deeply nested class inheritance hierarchies."
   },
   {
     "id": "cc-20",
@@ -2729,7 +2748,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tính trừu tượng (ẩn chi tiết cài đặt, chỉ lộ giao diện)",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "A good abstraction exposes clean user operations while hiding complicated underlying mechanics."
   },
   {
     "id": "cc-21",
@@ -2739,7 +2759,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Bổ sung tính năng mới cho đối tượng một cách linh hoạt",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The Decorator Pattern attaches dynamic logging behavior without mutating the original class."
   },
   {
     "id": "cc-22",
@@ -2749,7 +2770,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Chuyển đổi giao diện giữa 2 class không tương thích",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Use the Adapter Pattern to bridge communication between legacy formats and new APIs."
   },
   {
     "id": "cc-23",
@@ -2759,7 +2781,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Mô hình mẫu xấu, thói quen lập trình phản tác dụng",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Hardcoding database secrets directly in source files is a hazardous Anti-Pattern."
   },
   {
     "id": "cc-24",
@@ -2769,7 +2792,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Class quá lớn ôm đồm hầu hết mọi logic ứng dụng",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "This massive monolithic controller has unfortunately degraded into a bloated God Object."
   },
   {
     "id": "cc-25",
@@ -2779,7 +2803,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Code lộn xộn, đan xen khó theo dõi luồng",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Lacking architectural structure produced confusing Spaghetti Code that is risky to modify."
   },
   {
     "id": "cc-26",
@@ -2789,7 +2814,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Don't Repeat Yourself: Đừng lặp lại chính mình",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Follow the DRY Principle by extracting duplicated email validation into a utility module."
   },
   {
     "id": "cc-27",
@@ -2799,7 +2825,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Keep It Simple, Stupid: Giữ code đơn giản nhất",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Apply the KISS Principle so junior engineers can easily troubleshoot edge cases."
   },
   {
     "id": "cc-28",
@@ -2809,7 +2836,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "You Aren't Gonna Need It: Đừng viết tính năng khi chưa cần",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Do not build hypothetical features ahead of time; strictly obey the YAGNI Principle."
   },
   {
     "id": "cc-29",
@@ -2819,7 +2847,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Gánh nặng nhận thức khi đọc hiểu một đoạn code",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Excessive branching increases cognitive load during peer code reviews on GitHub."
   },
   {
     "id": "cc-30",
@@ -2829,7 +2858,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Code rõ ràng tự giải thích chính nó không cần comment",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Expressive variable naming helps produce self-documenting code requiring minimal commentary."
   },
   {
     "id": "cc-31",
@@ -2839,7 +2869,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Mức độ gắn kết cao giữa các chức năng bên trong cùng một module hoặc lớp, giúp mã nguồn dễ hiểu, dễ kiểm thử và bảo trì hơn.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "A module with high cohesion focuses strictly on achieving one well-defined responsibility."
   },
   {
     "id": "cc-32",
@@ -2849,7 +2880,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Sự liên kết lỏng lẻo giữa các module, giúp giảm tính phụ thuộc lẫn nhau và cho phép thay đổi một phần hệ thống mà ít tác động đến các phần khác.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Asynchronous event queues establish loose coupling between autonomous microservices."
   },
   {
     "id": "cc-33",
@@ -2859,7 +2891,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Nguyên tắc thiết kế quy định một phương thức chỉ nên là lệnh thực thi hành động (thay đổi trạng thái) hoặc truy vấn trả về dữ liệu, không làm cả hai cùng lúc.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Maintain command query separation by ensuring read queries never trigger side effects."
   },
   {
     "id": "cc-34",
@@ -2869,7 +2902,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Giá trị số cố định xuất hiện trực tiếp trong mã nguồn mà không có hằng số hay tên gọi rõ ràng, gây khó hiểu mục đích sử dụng và khó bảo trì.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Replace this arbitrary magic number with a named constant representing seconds in an hour."
   },
   {
     "id": "cc-35",
@@ -2879,7 +2913,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tốc độ mã nguồn bị sửa đổi, thêm mới hoặc xóa bỏ trong một khoảng thời gian; chỉ số này cao thường cảnh báo vùng mã kém ổn định hoặc yêu cầu thay đổi liên tục.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "A file experiencing intense code churn often signals volatile product requirements."
   },
   {
     "id": "cc-36",
@@ -2889,7 +2924,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Mẫu tái cấu trúc hệ thống bằng cách thay thế dần từng chức năng của hệ thống cũ (legacy) bằng các dịch vụ mới cho đến khi hệ thống cũ bị loại bỏ hoàn toàn.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Incrementally replace legacy systems by adopting the Strangler Fig Pattern in production."
   },
   {
     "id": "cc-37",
@@ -2899,7 +2935,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kỹ thuật tái cấu trúc gộp nhóm nhiều tham số có liên quan truyền vào hàm thành một đối tượng duy nhất nhằm giảm bớt độ phức tạp của danh sách tham số.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Use Introduce Parameter Object when methods take too many related coordinate parameters."
   },
   {
     "id": "cc-38",
@@ -2909,7 +2946,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Nguyên tắc lập trình hướng đối tượng khuyên nên ra lệnh cho đối tượng thực hiện hành động dựa trên dữ liệu của chính nó, thay vì lấy dữ liệu ra ngoài rồi xử lý.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Respect Tell, Don't Ask by commanding objects rather than interrogating their internal data."
   },
   {
     "id": "cc-39",
@@ -2919,7 +2957,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Phương thức thiết kế API dựa trên việc nối chuỗi các phương thức (method chaining), giúp mã nguồn dễ đọc và tự nhiên giống như văn bản nói.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Method chaining in our database builder provides a natural, expressive fluent interface."
   },
   {
     "id": "cc-40",
@@ -2929,7 +2968,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Mẫu thiết kế sử dụng một đối tượng mặc định thay vì giá trị null nhằm tránh việc phải kiểm tra null liên tục trong mã nguồn và giảm nguy cơ lỗi runtime.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The Null Object Pattern provides neutral fallback instances instead of returning null pointers."
   },
   {
     "id": "cc-41",
@@ -2939,7 +2979,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Hiện tượng ghép nối thời gian, xảy ra khi các phương thức hoặc khối lệnh phải được thực thi theo một thứ tự nghiêm ngặt nhất định, làm giảm tính linh hoạt và dễ gây lỗi khi thay đổi.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Requiring clients to call configure before execute causes risky temporal coupling."
   },
   {
     "id": "cc-42",
@@ -2949,7 +2990,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Chuỗi ký tự giá trị trực tiếp xuất hiện rải rác trong mã nguồn mà không được đặt tên bằng một hằng số rõ nghĩa, gây khó khăn cho việc bảo trì và dễ dẫn đến lỗi chính tả.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Never hardcode an unvalidated magic string inside core permission checks."
   },
   {
     "id": "cc-43",
@@ -2959,7 +3001,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Đoạn mã nguồn không bao giờ có thể được thực thi hoặc không còn bất kỳ tác động nào đến kết quả của chương trình, cần được loại bỏ để giữ mã nguồn sạch sẽ.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Purge unreachable dead code to prevent developer confusion and reduce bundle size."
   },
   {
     "id": "cc-44",
@@ -2969,7 +3012,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Thiết kế giao diện lập trình hướng đến khả năng dễ đọc thông qua kỹ thuật method chaining (gói chuỗi phương thức), giúp mã nguồn mô phỏng ngôn ngữ tự nhiên.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The HTTP library provides an intuitive fluent api for configuring headers and query params."
   },
   {
     "id": "cc-45",
@@ -2979,7 +3023,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Nguyên lý thiết kế ưu tiên sử dụng việc lắp ráp các đối tượng (composition) thay vì kế thừa lớp phức tạp (inheritance) nhằm tăng tính linh hoạt và giảm sự phụ thuộc sâu.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Architects consistently recommend composition over inheritance to enhance runtime flexibility."
   },
   {
     "id": "cc-46",
@@ -2989,7 +3034,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kỹ thuật tái cấu trúc mã nguồn bằng cách tách một lớp có quá nhiều trách nhiệm thành một lớp mới nhỏ hơn, chuyên biệt hơn để tuân thủ nguyên lý đơn trách nhiệm.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Perform extract class when an entity accumulates unrelated billing and shipping logic."
   },
   {
     "id": "cc-47",
@@ -2999,7 +3045,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Đối tượng tham số, kỹ thuật gom nhóm một danh sách dài các tham số của hàm thành một đối tượng duy nhất nhằm giảm độ phức tạp khi gọi hàm.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Consolidate user registration options into a single typed parameter object."
   },
   {
     "id": "cc-48",
@@ -3009,7 +3056,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kỹ thuật tái cấu trúc thay thế các cấu trúc điều kiện rẽ nhánh phức tạp (if-else/switch) bằng đa hình thông qua các lớp dẫn xuất.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Apply replace conditional with polymorphism to eliminate repetitive switch statements on types."
   },
   {
     "id": "cc-49",
@@ -3019,7 +3067,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Hàm thuần túy, hàm luôn trả về cùng một kết quả với cùng một đầu vào và không gây ra bất kỳ tác động phụ (side effect) nào bên ngoài phạm vi của nó.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "A pure function produces identical results for identical inputs without mutating outside state."
   },
   {
     "id": "cc-50",
@@ -3029,7 +3078,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kỹ thuật đặt tên biến trung gian để giải thích ý nghĩa của một biểu thức logic hoặc tính toán phức tạp, giúp đoạn mã tự diễn giải rõ ràng hơn.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Clarify complex pricing formulas by introducing explanation variable steps."
   },
   {
     "id": "cc-51",
@@ -3039,7 +3089,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kỹ thuật refactor mã nguồn bằng cách đưa một biểu thức phức tạp hoặc khó đọc gán vào một biến cục bộ có tên mang ý nghĩa rõ ràng.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Use extract variable to break down complicated regular expression validation checks."
   },
   {
     "id": "cc-52",
@@ -3049,7 +3100,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kỹ thuật đặt tên cho một phần của biểu thức phức tạp để giải thích mục đích của nó, giúp mã dễ đọc hơn đối với lập trình viên khác.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "We can introduce explaining variable to make geometric distance formulas self-evident."
   },
   {
     "id": "cc-53",
@@ -3059,7 +3111,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kỹ thuật tách một biến tạm bị gán giá trị nhiều lần cho các mục đích khác nhau thành các biến riêng biệt để tránh sự nhầm lẫn về trạng thái.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Avoid recycling variables across unrelated loops; always split temporary variable usage."
   },
   {
     "id": "cc-54",
@@ -3069,7 +3122,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Quy tắc refactor nhằm tránh việc ghi đè trực tiếp giá trị của tham số truyền vào hàm, giúp ngăn chặn các lỗi logic khó phát hiện.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Apply remove assignment to parameters to guard incoming arguments from unintentional mutation."
   },
   {
     "id": "cc-55",
@@ -3079,7 +3133,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kỹ thuật chuyển đổi một phương thức quá dài hoặc phức tạp thành một lớp độc lập (class) riêng biệt để dễ dàng chia nhỏ logic.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "When local dependencies complicate extraction, replace method with method object cleanly."
   },
   {
     "id": "cc-56",
@@ -3089,7 +3144,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kỹ thuật thay thế một thuật toán hiện tại bằng một giải pháp rõ ràng, ngắn gọn và tối ưu hơn khi viết Clean Code.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Use substitute algorithm to replace a slow recursive lookup with dynamic programming."
   },
   {
     "id": "cc-57",
@@ -3099,7 +3155,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kỹ thuật che giấu danh sách hoặc tập hợp dữ liệu bên trong một đối tượng, chỉ cho phép truy cập hoặc thay đổi thông qua các phương thức được kiểm soát.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Apply encapsulate collection to return read-only views rather than raw mutable arrays."
   },
   {
     "id": "cc-58",
@@ -3109,7 +3166,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kỹ thuật tạo các phương thức trung gian trong lớp hiện tại để che giấu đối tượng ủy quyền (delegate) bên dưới, giảm sự phụ thuộc trực tiếp.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Employ hide delegate so client callers do not need intimate knowledge of nested objects."
   },
   {
     "id": "cc-59",
@@ -3119,7 +3177,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kỹ thuật ngược lại với hide delegate, loại bỏ các lớp trung gian không cần thiết khi chúng chỉ chuyển tiếp lệnh gọi mà không làm gì thêm.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "When intermediary methods provide zero value, apply remove middle man to simplify calls."
   },
   {
     "id": "cc-60",
@@ -3129,7 +3188,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kỹ thuật bổ sung một phương thức cần thiết vào một lớp có sẵn (thường là thư viện bên thứ ba) mà không thể sửa trực tiếp mã nguồn của lớp đó.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Create an extension wrapper to introduce foreign method when library classes cannot be edited."
   },
   {
     "id": "cc-61",
@@ -3139,7 +3199,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Quá trình tự động hoặc thủ công loại bỏ các đoạn mã nguồn không còn được thực thi hoặc không còn giá trị sử dụng trong hệ thống.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Modern tree-shaking bundlers perform Dead Code Stripping to optimize client download speeds."
   },
   {
     "id": "cc-62",
@@ -3149,7 +3210,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Dấu hiệu cảnh báo thiết kế mã nguồn kém, nơi các phương thức hoặc hàm bắt buộc phải được gọi theo một thứ tự thời gian cụ thể mới hoạt động chính xác.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Documenting mandatory lifecycle invocation orders helps detect Temporal Coupling Smells early."
   },
   {
     "id": "cc-63",
@@ -3159,7 +3221,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kỹ thuật chuyển đổi các kiểu dữ liệu nguyên thủy (như chuỗi, số nguyên) thành các đối tượng miền (domain objects) có ý nghĩa nghiệp vụ rõ ràng hơn.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Carry out Primitive Obsession Refactoring by replacing naked strings with typed Value Objects."
   },
   {
     "id": "cc-64",
@@ -3169,7 +3232,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kỹ thuật gom nhóm nhiều tham số riêng lẻ của một hàm thành một đối tượng duy nhất nhằm giảm độ phức tạp và cải thiện tính bảo trì của chữ ký hàm.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Clean up verbose function signatures through structured Parameter Object Extraction."
   },
   {
     "id": "cc-65",
@@ -3179,7 +3243,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Hành động thay thế các hằng số vô danh xuất hiện trực tiếp trong mã nguồn bằng các hằng số có tên mô tả rõ nghĩa ngữ cảnh.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Execute Magic Number Replacement so retry interval milliseconds carry descriptive intent."
   },
   {
     "id": "cc-66",
@@ -3189,7 +3254,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kỹ thuật tái cấu trúc giúp ẩn giấu việc ép kiểu dữ liệu từ lớp cha xuống lớp con bên trong một phương thức, giúp mã gọi bên ngoài gọn gàng hơn.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Use Encapsulate Downcast inside specialized factories to isolate runtime casting warnings."
   },
   {
     "id": "cc-67",
@@ -3199,7 +3265,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Nguyên tắc thiết kế truyền nguyên một đối tượng thay vì bóc tách từng thuộc tính riêng lẻ của nó vào lời gọi phương thức để giữ mã sạch sẽ.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Prefer Preserve Whole Object when passing complete customer models to validation handlers."
   },
   {
     "id": "cc-68",
@@ -3209,7 +3276,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kỹ thuật loại bỏ các biến cờ điều khiển luồng (boolean flags) bằng cách sử dụng các lệnh trả về sớm (early return) hoặc phá vỡ vòng lặp.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Use early guard returns to cleanly Remove Control Flag variables from searching loops."
   },
   {
     "id": "cc-69",
@@ -3219,7 +3287,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Việc thay thế một thuật toán phức tạp hoặc kém hiệu quả bằng một giải pháp ngắn gọn, tối ưu và dễ hiểu hơn mà không làm thay đổi hành vi.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Boost search performance significantly through targeted Substitute Algorithm Refactoring."
   },
   {
     "id": "cc-70",
@@ -3229,7 +3298,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kỹ thuật thay thế một biến tạm chỉ được gán giá trị một lần bằng chính biểu thức tạo ra nó để loại bỏ sự dài dòng không cần thiết.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "When an intermediate variable only forwards an expression once, perform Inline Temp."
   },
   {
     "id": "cc-71",
@@ -3239,7 +3309,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Một kỹ thuật tái cấu trúc mã nguồn (refactoring) trong đó các phương thức chung của một lớp được gom lại và trích xuất thành một interface riêng biệt để tăng tính linh hoạt và giảm sự phụ thuộc cứng.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Use extract interface to decouple payment processing code from specific provider SDKs."
   },
   {
     "id": "cc-72",
@@ -3249,7 +3320,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kỹ thuật tái cấu trúc mã nguồn khi hai lớp có các tính năng tương tự nhau, bằng cách tạo ra một lớp cha (superclass) chung và chuyển các trường hoặc phương thức trùng lặp lên đó để tránh lặp code (DRY).",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Perform extract superclass when multiple models share identical audit timestamp fields."
   },
   {
     "id": "cc-73",
@@ -3259,7 +3331,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Một thủ tục refactoring nhằm di chuyển một phương thức có hành vi giống hệt nhau từ các lớp con (subclasses) lên lớp cha (superclass) để loại bỏ sự trùng lặp mã nguồn trong hệ thống hướng đối tượng.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Execute pull up method to relocate identical validation logic from children into the parent."
   },
   {
     "id": "cc-74",
@@ -3269,7 +3342,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Thao tác tái cấu trúc mã nguồn chuyển một thuộc tính hoặc biến thành viên được sử dụng ở nhiều lớp con lên lớp cha chung nhằm tập trung hóa dữ liệu và chuẩn hóa cấu trúc.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Apply pull up field to eliminate duplicated identifier properties across sibling classes."
   },
   {
     "id": "cc-75",
@@ -3279,7 +3353,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kỹ thuật di chuyển một phương thức từ lớp cha xuống một hoặc nhiều lớp con cụ thể, thường được áp dụng khi phương thức đó chỉ có ý nghĩa hoặc được sử dụng bởi các lớp con đó.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Use push down method if a capability is only exercised by one specialized child class."
   },
   {
     "id": "cc-76",
@@ -3289,7 +3364,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Hành động dời một thuộc tính từ lớp cha xuống các lớp con liên quan, được áp dụng khi trường dữ liệu đó không cần thiết cho toàn bộ cấu trúc của lớp cha mà chỉ phục vụ riêng cho một số lớp con.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Perform push down field to keep general base classes uncluttered by niche attributes."
   },
   {
     "id": "cc-77",
@@ -3299,7 +3375,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Quy trình thay thế toàn bộ phần cài đặt (body) của một phương thức cũ bằng một thuật toán mới rõ ràng, ngắn gọn và dễ bảo trì hơn mà không làm thay đổi giao diện hoặc hợp đồng (contract) của phương thức.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Replace obsolete calculation procedures with an optimized substitute method."
   },
   {
     "id": "cc-78",
@@ -3309,7 +3386,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Nguyên tắc thiết kế phần mềm yêu cầu tách biệt rõ ràng giữa phương thức truy vấn trạng thái (query - không làm thay đổi trạng thái hệ thống) và phương thức thay đổi dữ liệu (modifier - có tác dụng phụ), giúp mã nguồn dễ đoán và an toàn hơn.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Ensure routines separate query from modifier so telemetry reads never cause write locking."
   },
   {
     "id": "cc-79",
@@ -3319,7 +3397,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kỹ thuật chuyển đổi tầm vực (visibility) của một phương thức từ công khai (public) sang riêng tư (private) hoặc bảo vệ (protected) khi không còn lớp bên ngoài nào gọi đến nó, nhằm che giấu chi tiết cài đặt và đóng gói tốt hơn.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "When helper logic is strictly internal, hide method behind private access control."
   },
   {
     "id": "cc-80",
@@ -3329,7 +3408,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Thủ tục tái cấu trúc loại bỏ các phương thức gán giá trị (setter) cho một trường dữ liệu, thường được dùng để biến trường đó thành bất biến (immutable) sau khi đối tượng được khởi tạo, đảm bảo tính toàn vẹn dữ liệu.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Enforce domain immutability after construction by deciding to remove setting method calls."
   },
   {
     "id": "arch-1",
@@ -3339,7 +3419,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tính lũy đẳng (thao tác thực hiện nhiều lần vẫn ra cùng một kết quả)",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Ensure billing webhooks support Idempotency so duplicate deliveries do not charge twice."
   },
   {
     "id": "arch-2",
@@ -3349,7 +3430,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Cơ chế ngắt mạch (cô lập service lỗi tránh sập hệ thống)",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "A Circuit Breaker trips open when downstream microservices experience cascading timeouts."
   },
   {
     "id": "arch-3",
@@ -3359,7 +3441,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tách rời, giảm sự phụ thuộc lẫn nhau giữa các service",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Use asynchronous Kafka topics to Decouple order checkout from the shipping service."
   },
   {
     "id": "arch-4",
@@ -3369,7 +3452,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Thông lượng (khối lượng công việc xử lý trong một đơn vị thời gian)",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Upgrading server hardware enabled higher transaction Throughput during flash sales."
   },
   {
     "id": "arch-5",
@@ -3379,7 +3463,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Độ trễ (thời gian truyền dữ liệu từ nguồn tới đích)",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Distributing content across edge servers reduces network Latency for international users."
   },
   {
     "id": "arch-6",
@@ -3389,7 +3474,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Xử lý đồng thời nhiều tác vụ",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Proper thread synchronization is essential to handle high user Concurrency safely."
   },
   {
     "id": "arch-7",
@@ -3399,7 +3485,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tình trạng bế tắc (tiến trình chờ nhau giải phóng tài nguyên)",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Two processes locking resources in reverse order will inevitably trigger a Deadlock."
   },
   {
     "id": "arch-8",
@@ -3409,7 +3496,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Phân mảnh cơ sở dữ liệu theo chiều ngang để chia tải",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Database Sharding partitions large customer tables across multiple physical database nodes."
   },
   {
     "id": "arch-9",
@@ -3419,7 +3507,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Nhân bản dữ liệu sang nhiều node để dự phòng",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Active data Replication ensures instant failover if the primary database crashes."
   },
   {
     "id": "arch-10",
@@ -3429,7 +3518,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Khả năng mở rộng của hệ thống khi tải tăng",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Horizontal auto-scaling provides the cloud Scalability needed for holiday traffic spikes."
   },
   {
     "id": "arch-11",
@@ -3439,7 +3529,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Bộ cân bằng tải phân phối lưu lượng",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "An intelligent Load Balancer distributes incoming HTTP requests across healthy worker pods."
   },
   {
     "id": "arch-12",
@@ -3449,7 +3540,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Hạ tầng quản lý giao tiếp nội bộ giữa microservices",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Istio acts as a Service Mesh managing encrypted mTLS traffic between microservices."
   },
   {
     "id": "arch-13",
@@ -3459,7 +3551,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kiến trúc nguyên khối",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Splitting the legacy Monolith into specialized services improved team deployment velocity."
   },
   {
     "id": "arch-14",
@@ -3469,7 +3562,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kiến trúc chia nhỏ hệ thống thành các service độc lập",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Each independent Microservice owns its private database schema and API contracts."
   },
   {
     "id": "arch-15",
@@ -3479,7 +3573,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kiến trúc hướng sự kiện",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "An Event-Driven architecture allows services to react asynchronously to domain events."
   },
   {
     "id": "arch-16",
@@ -3489,7 +3584,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Hệ thống trung chuyển tin nhắn (Kafka, RabbitMQ)",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "RabbitMQ operates as a high-performance Message Broker routing jobs to background workers."
   },
   {
     "id": "arch-17",
@@ -3499,7 +3595,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Cơ chế kiểm soát lưu lượng khi bên nhận xử lý chậm",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Reactive streams apply Backpressure to avoid overwhelming slow downstream consumer queues."
   },
   {
     "id": "arch-18",
@@ -3509,7 +3606,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Khả năng chịu lỗi và duy trì hoạt động",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Redundant server clusters ensure high Fault Tolerance in mission-critical applications."
   },
   {
     "id": "arch-19",
@@ -3519,7 +3617,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Giới hạn số request tối đa trong một khoảng thời gian",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "API gateways enforce Rate Limiting to prevent distributed denial-of-service abuse."
   },
   {
     "id": "arch-20",
@@ -3529,7 +3628,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tự động chuyển sang server dự phòng khi server chính sập",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Automatic Failover immediately redirects DNS traffic to the standby disaster recovery region."
   },
   {
     "id": "arch-21",
@@ -3539,7 +3639,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Không lưu trạng thái phiên làm việc giữa các request",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Building Stateless application servers allows effortless horizontal auto-scaling in the cloud."
   },
   {
     "id": "arch-22",
@@ -3549,7 +3650,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Có lưu trạng thái phiên làm việc",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "A Stateful cluster requires distributed consensus protocols like Raft to preserve consistency."
   },
   {
     "id": "arch-23",
@@ -3559,7 +3661,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Mô hình quản lý transaction phân tán trên microservices",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Distributed transactions across microservices are coordinated using the Saga Pattern."
   },
   {
     "id": "arch-24",
@@ -3569,7 +3672,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Mô hình đảm bảo tính nhất quán giữa ghi DB và bắn event",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Reliable event publishing without dual-write inconsistency relies on the Outbox Pattern."
   },
   {
     "id": "arch-25",
@@ -3579,7 +3683,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Mô hình vách ngăn cô lập tài nguyên tránh lỗi lan rộng",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Partition thread pools into separate Bulkhead compartments to isolate third-party service failures."
   },
   {
     "id": "arch-26",
@@ -3589,7 +3694,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Hạ cấp êm ái (tắt tính năng phụ giữ luồng chính)",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "During peak load, the platform adopts Graceful Degradation by disabling non-essential widgets."
   },
   {
     "id": "arch-27",
@@ -3599,7 +3705,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tính nhất quán của dữ liệu",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Strong Data Consistency guarantees all database nodes reflect identical records simultaneously."
   },
   {
     "id": "arch-28",
@@ -3609,7 +3716,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tính nhất quán cuối cùng",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "NoSQL databases often favor Eventual Consistency across geographically distributed clusters."
   },
   {
     "id": "arch-29",
@@ -3619,7 +3727,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Định lý CAP (Consistency, Availability, Partition tolerance)",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Under network partitions, the CAP Theorem dictates choosing consistency or availability."
   },
   {
     "id": "arch-30",
@@ -3629,7 +3738,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Bộ thuộc tính giao dịch: Atomicity, Consistency, Isolation, Durability",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Relational transactions guarantee ACID properties to keep financial ledgers accurate."
   },
   {
     "id": "arch-31",
@@ -3639,7 +3749,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tích hợp liên tục (tự động build/test khi push code)",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Developers practice Continuous Integration by merging code into the main branch daily."
   },
   {
     "id": "arch-32",
@@ -3649,7 +3760,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Bàn giao liên tục (sẵn sàng release tự động)",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Automated pipelines enable Continuous Delivery of verified release candidates to staging."
   },
   {
     "id": "arch-33",
@@ -3659,7 +3771,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Triển khai liên tục (tự động deploy lên production)",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Companies with mature testing achieve Continuous Deployment directly to production."
   },
   {
     "id": "arch-34",
@@ -3669,7 +3782,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Hạ tầng dưới dạng code (IaC)",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Terraform codifies cloud resources through declarative Infrastructure as Code definitions."
   },
   {
     "id": "arch-35",
@@ -3679,7 +3793,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Công nghệ đóng gói ứng dụng kèm môi trường (Docker)",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Docker simplifies software Containerization by bundling dependencies into portable images."
   },
   {
     "id": "arch-36",
@@ -3689,7 +3804,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Điều phối tự động container (Kubernetes)",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Kubernetes provides robust container Orchestration with automatic health self-healing."
   },
   {
     "id": "arch-37",
@@ -3699,7 +3815,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Quay lui, khôi phục phiên bản trước khi bản mới lỗi",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Automated alerts triggered an immediate Rollback to the previous stable container image."
   },
   {
     "id": "arch-38",
@@ -3709,7 +3826,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Triển khai thử nghiệm cho một lượng nhỏ người dùng trước",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Routing five percent of traffic to a Canary Deployment validates changes safely."
   },
   {
     "id": "arch-39",
@@ -3719,7 +3837,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Deploy song song 2 môi trường để zero-downtime",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "A Blue-Green Deployment switches router traffic seamlessly with zero downtime."
   },
   {
     "id": "arch-40",
@@ -3729,7 +3848,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Thu thập và truyền dữ liệu giám sát hệ thống từ xa",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "OpenTelemetry collects metrics and traces as standard runtime Telemetry data."
   },
   {
     "id": "arch-41",
@@ -3739,7 +3859,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Khởi tạo và cấp phát tài nguyên máy chủ tự động",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Automated scripts handle server Provisioning within minutes of capacity demand."
   },
   {
     "id": "arch-42",
@@ -3749,7 +3870,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Sản phẩm đầu ra sau build (jar, docker image, zip)",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The build pipeline compiles TypeScript files into a deployable Docker Artifact."
   },
   {
     "id": "arch-43",
@@ -3759,7 +3881,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Hạ tầng bất biến (thay mới chứ không sửa server cũ)",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Replacing virtual machines with pre-baked images embodies Immutable Infrastructure principles."
   },
   {
     "id": "arch-44",
@@ -3769,7 +3892,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Bản vá lỗi khẩn cấp trực tiếp lên production",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The engineering team deployed an emergency Hotfix to patch the critical zero-day exploit."
   },
   {
     "id": "arch-45",
@@ -3779,7 +3903,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Môi trường giả lập giống production để kiểm thử lần cuối",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Engineers thoroughly test upcoming releases in a Staging environment mirroring production."
   },
   {
     "id": "arch-46",
@@ -3789,7 +3914,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Khả năng quan sát trạng thái nội tại qua logs/metrics/traces",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Distributed system Observability requires combining structured logs, metrics, and traces."
   },
   {
     "id": "arch-47",
@@ -3799,7 +3925,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Các chỉ số đo lường hiệu năng hệ thống",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Prometheus scrapes CPU and memory usage Metrics from our Kubernetes pods every ten seconds."
   },
   {
     "id": "arch-48",
@@ -3809,7 +3936,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Truy vết hành trình của request qua các microservices",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Distributed Tracing helps engineers pinpoint latency bottlenecks across microservice hops."
   },
   {
     "id": "arch-49",
@@ -3819,7 +3947,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Ghi lại nhật ký hoạt động của ứng dụng",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Centralized Logging through Elasticsearch enables rapid troubleshooting of production exceptions."
   },
   {
     "id": "arch-50",
@@ -3829,7 +3958,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tiến trình chạy ngầm liên tục trên hệ điều hành",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The cron scheduler runs in the background as a Linux Daemon process."
   },
   {
     "id": "arch-51",
@@ -3839,7 +3969,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Chuỗi các bước tự động hóa trong CI/CD",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The automated CI/CD Pipeline runs linter checks, unit tests, and production builds."
   },
   {
     "id": "arch-52",
@@ -3849,7 +3980,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kho lưu trữ tập trung Docker images",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Store verified container images in a private Docker Registry before production rollout."
   },
   {
     "id": "arch-53",
@@ -3859,7 +3991,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Cổng điều hướng lưu lượng vào cụm Kubernetes",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The Kubernetes Ingress controller routes external SSL traffic to internal cluster services."
   },
   {
     "id": "arch-54",
@@ -3869,7 +4002,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Quản lý bảo mật các token, password, API key",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "HashiCorp Vault provides secure Secret Management for database credentials and API keys."
   },
   {
     "id": "arch-55",
@@ -3879,7 +4013,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Cơ chế kiểm tra xem service có còn sống không",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The load balancer sends an HTTP ping to the Health Check endpoint every five seconds."
   },
   {
     "id": "arch-56",
@@ -3889,7 +4024,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kiểm tra xem container có cần được restart không",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Kubernetes uses a Liveness Probe to detect deadlocked containers and restart them."
   },
   {
     "id": "arch-57",
@@ -3899,7 +4035,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kiểm tra xem container đã sẵn sàng nhận request chưa",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "A pod will not receive user traffic until its Readiness Probe reports a successful status."
   },
   {
     "id": "arch-58",
@@ -3909,7 +4046,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Container phụ chạy cạnh container chính để hỗ trợ",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Envoy proxies run alongside application pods inside a lightweight Sidecar Container."
   },
   {
     "id": "arch-59",
@@ -3919,7 +4057,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Triển khai không làm gián đoạn dịch vụ",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Rolling updates enable Zero Downtime releases without disconnecting active users."
   },
   {
     "id": "arch-60",
@@ -3929,7 +4068,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Cố tình tạo sự cố để thử thách độ bền hệ thống",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Netflix tests infrastructure resilience under unexpected failure using Chaos Engineering tools."
   },
   {
     "id": "arch-61",
@@ -3939,7 +4079,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Khóa bi quan: Khóa tài nguyên ngay khi đọc để ngăn ngừa xung đột dữ liệu",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Use Pessimistic Locking with SELECT FOR UPDATE when executing strict inventory reservation."
   },
   {
     "id": "arch-62",
@@ -3949,7 +4090,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Khóa lạc quan: Cho phép đọc ghi tự do và kiểm tra phiên bản (version check) lúc commit",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "High-throughput systems employ Optimistic Locking with version columns to avoid blocking reads."
   },
   {
     "id": "arch-63",
@@ -3959,7 +4101,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tập hợp các kết nối cơ sở dữ liệu được mở sẵn để tái sử dụng, tối ưu tài nguyên",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Tuning the database Connection Pool size prevents backend connection exhaustion during spikes."
   },
   {
     "id": "arch-64",
@@ -3969,7 +4112,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Quản lý và áp dụng các phiên bản cấu trúc cơ sở dữ liệu theo thời gian",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Run an automated Database Migration script to alter table columns safely before deploying code."
   },
   {
     "id": "arch-65",
@@ -3979,7 +4123,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Ghi nhật ký thay đổi trước khi ghi dữ liệu chính thức xuống đĩa để đảm bảo phục hồi",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "PostgreSQL ensures crash recovery by appending transactions to the Write-Ahead Logging buffer."
   },
   {
     "id": "arch-66",
@@ -3989,7 +4134,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Ràng buộc khóa ngoại đảm bảo tính toàn vẹn tham chiếu giữa các bảng",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "A Foreign Key Constraint prevents orphaned records when parent user accounts are deleted."
   },
   {
     "id": "arch-67",
@@ -3999,7 +4145,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Cấu trúc cây cân bằng phổ biến nhất dùng để đánh chỉ mục tìm kiếm nhanh",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Creating a B-Tree Index on the user email column accelerates lookup query performance."
   },
   {
     "id": "arch-68",
@@ -4009,7 +4156,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Bộ tối ưu hóa truy vấn tự động chọn chiến lược thực thi truy vấn hiệu quả nhất",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The Query Optimizer analyzes table statistics to pick the most efficient scan strategy."
   },
   {
     "id": "arch-69",
@@ -4019,7 +4167,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Khóa mức độ dòng dữ liệu giúp tăng khả năng xử lý đồng thời so với table-level locking",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "PostgreSQL applies Row-Level Locking so concurrent transactions can modify different rows."
   },
   {
     "id": "arch-70",
@@ -4029,7 +4178,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Điểm đồng bộ hóa định kỳ đưa toàn bộ dữ liệu từ bộ nhớ đệm xuống đĩa vật lý",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The database flushes dirty memory buffers to permanent storage during a scheduled Database Checkpoint."
   },
   {
     "id": "qasec-1",
@@ -4039,7 +4189,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Xác thực danh tính (người dùng là ai)",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "User Authentication verifies passwords and two-factor tokens during login."
   },
   {
     "id": "qasec-2",
@@ -4049,7 +4200,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Phân quyền (được phép truy cập tài nguyên nào)",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Role-based Authorization restricts regular members from accessing administrator controls."
   },
   {
     "id": "qasec-3",
@@ -4059,7 +4211,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Lỗ hổng bảo mật",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Regular dependency scanning discovered a severe Vulnerability in an outdated package."
   },
   {
     "id": "qasec-4",
@@ -4069,7 +4222,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Đoạn code hoặc kỹ thuật khai thác lỗ hổng bảo mật",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Security researchers created an Exploit demonstrating how buffer overflows breach memory."
   },
   {
     "id": "qasec-5",
@@ -4079,7 +4233,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Dữ liệu mang theo trong request",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Inspect the incoming JSON Payload to ensure it conforms to the expected schema."
   },
   {
     "id": "qasec-6",
@@ -4089,7 +4244,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Làm sạch dữ liệu đầu vào ngăn chặn mã độc",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Always Sanitize user inputs before concatenating them into HTML templates or SQL queries."
   },
   {
     "id": "qasec-7",
@@ -4099,7 +4255,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tấn công chèn script độc hại vào trình duyệt (XSS)",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Escaping dangerous script tags prevents Cross-Site Scripting attacks on client browsers."
   },
   {
     "id": "qasec-8",
@@ -4109,7 +4266,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tấn công chèn lệnh SQL trái phép vào câu truy vấn",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Using parameterized queries defends relational databases against malicious SQL Injection attempts."
   },
   {
     "id": "qasec-9",
@@ -4119,7 +4277,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tấn công giả mạo yêu cầu từ người dùng đã đăng nhập (CSRF)",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Include CSRF tokens in HTML forms to protect users from Cross-Site Request Forgery exploits."
   },
   {
     "id": "qasec-10",
@@ -4129,7 +4288,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tấn công kẻ đứng giữa nghe lén đường truyền",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Enforcing HTTPS encryption prevents a Man-in-the-Middle attacker from intercepting Wi-Fi traffic."
   },
   {
     "id": "qasec-11",
@@ -4139,7 +4299,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kiểm thử hồi quy (đảm bảo tính năng cũ không hỏng khi sửa code)",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Run the entire test suite to guarantee the bugfix introduced no Regression Test failures."
   },
   {
     "id": "qasec-12",
@@ -4149,7 +4310,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kiểm thử đơn vị (kiểm tra các hàm nhỏ nhất độc lập)",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "A fast Unit Test tests isolated functions without touching external network connections."
   },
   {
     "id": "qasec-13",
@@ -4159,7 +4321,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kiểm thử tích hợp giữa các module",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "An Integration Test verifies seamless communication between the repository and the database."
   },
   {
     "id": "qasec-14",
@@ -4169,7 +4332,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kiểm thử toàn trình theo luồng người dùng (E2E)",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Cypress executes an End-to-End Test simulating real browser interactions from login to checkout."
   },
   {
     "id": "qasec-15",
@@ -4179,7 +4343,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kiểm thử nhanh các luồng sống còn",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The CI pipeline executes a rapid Smoke Test to verify basic system startup health."
   },
   {
     "id": "qasec-16",
@@ -4189,7 +4354,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kiểm tra sơ bộ tính hợp lý của bản build mới",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Perform a quick Sanity Check to confirm that modified configuration variables take effect."
   },
   {
     "id": "qasec-17",
@@ -4199,7 +4365,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tạo đối tượng giả lập để cô lập phụ thuộc bên ngoài",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "We use Mocking to simulate third-party payment responses in local development environments."
   },
   {
     "id": "qasec-18",
@@ -4209,7 +4376,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Đoạn mã trả về dữ liệu mẫu cố định phục vụ kiểm thử",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Replace slow external email APIs with a lightweight test Stub returning canned responses."
   },
   {
     "id": "qasec-19",
@@ -4219,7 +4387,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Mệnh đề khẳng định kết quả mong đợi trong test",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The test failed because the expected Assertion did not match the actual returned status code."
   },
   {
     "id": "qasec-20",
@@ -4229,7 +4398,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tỷ lệ phần trăm dòng code được bao phủ bởi test",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Achieving eighty percent Code Coverage ensures major conditional branches are verified."
   },
   {
     "id": "qasec-21",
@@ -4239,7 +4409,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tái hiện lại lỗi theo các bước cụ thể",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "QA engineers need precise steps to Reproduce intermittent customer-reported bugs."
   },
   {
     "id": "qasec-22",
@@ -4249,7 +4420,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Bài test chập chờn lúc pass lúc fail",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "A Flaky Test that randomly fails due to race conditions undermines team confidence."
   },
   {
     "id": "qasec-23",
@@ -4259,7 +4431,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tiêu chuẩn chấp thuận tính năng hoàn thành",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Features cannot be signed off until all Acceptance Criteria defined in the Jira ticket pass."
   },
   {
     "id": "qasec-24",
@@ -4269,7 +4442,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Trường hợp biên, tình huống cực đoan ít khi xảy ra",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Be sure to verify an Edge Case such as an empty string or leap-year timestamp input."
   },
   {
     "id": "qasec-25",
@@ -4279,7 +4453,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Giá trị biên tại ngưỡng chuyển tiếp dữ liệu",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Boundary Value analysis tests maximum integer limits and minimum allowable characters."
   },
   {
     "id": "qasec-26",
@@ -4289,7 +4464,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kiểm thử khả năng chịu tải của hệ thống",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "We run Load Testing to see how the cluster behaves under sustained normal user volume."
   },
   {
     "id": "qasec-27",
@@ -4299,7 +4475,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kiểm thử giới hạn chịu đựng cực hạn trước khi sập",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Engineers conduct Stress Testing to determine the exact breaking point of the API server."
   },
   {
     "id": "qasec-28",
@@ -4309,7 +4486,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Phát triển hướng kiểm thử (viết test trước, code sau - TDD)",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Writing unit tests before writing business logic is the essence of Test-Driven Dev practices."
   },
   {
     "id": "qasec-29",
@@ -4319,7 +4497,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Phát triển hướng hành vi theo ngôn ngữ tự nhiên (BDD)",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Product owners and engineers collaborate using Behavior-Driven Dev scenarios in Gherkin."
   },
   {
     "id": "qasec-30",
@@ -4329,7 +4508,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Trình duyệt không giao diện đồ họa phục vụ test tự động",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Playwright launches a Headless Browser to execute UI test suites quickly in CI runners."
   },
   {
     "id": "qasec-31",
@@ -4339,7 +4519,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Môi trường và dữ liệu mẫu chuẩn bị sẵn cho bài test",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Load dummy database users using a pre-configured Test Fixture before test execution."
   },
   {
     "id": "qasec-32",
@@ -4349,7 +4530,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Dọn dẹp môi trường và giải phóng tài nguyên sau test",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The afterEach hook runs Teardown routines to delete temporary test artifacts."
   },
   {
     "id": "qasec-33",
@@ -4359,7 +4541,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Biến dị code để kiểm tra chất lượng bộ test",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Evaluate test suite effectiveness by introducing synthetic bugs via Mutation Testing tools."
   },
   {
     "id": "qasec-34",
@@ -4369,7 +4552,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Chương trình thưởng tiền cho người phát hiện lỗ hổng",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The company launched an open Bug Bounty program rewarding hackers for reporting zero-day flaws."
   },
   {
     "id": "qasec-35",
@@ -4379,7 +4563,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Mật độ lỗi trên mỗi nghìn dòng code",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "A lower Defect Density indicates superior code quality and fewer bugs per thousand lines."
   },
   {
     "id": "qasec-36",
@@ -4389,7 +4574,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Cảnh báo sai (báo lỗi trong khi code đúng)",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The linter flagged a safe variable as dangerous, which turned out to be a False Positive."
   },
   {
     "id": "qasec-37",
@@ -4399,7 +4585,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Bỏ sót lỗi (báo thành công trong khi có lỗi)",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "An undetected security breach represents a catastrophic False Negative in automated audits."
   },
   {
     "id": "qasec-38",
@@ -4409,7 +4596,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kiểm thử độ thân thiện và dễ dùng",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Conduct Usability Testing with real end users to identify confusing navigation interfaces."
   },
   {
     "id": "qasec-39",
@@ -4419,7 +4607,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Phân tích đo đạc hiệu năng CPU và RAM của từng hàm",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Memory Profiling revealed that unclosed database listeners were causing node memory leaks."
   },
   {
     "id": "qasec-40",
@@ -4429,7 +4618,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Phân tích tĩnh kiểm tra code mà không cần chạy chương trình",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Running Static Analysis tools like SonarQube flags vulnerabilities without executing code."
   },
   {
     "id": "cs-1",
@@ -4439,7 +4629,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Phép nhân",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The arithmetic logic unit executes binary Multiplication in hardware clock cycles."
   },
   {
     "id": "cs-2",
@@ -4449,7 +4640,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Số học, thuộc về số học",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Validate that the user input consists solely of Numeric characters before conversion."
   },
   {
     "id": "cs-3",
@@ -4459,7 +4651,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Thao tác",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "A bitwise XOR is a low-level CPU Operation completed in a single machine cycle."
   },
   {
     "id": "cs-4",
@@ -4469,7 +4662,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Ra, đưa ra",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The computer monitor and audio speakers serve as primary Output devices for users."
   },
   {
     "id": "cs-5",
@@ -4479,7 +4673,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tiến hành, thi hành",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Modern multiprocessors Perform millions of complex floating-point calculations every second."
   },
   {
     "id": "cs-6",
@@ -4489,7 +4684,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Xử lý",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The operating system schedules each background Process across available processor cores."
   },
   {
     "id": "cs-7",
@@ -4499,7 +4695,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Bộ xử lý",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The central Processor executes instructions fetched from high-speed cache memory."
   },
   {
     "id": "cs-8",
@@ -4509,7 +4706,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Xung",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "A digital clock generator sends an electric Pulse to synchronize circuit components."
   },
   {
     "id": "cs-9",
@@ -4519,7 +4717,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Thanh ghi, đăng ký",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The CPU stores immediate operands inside a high-speed internal Register for rapid access."
   },
   {
     "id": "cs-10",
@@ -4529,7 +4728,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tín hiệu",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Fiber optic cables transmit an optical Signal across oceans with minimal degradation."
   },
   {
     "id": "cs-11",
@@ -4539,7 +4739,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Giải pháp, lời giải",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Dynamic programming provided an optimal Solution to the shortest path routing problem."
   },
   {
     "id": "cs-12",
@@ -4549,7 +4750,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Lưu trữ",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Solid state drives Store persistent files even when system power is disconnected."
   },
   {
     "id": "cs-13",
@@ -4559,7 +4761,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Phép trừ",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Binary Subtraction is performed in digital circuits using two's complement addition."
   },
   {
     "id": "cs-14",
@@ -4569,7 +4772,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Chuyển",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "A network Switch directs Ethernet packets specifically to their intended local MAC addresses."
   },
   {
     "id": "cs-15",
@@ -4578,7 +4782,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Ghi băng, băng",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Early computing centers archived cold backup archives onto magnetic Tape spools."
   },
   {
     "id": "cs-16",
@@ -4587,7 +4792,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Máy trạm",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Engineers interact with remote Linux cloud instances through a secure bash Terminal window."
   },
   {
     "id": "cs-17",
@@ -4596,7 +4802,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Truyền",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Satellites Transmit telemetry coordinates back to earth stations in real time."
   },
   {
     "id": "cs-18",
@@ -4605,7 +4812,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Bàn tính",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Ancient merchants calculated trade balances using an early bead Abacus counting frame."
   },
   {
     "id": "cs-19",
@@ -4614,7 +4822,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Phân phối",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The operating system memory manager must Allocate free RAM blocks to newly launched apps."
   },
   {
     "id": "cs-20",
@@ -4623,7 +4832,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tương tự",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "A sound wave is an Analog waveform that must be sampled into discrete digital numbers."
   },
   {
     "id": "cs-21",
@@ -4632,7 +4842,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Ứng dụng",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Download the official mobile Application from the app store to manage your account."
   },
   {
     "id": "cs-22",
@@ -4641,7 +4852,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Nhị phân, thuộc về nhị phân",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Computers represent all instructions and data using Binary combinations of zeroes and ones."
   },
   {
     "id": "cs-23",
@@ -4650,7 +4862,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tính toán",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Performing a 3D matrix Calculation requires heavy floating-point GPU processing power."
   },
   {
     "id": "cs-24",
@@ -4659,7 +4872,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Ra lệnh, lệnh (trong máy tính)",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Type the git status Command into the command-line prompt to check repository changes."
   },
   {
     "id": "cs-25",
@@ -4668,7 +4882,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Có thể tin cậy được",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Banking infrastructures require highly Dependable servers that provide five-nines uptime."
   },
   {
     "id": "cs-26",
@@ -4677,7 +4892,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Phát minh",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Computer scientists Devise novel encryption algorithms to protect sensitive medical data."
   },
   {
     "id": "cs-27",
@@ -4686,7 +4902,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Khác biệt",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Modern compilers generate Different assembly instructions depending on the target architecture."
   },
   {
     "id": "cs-28",
@@ -4695,7 +4912,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Số, thuộc về số",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Digital electronics process information encoded as discrete high and low voltage states."
   },
   {
     "id": "cs-29",
@@ -4704,7 +4922,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Khắc axit",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Semiconductor fabrication plants Etch microscopic transistor gates onto silicon wafers."
   },
   {
     "id": "cs-30",
@@ -4713,7 +4932,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tiến hành thí nghiệm, cuộc thí nghiệm",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Researchers run a controlled scientific Experiment to benchmark algorithmic performance."
   },
   {
     "id": "cs-31",
@@ -4722,7 +4942,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Truy cập từ xa qua mạng",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "VPN software allows employees secure Remote Access to internal corporate intranet resources."
   },
   {
     "id": "cs-32",
@@ -4731,7 +4952,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tin học hóa",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Hospitals decided to Computerize paper patient charts to eliminate transcription mistakes."
   },
   {
     "id": "cs-33",
@@ -4740,7 +4962,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Lưu trữ",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Cloud Storage providers offer scalable object buckets for hosting media files."
   },
   {
     "id": "cs-34",
@@ -4749,7 +4972,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tính toán, tìm ra",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Engineers worked late to Figure out the obscure cause of the production memory leak."
   },
   {
     "id": "cs-35",
@@ -4758,7 +4982,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Thế hệ",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Each new Generation of microchips doubles transistor density while reducing power draw."
   },
   {
     "id": "cs-36",
@@ -4767,7 +4992,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Lịch sử",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Studying the History of computer science provides valuable insight into modern design choices."
   },
   {
     "id": "cs-37",
@@ -4776,7 +5002,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "In, khắc",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Printers leave a permanent ink Imprint of barcode labels onto shipping cartons."
   },
   {
     "id": "cs-38",
@@ -4785,7 +5012,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tích hợp",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "We plan to Integrate the payment gateway with our inventory management database."
   },
   {
     "id": "cs-39",
@@ -4794,7 +5022,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Phát minh",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The Invention of the silicon transistor revolutionized global telecommunications."
   },
   {
     "id": "cs-40",
@@ -4803,7 +5032,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tầng, lớp",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The transport Layer in the network model manages end-to-end packet delivery confirmation."
   },
   {
     "id": "cs-41",
@@ -4812,7 +5042,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Máy tính lớn",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Large financial enterprises historically relied on an IBM Mainframe computer for batch billing."
   },
   {
     "id": "cs-42",
@@ -4821,7 +5052,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Khả năng",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The new graphics architecture demonstrates the Ability to render ray-traced shadows smoothly."
   },
   {
     "id": "cs-43",
@@ -4830,7 +5062,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Truy cập; sự truy cập",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Only authorized administrators possess permission to Access production database servers."
   },
   {
     "id": "cs-44",
@@ -4839,7 +5072,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Bộ ghép âm",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Early telecommuters dialed into mainframe networks using an Acoustic coupler telephone modem."
   },
   {
     "id": "cs-45",
@@ -4848,7 +5082,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Nhà phân tích",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "A senior systems Analyst diagrams business requirements into technical system specifications."
   },
   {
     "id": "cs-46",
@@ -4857,7 +5092,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Mảnh trung tâm",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The relational database serves as the architectural Centerpiece of our web service."
   },
   {
     "id": "cs-47",
@@ -4866,7 +5102,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Kênh",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Fiber optic strands provide a dedicated communications Channel with immense bandwidth."
   },
   {
     "id": "cs-48",
@@ -4875,7 +5112,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Thuộc tính, nét tính cách",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Low power consumption is a key Characteristic of modern mobile ARM processors."
   },
   {
     "id": "cs-49",
@@ -4884,7 +5122,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Bộ điều khiển trùm",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "A Cluster controller coordinates data transfers between mainframe channels and local terminals."
   },
   {
     "id": "cs-50",
@@ -4893,7 +5132,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Bao gồm",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Modern relational databases Consist of tables, indexes, triggers, and stored procedures."
   },
   {
     "id": "cs-51",
@@ -4902,7 +5142,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Chuyển đổi",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Digital converters Convert continuous analog audio waveforms into compressed MP3 bytes."
   },
   {
     "id": "cs-52",
@@ -4911,7 +5152,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Trang thiết bị",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Server racks contain specialized networking Equipment including routers, switches, and patch panels."
   },
   {
     "id": "cs-53",
@@ -4920,7 +5162,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Bộ dồn kênh",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "A hardware Multiplexor merges multiple input data streams into a single high-speed line."
   },
   {
     "id": "cs-54",
@@ -4929,7 +5172,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Mạng",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Connecting computers together forms a Network capable of sharing files and printers."
   },
   {
     "id": "cs-55",
@@ -4938,7 +5182,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Ngoại vi",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "A USB mouse is an external input Peripheral connected to the desktop workstation."
   },
   {
     "id": "cs-56",
@@ -4947,7 +5192,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Sự có thể tin cậy được",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Extensive stress testing proved the Reliability of the distributed database under heavy load."
   },
   {
     "id": "cs-57",
@@ -4956,7 +5202,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Đơn mục đích",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "A barcode scanner is a Single-purpose input device designed solely for retail inventory."
   },
   {
     "id": "cs-58",
@@ -4965,7 +5212,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Hội thảo từ xa",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Remote engineering teams host a weekly Teleconference over video to align sprint goals."
   },
   {
     "id": "cs-59",
@@ -4974,7 +5222,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Đa nhiệm",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Modern preemptive operating systems allow CPUs to Multi-task smoothly between dozens of apps."
   },
   {
     "id": "cs-60",
@@ -4983,7 +5232,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Số học",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The processor arithmetic logic unit carries out integer Arithmetic such as addition and division."
   },
   {
     "id": "cs-61",
@@ -4992,7 +5242,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Hợp kim",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Aerospace computers use specialized metal Alloy casings to shield circuits from radiation."
   },
   {
     "id": "cs-62",
@@ -5001,7 +5252,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Bộ nhớ bọt",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Experimental Bubble memory stored data in magnetic domains before flash memory took over."
   },
   {
     "id": "cs-63",
@@ -5010,7 +5262,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Dung lượng",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "This enterprise hard drive has a storage Capacity of twenty terabytes of user data."
   },
   {
     "id": "cs-64",
@@ -5019,7 +5272,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Bộ nhớ lõi",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Early computers relied on magnetic Core memory matrices to hold operative program state."
   },
   {
     "id": "cs-65",
@@ -5028,7 +5282,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Thống trị",
     "partOfSpeech": "verb",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Arm architecture processors Dominate modern smartphones due to their high power efficiency."
   },
   {
     "id": "cs-66",
@@ -5037,7 +5292,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Vòng nhiễm từ",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Core memory threaded copper wires through tiny Ferrite ring elements to store binary bits."
   },
   {
     "id": "cs-67",
@@ -5046,7 +5302,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Ngang, đường ngang",
     "partOfSpeech": "adj",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Draw a Horizontal timeline across the canvas to represent transaction processing stages."
   },
   {
     "id": "cs-68",
@@ -5055,7 +5312,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Sự cảm hứng",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Natural neural networks provided Inspiration for modern artificial intelligence algorithms."
   },
   {
     "id": "cs-69",
@@ -5064,7 +5322,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Giao điểm",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "A grid Intersection indicates the coordinates where row and column electrical traces meet."
   },
   {
     "id": "cs-70",
@@ -5073,7 +5332,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Chi tiết",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The architect delivered a Detailed specification outlining database migration procedures."
   },
   {
     "id": "cs-71",
@@ -5082,7 +5342,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tương ứng",
     "partOfSpeech": "adj",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Modules execute their Respective duties according to their defined domain boundaries."
   },
   {
     "id": "cs-72",
@@ -5091,7 +5352,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Giữ lại, duy trì",
     "partOfSpeech": "verb",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Non-volatile storage drives Retain written data even after system electricity is cut off."
   },
   {
     "id": "cs-73",
@@ -5100,7 +5362,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Đồ phụ tùng nhỏ",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "A smartwatch is a portable consumer Gadget equipped with biometric sensors and Bluetooth."
   },
   {
     "id": "cs-74",
@@ -5109,7 +5372,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Bộ nhớ bán dẫn",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Dynamic RAM is the dominant form of Semiconductor memory in personal computers today."
   },
   {
     "id": "cs-75",
@@ -5118,7 +5382,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Duy nhất",
     "partOfSpeech": "adj",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Each registered user receives a Unique identifier that never collides in the database."
   },
   {
     "id": "cs-76",
@@ -5127,7 +5392,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Dọc; đường dọc",
     "partOfSpeech": "adj",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Stack columns along a Vertical axis to compare yearly server utilization metrics."
   },
   {
     "id": "cs-77",
@@ -5136,7 +5402,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Dây điện",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Copper Wire conducts electrical signals between the motherboard and power supply unit."
   },
   {
     "id": "cs-78",
@@ -5145,7 +5412,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Ma trận",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Graphics processors multiply a 4x4 coordinate Matrix to transform 3D model vertices."
   },
   {
     "id": "cs-79",
@@ -5154,7 +5422,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Vi phim",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Libraries historically archived delicate newspaper pages onto reels of Microfilm sheets."
   },
   {
     "id": "cs-80",
@@ -5163,7 +5432,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Dễ nhận thấy",
     "partOfSpeech": "adj",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Adding caching produced a Noticeable decrease in average HTTP request response times."
   },
   {
     "id": "cs-81",
@@ -5172,7 +5442,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Hiện tượng",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Quantum tunneling is a subatomic Phenomenon observed when chip transistors shrink to nanometers."
   },
   {
     "id": "cs-82",
@@ -5181,7 +5452,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Vị trí",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Calculate the exact screen Position of the button before rendering the dropdown menu."
   },
   {
     "id": "cs-83",
@@ -5190,7 +5462,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Sự tiên đoán, lời tiên đoán",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The neural network made an accurate Prediction of future server load based on historical trends."
   },
   {
     "id": "cs-84",
@@ -5199,7 +5472,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Chất lượng",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "High code Quality reduces defects and minimizes maintenance costs throughout application lifecycles."
   },
   {
     "id": "cs-85",
@@ -5208,7 +5482,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Số lượng",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Track the remaining Quantity of items in the e-commerce shopping cart during checkout."
   },
   {
     "id": "cs-86",
@@ -5217,7 +5492,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Dải băng",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Impact dot-matrix printers strike an inked fabric Ribbon against paper to print receipts."
   },
   {
     "id": "cs-87",
@@ -5226,7 +5502,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tập",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "A mathematical Set contains distinct elements without any duplicate items allowed."
   },
   {
     "id": "cs-88",
@@ -5235,7 +5512,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Quay",
     "partOfSpeech": "verb",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Traditional magnetic hard disk platters Spin at seven thousand two hundred revolutions per minute."
   },
   {
     "id": "cs-89",
@@ -5244,7 +5522,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Đánh, đập",
     "partOfSpeech": "verb",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "In impact printing, mechanical hammers Strike the ribbon to transfer characters onto the page."
   },
   {
     "id": "cs-90",
@@ -5253,7 +5532,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tuyệt vời, xuất sắc",
     "partOfSpeech": "adj",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The new flagship processor delivers Superb energy efficiency during heavy video rendering."
   },
   {
     "id": "cs-91",
@@ -5262,7 +5542,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Người giám sát",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The kernel Supervisor mode has full permission to configure CPU registers and memory pages."
   },
   {
     "id": "cs-92",
@@ -5271,7 +5552,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Nhiệt",
     "partOfSpeech": "adj",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Point-of-sale receipt printers use heat-sensitive Thermal paper rather than liquid ink cartridges."
   },
   {
     "id": "cs-93",
@@ -5280,7 +5562,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Đoàn tàu, dòng, dãy, chuỗi",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "We must Train the machine learning classifier using thousands of labeled image samples."
   },
   {
     "id": "cs-94",
@@ -5289,7 +5572,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Trong mờ",
     "partOfSpeech": "adj",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Overlaying a Translucent layer creates a stylish frosted glass visual effect on modern user interfaces."
   },
   {
     "id": "cs-95",
@@ -5298,7 +5582,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Cấu hình",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Check the server Configuration file to update the database port and host settings."
   },
   {
     "id": "cs-96",
@@ -5307,7 +5592,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Công cụ, phương tiện",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Developers will Implement the new payment gateway using official developer documentation."
   },
   {
     "id": "cs-97",
@@ -5316,7 +5602,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Đĩa",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Store large video recordings onto an external optical Disk or solid-state hard drive."
   },
   {
     "id": "cs-98",
@@ -5325,7 +5612,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Sự thay thế",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "PostgreSQL is a reliable open-source Alternative to proprietary enterprise database solutions."
   },
   {
     "id": "cs-99",
@@ -5334,7 +5622,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Có khả năng, có khuynh hướng",
     "partOfSpeech": "verb",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "This design pattern is an Apt solution for decoupling message producers from message consumers."
   },
   {
     "id": "cs-100",
@@ -5343,7 +5632,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Chùm",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "An electron Beam in cathode ray tube monitors illuminated phosphor pixels on the glass screen."
   },
   {
     "id": "cs-101",
@@ -5352,7 +5642,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Chuỗi",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Cryptographic blocks form an immutable Chain linked together through SHA-256 hashes."
   },
   {
     "id": "cs-102",
@@ -5361,7 +5652,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Làm cho trong sáng dễ hiểu",
     "partOfSpeech": "verb",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Add comments to Clarify non-obvious business calculations for teammates reviewing the code."
   },
   {
     "id": "cs-103",
@@ -5370,7 +5662,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Cuộn",
     "partOfSpeech": "verb",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "An electromagnetic Coil in the speaker converts amplified audio voltage into sound waves."
   },
   {
     "id": "cs-104",
@@ -5379,7 +5672,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Làm đặc lại, làm gọn lại",
     "partOfSpeech": "verb",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Gzip algorithms Condense raw HTML text into smaller packets for faster network delivery."
   },
   {
     "id": "cs-105",
@@ -5388,7 +5682,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Mô tả",
     "partOfSpeech": "verb",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Swagger documentation files Describe all available REST endpoints and their payload types."
   },
   {
     "id": "cs-106",
@@ -5397,7 +5692,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Hướng",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Specify the exact height and width Dimension parameters when resizing user avatars."
   },
   {
     "id": "cs-107",
@@ -5406,7 +5702,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Trống",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Early computing machines stored volatile data on a revolving magnetic Drum cylinder."
   },
   {
     "id": "cs-108",
@@ -5415,7 +5712,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Nhiếm điện",
     "partOfSpeech": "adj",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Early thermal facsimiles relied on Electro sensitive paper that darkened under electric current."
   },
   {
     "id": "cs-109",
@@ -5424,7 +5722,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tĩnh điện",
     "partOfSpeech": "adj",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Laser printers rely on Electrostatic charges to attract dry toner powder onto the imaging drum."
   },
   {
     "id": "cs-110",
@@ -5433,7 +5732,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Phơi bày, phô ra",
     "partOfSpeech": "verb",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Never Expose private API secrets or cryptographic keys inside client-side browser bundles."
   },
   {
     "id": "cs-111",
@@ -5442,7 +5742,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Cam đoan, bảo đảm",
     "partOfSpeech": "verb",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Cloud hosting service level agreements Guarantee ninety-nine point nine percent server availability."
   },
   {
     "id": "cs-112",
@@ -5451,7 +5752,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Khử từ hóa",
     "partOfSpeech": "verb",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Technicians Demagnetize old backup drives before recycling hardware to protect confidential data."
   },
   {
     "id": "cs-113",
@@ -5460,7 +5762,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Mạng nội bộ",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Employees browse the company Intranet to access internal HR documents and holiday calendars."
   },
   {
     "id": "cs-114",
@@ -5469,7 +5772,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Búa",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "An impact printer fires a tiny metal Hammer to press characters firmly against the inked ribbon."
   },
   {
     "id": "cs-115",
@@ -5478,7 +5782,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Cá nhân, cá thể",
     "partOfSpeech": "adj",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Each Individual user account has isolated permissions and customized dashboard settings."
   },
   {
     "id": "cs-116",
@@ -5487,7 +5792,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Quán tính",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Mechanical Inertia causes spinning hard drive platters to take a second to spin down."
   },
   {
     "id": "cs-117",
@@ -5496,7 +5802,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Sự bất thường, không theo quy tắc",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The automated monitor detected an unexpected Irregularity in the server network bandwidth."
   },
   {
     "id": "cs-118",
@@ -5505,7 +5812,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Thiết lập",
     "partOfSpeech": "verb",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The client application must Establish a secure TLS handshake before sending HTTP requests."
   },
   {
     "id": "cs-119",
@@ -5514,7 +5822,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Vĩnh viễn",
     "partOfSpeech": "adj",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Save database backups in Permanent optical storage so files survive hardware failures."
   },
   {
     "id": "cs-120",
@@ -5523,7 +5832,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Nhiều loại",
     "partOfSpeech": "adj",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The engineering team comprises people with Diverse skillsets ranging from UI design to DevOps."
   },
   {
     "id": "cs-121",
@@ -5532,7 +5842,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Phức tạp",
     "partOfSpeech": "adj",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Modern cloud architectures utilize Sophisticated container orchestrators to manage workloads."
   },
   {
     "id": "cs-122",
@@ -5541,7 +5852,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Đơn sắc",
     "partOfSpeech": "adj",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Classic terminal displays were Monochromatic showing bright green text against a black background."
   },
   {
     "id": "cs-123",
@@ -5550,7 +5862,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Nhấp nháy",
     "partOfSpeech": "verb",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Configure the cursor to Blink at a comfortable rate inside the text editing component."
   },
   {
     "id": "cs-124",
@@ -5559,7 +5872,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Dày gấp đôi",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "A Dual-density floppy disk doubled storage capacity compared to early single-density media."
   },
   {
     "id": "cs-125",
@@ -5568,7 +5882,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Hình dạng",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Vector graphics scale to any Shape without losing crisp sharpness on retina screens."
   },
   {
     "id": "cs-126",
@@ -5577,7 +5892,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Đường cong",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The Bézier Curve allows graphic software to draw smooth vectors between anchor points."
   },
   {
     "id": "cs-127",
@@ -5586,7 +5902,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Thiết bị đánh dấu",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Architects use a wide-format Plotter to print detailed blue-prints onto drafting paper."
   },
   {
     "id": "cs-128",
@@ -5595,7 +5912,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Thuộc về xúc giác",
     "partOfSpeech": "adj",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Haptic mobile feedback provides Tactile confirmation when users tap virtual keypad buttons."
   },
   {
     "id": "cs-129",
@@ -5604,7 +5922,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Ảo",
     "partOfSpeech": "adj",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Developers test multi-node clusters inside a Virtual machine sandbox running on their laptops."
   },
   {
     "id": "cs-130",
@@ -5613,7 +5932,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tương thích",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Ensure the compiled binary is Compatible with both ARM and x86 operating systems."
   },
   {
     "id": "cs-131",
@@ -5622,7 +5942,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Giao thức",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "HTTP is the foundational communication Protocol powering the World Wide Web."
   },
   {
     "id": "cs-132",
@@ -5631,7 +5952,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Cơ sở dữ liệu",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "An indexing engine accelerates structured search across our customer Database."
   },
   {
     "id": "cs-133",
@@ -5640,7 +5962,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Mạch",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "An integrated Circuit combines millions of microscopic transistors onto a tiny silicon die."
   },
   {
     "id": "cs-134",
@@ -5649,7 +5972,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Phần mềm",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Keep application Software updated with the latest security patches to block vulnerabilities."
   },
   {
     "id": "cs-135",
@@ -5658,7 +5982,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Phần cứng",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Upgrading server Hardware with additional RAM improved concurrent database query throughput."
   },
   {
     "id": "cs-136",
@@ -5667,7 +5992,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Đa người dùng",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "UNIX was designed from inception as a secure Multi-user time-sharing operating system."
   },
   {
     "id": "cs-137",
@@ -5676,7 +6002,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Đồ họa",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Modern video games require dedicated 3D Graphics processing units to achieve high framerates."
   },
   {
     "id": "cs-138",
@@ -5685,7 +6012,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Thuê ai làm gì",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Tech enterprises Employ thousands of software engineers to build scalable cloud infrastructure."
   },
   {
     "id": "cs-139",
@@ -5694,7 +6022,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Quan sát",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Staff software architects Oversee engineering standards across multiple distributed product teams."
   },
   {
     "id": "cs-140",
@@ -5703,7 +6032,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Dùng được, có hiệu lực",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The cloud storage service is Available across multiple geographical availability zones."
   },
   {
     "id": "cs-141",
@@ -5712,7 +6042,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Trở ngại, hạn chế",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The main Drawback of relational databases is the complexity of horizontal sharding."
   },
   {
     "id": "cs-142",
@@ -5721,7 +6052,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Nghiên cứu",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Deep learning breakthroughs are fueled by cutting-edge academic Research in neural models."
   },
   {
     "id": "cs-143",
@@ -5730,7 +6062,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Tập đoàn, công ty",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "An Enterprise software contract includes dedicated 24/7 technical customer support."
   },
   {
     "id": "cs-144",
@@ -5739,7 +6072,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Xu hướng",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Serverless cloud computing is an accelerating Trend in modern web application engineering."
   },
   {
     "id": "cs-145",
@@ -5748,7 +6082,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Thay thế",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "We need to Replace deprecated cryptographic libraries with modern SHA-256 implementations."
   },
   {
     "id": "cs-146",
@@ -5757,7 +6092,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Thành thạo, tinh thông",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Consulting architects bring valuable technical Expertise to solve difficult concurrency bugs."
   },
   {
     "id": "cs-147",
@@ -5766,7 +6102,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Chỉ thị, chỉ dẫn",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The processor decodes and executes a binary machine Instruction during every clock cycle."
   },
   {
     "id": "cs-148",
@@ -5775,7 +6112,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Nguồn thông tin chính.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The official product documentation is the Chief source of information for software developers."
   },
   {
     "id": "cs-149",
@@ -5784,7 +6122,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Hệ điều hành",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Linux is a free open-source Operating system powering supercomputers and internet servers."
   },
   {
     "id": "cs-150",
@@ -5793,7 +6132,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Phân loại tổng quát",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Software can be grouped under the Broad classification of system tools or user applications."
   },
   {
     "id": "cs-151",
@@ -5802,7 +6142,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Mục lục liên hợp.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "University libraries cross-reference physical book holdings through a centralized Union catalog."
   },
   {
     "id": "cs-152",
@@ -5811,7 +6152,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Là chữ viết tắt của “Point-to-Point Protocol”. Đây là một giao thức kết nối Internet tin cậy thông qua Modem",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Dial-up connections encapsulated internet traffic using the point-to-point PPP link protocol."
   },
   {
     "id": "cs-153",
@@ -5820,7 +6162,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Mã nguồn (của của file hay một chương trình nào đó)",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Version control systems track historical changes made to human-readable Source Code."
   },
   {
     "id": "cs-154",
@@ -5829,7 +6172,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Công tác biên mục (tạo ra các điểm truy cập) đối với tên, tựa đề hay chủ đề; riêng đối với biên mục tên và nhan đề, quá trình này bao gồm xác định tất cả các tên hay tựa đề và liên kết các tên/tựa đề không được chọn với tên/tựa đề được chọn làm điểm truy dụng. Đôi khi quá trình này cũng bao gồm liên kết tên và tựa đề với nhau",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Librarians perform Authority work to ensure author names and catalog subjects remain consistent."
   },
   {
     "id": "cs-155",
@@ -5838,7 +6182,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Dữ liệu chữ số, dữ liệu cấu thành các chữ cái và bất kỳ chữ số từ 0 đến 9.",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Passwords and postal codes contain Alphanumeric data consisting of letters and numbers."
   },
   {
     "id": "cs-156",
@@ -5847,7 +6192,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Thuận tiện",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Online banking brings immense convenience convenience for customers paying bills from home."
   },
   {
     "id": "cs-157",
@@ -5856,7 +6202,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Các câu hỏi thường gặp, nó đưa ra những câu hỏi phổ biến nhất mà người dùng thường gặp sau đó có phần giải đáp cho các câu hỏi",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Check the project FAQ page to find quick answers to common setup and installation issues."
   },
   {
     "id": "cs-158",
@@ -5865,7 +6212,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Ngôn ngữ đánh dấu được thiết kế ra để tạo nên các trang web với các mẩu thông tin được trình bày trên World Wide Web",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Web pages use semantic HTML tags to structure headings, paragraphs, and navigation links."
   },
   {
     "id": "cs-159",
@@ -5874,7 +6222,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Mạng máy tính nội bộ",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Office workstations connect to the local printer over a high-speed Ethernet LAN network."
   },
   {
     "id": "cs-160",
@@ -5883,7 +6232,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Người quản trị thiên về phần cứng",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "A skilled Network Administrator configures firewalls, routing tables, and subnet masks."
   },
   {
     "id": "cs-161",
@@ -5892,7 +6242,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Open System Interconnection (mô hình chuẩn OSI)",
     "partOfSpeech": "noun",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "The standard OSI seven-layer model conceptualizes network communications from physical to application."
   },
   {
     "id": "cs-162",
@@ -5901,7 +6252,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Giao thức kết nối điểm-điểm (PPP) truyền dữ liệu tin cậy qua mạng",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Legacy dial-up modems used Point-to-Point Protocol framing to establish direct server sessions."
   },
   {
     "id": "cs-163",
@@ -5910,7 +6262,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "definition": "Bộ nhớ truy xuất ngẫu nhiên (RAM) khả biến cho phép đọc-ghi tốc độ cao",
     "partOfSpeech": "phrase",
     "status": "new",
-    "reviewCount": 0
+    "reviewCount": 0,
+    "example": "Programs load executable instructions into volatile Random Access Memory for instant CPU access."
   },
   {
     "id": "it-41",

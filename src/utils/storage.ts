@@ -8,7 +8,15 @@ import type {
   WordItem,
 } from '../types'
 
-const CURRENT_SEED_VERSION = 6
+const CURRENT_SEED_VERSION = 7
+
+export const SRS_INTERVALS_MS: Record<number, number> = {
+  1: 1 * 24 * 60 * 60 * 1000, // Level 1: 1 day (86,400,000 ms)
+  2: 3 * 24 * 60 * 60 * 1000, // Level 2: 3 days (259,200,000 ms)
+  3: 7 * 24 * 60 * 60 * 1000, // Level 3: 7 days (604,800,000 ms)
+  4: 14 * 24 * 60 * 60 * 1000, // Level 4: 14 days (1,209,600,000 ms)
+  5: 30 * 24 * 60 * 60 * 1000, // Level 5: 30 days (2,592,000,000 ms)
+}
 
 const STORAGE_KEYS = {
   DECKS: 'vocabflow_decks',
@@ -276,6 +284,8 @@ class SafeStorageService {
               status: w.status,
               reviewCount: w.reviewCount,
               lastReviewed: w.lastReviewed,
+              srsLevel: w.srsLevel,
+              nextReview: w.nextReview,
             }
           }
           return w
@@ -358,11 +368,31 @@ class SafeStorageService {
     const now = Date.now()
     const updated = words.map((w) => {
       if (w.id === id) {
+        let srsLevel = w.srsLevel
+        let nextReview = w.nextReview
+
+        if (status === 'mastered') {
+          // Promote to next SRS stage (1 -> 2 -> 3 -> 4 -> 5)
+          const curLevel = w.srsLevel || 0
+          const nextLevel = Math.min(5, Math.max(1, curLevel + 1))
+          srsLevel = nextLevel
+          nextReview = now + (SRS_INTERVALS_MS[nextLevel] || SRS_INTERVALS_MS[1])
+        } else if (status === 'learning') {
+          // Demote/reset to level 1 for 1-day spaced repetition
+          srsLevel = 1
+          nextReview = now + SRS_INTERVALS_MS[1]
+        } else {
+          srsLevel = undefined
+          nextReview = undefined
+        }
+
         return {
           ...w,
           status,
           reviewCount: status === 'mastered' ? w.reviewCount : w.reviewCount + 1,
           lastReviewed: now,
+          srsLevel,
+          nextReview,
         }
       }
       return w
@@ -372,6 +402,42 @@ class SafeStorageService {
     if (countActivity) {
       this.recordDailyActivity(true)
     }
+  }
+
+  // Spaced Repetition (SRS) helper queries
+  public getDueReviewWords(deckId?: string): WordItem[] {
+    const words = this.getWords(deckId)
+    const now = Date.now()
+    return words.filter((w) => w.status === 'mastered' && (!w.nextReview || w.nextReview <= now))
+  }
+
+  public getSrsStats(deckId?: string): {
+    dueCount: number
+    masteredCount: number
+    learningCount: number
+    levelCounts: Record<number, number>
+  } {
+    const words = this.getWords(deckId)
+    const now = Date.now()
+    let dueCount = 0
+    let masteredCount = 0
+    let learningCount = 0
+    const levelCounts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+
+    for (const w of words) {
+      if (w.status === 'mastered') {
+        masteredCount++
+        if (!w.nextReview || w.nextReview <= now) {
+          dueCount++
+        }
+        const lvl = w.srsLevel && w.srsLevel >= 1 && w.srsLevel <= 5 ? w.srsLevel : 1
+        levelCounts[lvl] = (levelCounts[lvl] || 0) + 1
+      } else if (w.status === 'learning') {
+        learningCount++
+      }
+    }
+
+    return { dueCount, masteredCount, learningCount, levelCounts }
   }
 
   public async resetDeckProgress(deckId: string): Promise<void> {
@@ -401,6 +467,8 @@ class SafeStorageService {
           status: 'new' as const,
           reviewCount: 0,
           lastReviewed: undefined,
+          srsLevel: undefined,
+          nextReview: undefined,
         }
       }
       return w
@@ -598,7 +666,14 @@ class SafeStorageService {
         if (mode === 'replace') {
           hydratedBuiltIns.push(
             cp
-              ? { ...bw, status: cp.s, reviewCount: cp.r || 0, lastReviewed: cp.t }
+              ? {
+                  ...bw,
+                  status: cp.s,
+                  reviewCount: cp.r || 0,
+                  lastReviewed: cp.t,
+                  srsLevel: cp.l,
+                  nextReview: cp.n,
+                }
               : bw
           )
         } else {
@@ -607,11 +682,15 @@ class SafeStorageService {
           const bestStatus = rankStatus(cs) >= rankStatus(ls) ? cs : ls
           const bestReviews = Math.max(cp?.r || 0, lw?.reviewCount || 0)
           const latestTime = Math.max(cp?.t || 0, lw?.lastReviewed || 0) || undefined
+          const bestLevel = Math.max(cp?.l || 0, lw?.srsLevel || 0) || undefined
+          const nextReview = cp?.n || lw?.nextReview || undefined
           hydratedBuiltIns.push({
             ...bw,
             status: bestStatus,
             reviewCount: bestReviews,
             lastReviewed: latestTime,
+            srsLevel: bestLevel,
+            nextReview: nextReview,
           })
         }
       }
