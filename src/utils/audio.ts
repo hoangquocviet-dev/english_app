@@ -168,17 +168,42 @@ class AudioManager {
       const gain = ctx.createGain()
 
       osc.type = 'triangle'
-      osc.frequency.setValueAtTime(920, now)
-      osc.frequency.exponentialRampToValueAtTime(220, now + 0.06)
+      osc.frequency.setValueAtTime(780, now)
+      osc.frequency.exponentialRampToValueAtTime(240, now + 0.045)
 
-      gain.gain.setValueAtTime(0.05, now)
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06)
+      gain.gain.setValueAtTime(0.03, now)
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045)
 
       osc.connect(gain)
       gain.connect(ctx.destination)
 
       osc.start(now)
-      osc.stop(now + 0.06)
+      osc.stop(now + 0.045)
+    } catch {}
+  }
+
+  // Subtle crisp shield-impact tick when a laser bolt hits an enemy hull
+  public playHitTick(): void {
+    if (!this.isSoundEnabled) return
+    try {
+      const ctx = this.getAudioContext()
+      if (!ctx) return
+      const now = ctx.currentTime
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(1150, now)
+      osc.frequency.exponentialRampToValueAtTime(620, now + 0.03)
+
+      gain.gain.setValueAtTime(0.045, now)
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03)
+
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+
+      osc.start(now)
+      osc.stop(now + 0.03)
     } catch {}
   }
 

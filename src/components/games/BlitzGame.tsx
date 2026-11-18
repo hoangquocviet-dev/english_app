@@ -1,5 +1,5 @@
 import confetti from 'canvas-confetti'
-import { ArrowLeft, Check, Flame, Heart, RotateCcw, Trophy, X } from 'lucide-react'
+import { ArrowLeft, Check, Flame, Heart, Pause, Play, RotateCcw, Trophy, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { INITIAL_WORDS } from '../../data/initialDecks'
 import type { WordItem } from '../../types'
@@ -26,20 +26,35 @@ function getDurationForRound(round: number): number {
   return 1750
 }
 
-export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
-  const getPool = useCallback((): WordItem[] => {
-    if (words.length >= 6) return words
-    const merged = [...words]
-    const seen = new Set(words.map((w) => w.term.toLowerCase()))
-    for (const iw of INITIAL_WORDS) {
-      if (!seen.has(iw.term.toLowerCase())) {
-        seen.add(iw.term.toLowerCase())
-        merged.push(iw)
-      }
-      if (merged.length >= 16) break
+function buildBlitzPool(words: WordItem[]): WordItem[] {
+  const concise = words.filter((w) => w.term.length <= 28 && w.definition.length <= 95)
+  const base = concise.length >= 8 ? concise : words
+
+  const unique: WordItem[] = []
+  const seen = new Set<string>()
+  for (const w of base) {
+    const tk = w.term.trim().toLowerCase()
+    if (!seen.has(tk)) {
+      seen.add(tk)
+      unique.push(w)
     }
-    return merged
-  }, [words])
+  }
+
+  if (unique.length >= 8) return unique
+
+  for (const iw of INITIAL_WORDS) {
+    const tk = iw.term.trim().toLowerCase()
+    if (iw.term.length <= 28 && iw.definition.length <= 95 && !seen.has(tk)) {
+      seen.add(tk)
+      unique.push(iw)
+    }
+    if (unique.length >= 18) break
+  }
+  return unique
+}
+
+export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
+  const getPool = useCallback(() => buildBlitzPool(words), [words])
 
   const generatePrompt = useCallback(
     (roundNum: number, prevWordId?: string): BlitzPrompt => {
@@ -53,7 +68,9 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
 
       if (!isMatch) {
         const traps = pool.filter(
-          (w) => w.definition.trim().toLowerCase() !== word.definition.trim().toLowerCase()
+          (w) =>
+            w.term.trim().toLowerCase() !== word.term.trim().toLowerCase() &&
+            w.definition.trim().toLowerCase() !== word.definition.trim().toLowerCase()
         )
         if (traps.length > 0) {
           const trapWord = traps[Math.floor(Math.random() * traps.length)]
@@ -86,49 +103,82 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
   const [correctTotal, setCorrectTotal] = useState(0)
   const [lives, setLives] = useState(3)
   const [feedback, setFeedback] = useState<'none' | 'correct' | 'wrong' | 'timeout'>('none')
-  const [progressPct, setProgressPct] = useState(100)
   const [secondsLeft, setSecondsLeft] = useState(2.6)
+  const [isUrgentText, setIsUrgentText] = useState(false)
+  const [isPaused, setIsPaused] = useState(false)
   const [isGameOver, setIsGameOver] = useState(false)
   const [isNewRecord, setIsNewRecord] = useState(false)
   const [bestScore, setBestScore] = useState(
     () => storageService.getHighScores()['blitz-2s'] || 0
   )
 
+  const barRef = useRef<HTMLDivElement | null>(null)
+  const progressPctRef = useRef(100)
+  const remainingMsRef = useRef(2600)
+  const lastTenthsRef = useRef(26)
   const scoreRef = useRef(0)
   const livesRef = useRef(3)
   const lockedRef = useRef(false)
-  const deadlineRef = useRef(0)
+  const feedbackTimeoutRef = useRef<number | null>(null)
 
-  const endGame = useCallback((finalScore: number) => {
-    setIsGameOver(true)
-    const isNew = storageService.saveHighScore('blitz-2s', finalScore)
-    setIsNewRecord(isNew)
-    setBestScore(storageService.getHighScores()['blitz-2s'] || finalScore)
-    if (isNew && finalScore > 0) {
-      audioService.playSuccessChime()
-      try {
-        confetti({ particleCount: 65, spread: 70, origin: { y: 0.6 } })
-      } catch {}
+  const clearFeedbackTimeout = useCallback(() => {
+    if (feedbackTimeoutRef.current !== null) {
+      window.clearTimeout(feedbackTimeoutRef.current)
+      feedbackTimeoutRef.current = null
     }
   }, [])
+
+  const applyBarVisual = useCallback((pct: number) => {
+    progressPctRef.current = pct
+    const el = barRef.current
+    if (!el) return
+    el.style.width = `${pct}%`
+    const colorClass =
+      pct <= 35 ? 'bg-rose-500' : pct <= 65 ? 'bg-amber-500' : 'bg-emerald-500'
+    el.className = `h-full rounded-full ${colorClass}`
+  }, [])
+
+  const endGame = useCallback(
+    (finalScore: number) => {
+      clearFeedbackTimeout()
+      setIsPaused(false)
+      setIsGameOver(true)
+      const isNew = storageService.saveHighScore('blitz-2s', finalScore)
+      setIsNewRecord(isNew)
+      setBestScore(storageService.getHighScores()['blitz-2s'] || finalScore)
+      if (isNew && finalScore > 0) {
+        audioService.playSuccessChime()
+        try {
+          confetti({ particleCount: 65, spread: 70, origin: { y: 0.6 } })
+        } catch {}
+      }
+    },
+    [clearFeedbackTimeout]
+  )
 
   const advanceNextRound = useCallback(
     (nextRoundNum: number, prevId: string) => {
       const nextP = generatePrompt(nextRoundNum, prevId)
+      remainingMsRef.current = nextP.durationMs
+      const tenths = Math.round(nextP.durationMs / 100)
+      lastTenthsRef.current = tenths
+
       setPrompt(nextP)
       setRound(nextRoundNum)
       setFeedback('none')
-      setProgressPct(100)
-      setSecondsLeft(Number((nextP.durationMs / 1000).toFixed(1)))
-      deadlineRef.current = performance.now() + nextP.durationMs
+      setIsUrgentText(false)
+      setSecondsLeft(tenths / 10)
+      applyBarVisual(100)
       lockedRef.current = false
     },
-    [generatePrompt]
+    [applyBarVisual, generatePrompt]
   )
 
   const handleTimeout = useCallback(() => {
     if (lockedRef.current || isGameOver) return
     lockedRef.current = true
+    applyBarVisual(0)
+    setSecondsLeft(0)
 
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
       try {
@@ -143,29 +193,55 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
     livesRef.current = nextLives
     setLives(nextLives)
 
-    setTimeout(() => {
+    clearFeedbackTimeout()
+    feedbackTimeoutRef.current = window.setTimeout(() => {
+      feedbackTimeoutRef.current = null
       if (nextLives <= 0) {
         endGame(scoreRef.current)
       } else {
         advanceNextRound(round + 1, prompt.word.id)
       }
     }, 1150)
-  }, [isGameOver, round, prompt.word.id, endGame, advanceNextRound])
+  }, [isGameOver, round, prompt.word.id, applyBarVisual, clearFeedbackTimeout, endGame, advanceNextRound])
 
-  // 60fps Timer Bar Loop
+  // Cleanup on unmount & auto-pause on tab hide
   useEffect(() => {
-    if (isGameOver) return
-    deadlineRef.current = performance.now() + prompt.durationMs
+    const onVisibility = () => {
+      if (document.hidden && !isGameOver && !lockedRef.current) {
+        setIsPaused(true)
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility)
+      clearFeedbackTimeout()
+    }
+  }, [isGameOver, clearFeedbackTimeout])
+
+  // Direct DOM 60fps Timer Bar Loop (avoids 60 React re-renders/sec!)
+  useEffect(() => {
+    if (isGameOver || isPaused) return
 
     let rafId = 0
-    const tick = (now: number) => {
-      if (!lockedRef.current) {
-        const remaining = Math.max(0, deadlineRef.current - now)
-        const pct = (remaining / prompt.durationMs) * 100
-        setProgressPct(pct)
-        setSecondsLeft(Number((remaining / 1000).toFixed(1)))
+    let lastNow = performance.now()
 
-        if (remaining <= 0) {
+    const tick = (now: number) => {
+      const dtMs = Math.min(50, now - lastNow)
+      lastNow = now
+
+      if (!lockedRef.current) {
+        remainingMsRef.current = Math.max(0, remainingMsRef.current - dtMs)
+        const pct = (remainingMsRef.current / prompt.durationMs) * 100
+        applyBarVisual(pct)
+
+        const tenths = Math.ceil(remainingMsRef.current / 100)
+        if (tenths !== lastTenthsRef.current) {
+          lastTenthsRef.current = tenths
+          setSecondsLeft(tenths / 10)
+          setIsUrgentText(pct <= 35)
+        }
+
+        if (remainingMsRef.current <= 0) {
           handleTimeout()
           return
         }
@@ -175,11 +251,11 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
 
     rafId = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(rafId)
-  }, [prompt, isGameOver, handleTimeout])
+  }, [prompt, isGameOver, isPaused, applyBarVisual, handleTimeout])
 
   const handleAnswer = useCallback(
     (userSaysMatch: boolean) => {
-      if (lockedRef.current || isGameOver) return
+      if (lockedRef.current || isGameOver || isPaused) return
       lockedRef.current = true
 
       const isRight = userSaysMatch === prompt.isMatch
@@ -187,7 +263,7 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
       if (isRight) {
         const nextStreak = streak + 1
         const isFever = nextStreak >= 5
-        const timeBonus = Math.round((progressPct / 100) * 30)
+        const timeBonus = Math.round((progressPctRef.current / 100) * 30)
         const gained = (50 + timeBonus) * (isFever ? 2 : 1)
 
         scoreRef.current += gained
@@ -205,9 +281,11 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
         audioService.playCombo(nextStreak)
         storageService.recordDailyActivity(true)
 
-        setTimeout(() => {
+        clearFeedbackTimeout()
+        feedbackTimeoutRef.current = window.setTimeout(() => {
+          feedbackTimeoutRef.current = null
           advanceNextRound(round + 1, prompt.word.id)
-        }, 230)
+        }, 220)
       } else {
         if (typeof navigator !== 'undefined' && navigator.vibrate) {
           try {
@@ -222,7 +300,9 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
         livesRef.current = nextLives
         setLives(nextLives)
 
-        setTimeout(() => {
+        clearFeedbackTimeout()
+        feedbackTimeoutRef.current = window.setTimeout(() => {
+          feedbackTimeoutRef.current = null
           if (nextLives <= 0) {
             endGame(scoreRef.current)
           } else {
@@ -231,13 +311,21 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
         }, 1150)
       }
     },
-    [isGameOver, prompt, streak, progressPct, round, advanceNextRound, endGame]
+    [isGameOver, isPaused, prompt, streak, round, clearFeedbackTimeout, advanceNextRound, endGame]
   )
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts (binds only once per round instead of 60x/sec!)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (isGameOver || lockedRef.current) return
+      if (isGameOver) return
+      if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') {
+        if (!lockedRef.current) {
+          e.preventDefault()
+          setIsPaused((p) => !p)
+        }
+        return
+      }
+      if (isPaused || lockedRef.current) return
       if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a' || e.key === '1') {
         e.preventDefault()
         handleAnswer(false)
@@ -248,45 +336,70 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [isGameOver, handleAnswer])
+  }, [isGameOver, isPaused, handleAnswer])
 
   const restartBlitz = () => {
     audioService.playClick()
+    clearFeedbackTimeout()
     scoreRef.current = 0
     livesRef.current = 3
     lockedRef.current = false
+
+    const first = generatePrompt(1)
+    remainingMsRef.current = first.durationMs
+    lastTenthsRef.current = Math.round(first.durationMs / 100)
+
     setScore(0)
     setLives(3)
     setStreak(0)
     setMaxStreak(0)
     setCorrectTotal(0)
     setIsNewRecord(false)
+    setIsPaused(false)
     setIsGameOver(false)
-    const first = generatePrompt(1)
     setPrompt(first)
     setRound(1)
     setFeedback('none')
-    setProgressPct(100)
+    setIsUrgentText(false)
     setSecondsLeft(2.6)
-    deadlineRef.current = performance.now() + first.durationMs
+    applyBarVisual(100)
   }
 
   const isFever = streak >= 5
 
   return (
     <div
-      className="w-full flex-1 flex flex-col max-w-md mx-auto px-3.5 py-2 select-none"
+      className="w-full flex-1 flex flex-col max-w-md mx-auto px-3.5 py-1.5 select-none relative"
       data-no-pull="true"
     >
       {/* Top HUD */}
-      <div className="flex items-center justify-between mb-3">
-        <button
-          onClick={onBack}
-          className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
-          title="Thoát trò chơi"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={onBack}
+            className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
+            title="Thoát trò chơi"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+
+          {!isGameOver && (
+            <button
+              type="button"
+              onClick={() => {
+                if (!lockedRef.current) {
+                  audioService.playClick()
+                  setIsPaused((p) => !p)
+                }
+              }}
+              className="p-2 rounded-lg text-slate-500 hover:text-rose-600 dark:hover:text-rose-400"
+              title={isPaused ? 'Tiếp tục (P)' : 'Tạm dừng (P)'}
+            >
+              {isPaused ? <Play className="w-4 h-4 fill-current" /> : <Pause className="w-4 h-4" />}
+            </button>
+          )}
+        </div>
 
         <div className="flex items-center gap-2">
           <span className="text-sm font-extrabold text-slate-900 dark:text-slate-100">
@@ -321,39 +434,34 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
       </div>
 
       {!isGameOver ? (
-        <>
+        <div className="flex-1 flex flex-col relative">
           {/* Urgent 2-Second Bar */}
-          <div className="flex items-center justify-between text-xs font-bold mb-1.5 px-1">
-            <span className="text-slate-400 uppercase tracking-wider text-[11px]">
+          <div className="flex items-center justify-between text-xs font-bold mb-1.5 px-1 gap-2">
+            <span className="text-slate-400 uppercase tracking-wider text-[11px] truncate">
               Câu {round} • {deckName}
             </span>
             <span
               className={
-                progressPct <= 35
-                  ? 'text-rose-500 font-extrabold'
-                  : 'text-slate-600 dark:text-slate-300'
+                isUrgentText
+                  ? 'text-rose-500 font-extrabold shrink-0'
+                  : 'text-slate-600 dark:text-slate-300 shrink-0'
               }
             >
               {secondsLeft.toFixed(1)}s
             </span>
           </div>
 
-          <div className="w-full h-2.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden mb-5">
+          <div className="w-full h-2.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden mb-3.5 sm:mb-5">
             <div
-              className={`h-full rounded-full ${
-                progressPct <= 35
-                  ? 'bg-rose-500'
-                  : progressPct <= 65
-                  ? 'bg-amber-500'
-                  : 'bg-emerald-500'
-              }`}
-              style={{ width: `${progressPct}%` }}
+              ref={barRef}
+              className="h-full rounded-full bg-emerald-500"
+              style={{ width: '100%' }}
             />
           </div>
 
           {/* Blitz Flash Card */}
           <div
-            className={`flex-1 rounded-3xl p-6 flex flex-col items-center justify-center text-center border-2 transition-all my-auto shadow-lg ${
+            className={`flex-1 rounded-3xl p-4 sm:p-6 flex flex-col items-center justify-center text-center border-2 transition-colors my-auto shadow-lg ${
               feedback === 'correct'
                 ? 'bg-emerald-500/15 border-emerald-500'
                 : feedback === 'wrong' || feedback === 'timeout'
@@ -363,27 +471,27 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
                 : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-800'
             }`}
           >
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
               Cặp từ — nghĩa này Đúng hay Sai?
             </span>
 
-            <h2 className="text-3xl font-extrabold text-slate-900 dark:text-slate-50 tracking-tight break-words">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-50 tracking-tight break-words">
               {prompt.word.term}
             </h2>
             {prompt.word.ipa && (
-              <p className="text-xs font-sans font-semibold text-indigo-500 dark:text-indigo-400 mt-1">
+              <p className="text-xs font-sans font-semibold text-indigo-500 dark:text-indigo-400 mt-0.5">
                 {prompt.word.ipa}
               </p>
             )}
 
-            <div className="w-12 h-0.5 bg-slate-200 dark:bg-slate-700 my-5 rounded-full" />
+            <div className="w-12 h-0.5 bg-slate-200 dark:bg-slate-700 my-3.5 sm:my-5 rounded-full" />
 
-            <p className="text-lg font-bold text-slate-800 dark:text-slate-100 leading-snug break-words px-2">
+            <p className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100 leading-snug break-words px-2">
               "{prompt.shownDefinition}"
             </p>
 
             {(feedback === 'wrong' || feedback === 'timeout') && (
-              <div className="mt-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/25 text-xs text-rose-600 dark:text-rose-300 font-semibold animate-fadeIn">
+              <div className="mt-3 p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/25 text-xs text-rose-600 dark:text-rose-300 font-semibold animate-fadeIn">
                 {feedback === 'timeout' ? 'Hết 2 giây! ' : 'Chưa chuẩn! '}
                 Nghĩa thật của <strong>{prompt.word.term}</strong> là:{' '}
                 <span className="underline">{prompt.word.definition}</span>
@@ -392,11 +500,11 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
           </div>
 
           {/* Giant 2-Thumb Action Buttons */}
-          <div className="grid grid-cols-2 gap-3.5 pt-5 pb-2">
+          <div className="grid grid-cols-2 gap-3 pt-3.5 sm:pt-5 pb-1">
             <button
               type="button"
               onClick={() => handleAnswer(false)}
-              className="py-5 rounded-2xl bg-rose-600 hover:bg-rose-500 active:scale-95 text-white font-extrabold text-base flex items-center justify-center gap-2 shadow-lg shadow-rose-600/20 transition-transform"
+              className="py-4 sm:py-5 rounded-2xl bg-rose-600 hover:bg-rose-500 active:scale-95 text-white font-extrabold text-base flex items-center justify-center gap-2 shadow-lg shadow-rose-600/20 transition-transform"
             >
               <X className="w-6 h-6 stroke-[2.5]" />
               <span>SAI</span>
@@ -405,18 +513,51 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
             <button
               type="button"
               onClick={() => handleAnswer(true)}
-              className="py-5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-extrabold text-base flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-transform"
+              className="py-4 sm:py-5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-extrabold text-base flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-transform"
             >
               <Check className="w-6 h-6 stroke-[2.5]" />
               <span>ĐÚNG</span>
             </button>
           </div>
-        </>
+
+          {/* Pause Overlay hides current prompt so timer can't be abused */}
+          {isPaused && (
+            <div className="absolute inset-0 rounded-3xl bg-slate-950/88 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center animate-fadeIn z-20">
+              <div className="w-14 h-14 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-400 flex items-center justify-center mb-3">
+                <Pause className="w-7 h-7" />
+              </div>
+              <h3 className="text-lg font-extrabold text-white mb-1">Đang tạm dừng Blitz</h3>
+              <p className="text-xs text-slate-400 mb-5">
+                Câu {round} • Điểm hiện tại: <strong>{score.toLocaleString()}</strong>
+              </p>
+              <div className="w-full max-w-xs space-y-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    audioService.playClick()
+                    setIsPaused(false)
+                  }}
+                  className="w-full py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform"
+                >
+                  <Play className="w-4 h-4 fill-current" />
+                  <span>Tiếp tục phản xạ</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={onBack}
+                  className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs"
+                >
+                  Về Đấu Trường chọn trò khác
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       ) : (
         /* Game Over Screen */
         <div className="flex-1 flex flex-col items-center justify-center p-5 text-center animate-fadeIn">
-          <div className="w-18 h-18 rounded-3xl bg-rose-500/15 border border-rose-500/30 text-rose-500 flex items-center justify-center mb-4">
-            <Flame className="w-9 h-9" />
+          <div className="w-16 h-16 rounded-3xl bg-rose-500/15 border border-rose-500/30 text-rose-500 flex items-center justify-center mb-3">
+            <Flame className="w-8 h-8" />
           </div>
 
           {isNewRecord && (
@@ -429,10 +570,11 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
             Kết thúc Blitz 2 Giây!
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-5">
-            Phản xạ đúng <strong>{correctTotal} câu</strong> • Chuỗi liên tiếp cao nhất: <strong>{maxStreak}</strong>
+            Phản xạ đúng <strong>{correctTotal} câu</strong> • Chuỗi liên tiếp cao nhất:{' '}
+            <strong>{maxStreak}</strong>
           </p>
 
-          <div className="w-full max-w-xs grid grid-cols-2 gap-3 mb-6">
+          <div className="w-full max-w-xs grid grid-cols-2 gap-3 mb-5">
             <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800">
               <div className="text-xl font-extrabold text-rose-600 dark:text-rose-400">
                 {score.toLocaleString()}

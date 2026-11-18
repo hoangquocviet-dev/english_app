@@ -1,22 +1,41 @@
-import { useCallback, useState } from 'react'
-import { AddWordView } from './components/add/AddWordView'
+import { lazy, Suspense, useCallback, useState } from 'react'
 import { BottomNav } from './components/common/BottomNav'
 import { ErrorBoundary } from './components/common/ErrorBoundary'
 import { Navbar } from './components/common/Navbar'
 import { PullToRefresh } from './components/common/PullToRefresh'
-import { ArcadeHub } from './components/games/ArcadeHub'
-import { BlitzGame } from './components/games/BlitzGame'
-import { SkyDefenderGame } from './components/games/SkyDefenderGame'
-import { SpeedMatchGame } from './components/games/SpeedMatchGame'
-import { LibraryView } from './components/library/LibraryView'
-import { FlashcardView } from './components/practice/FlashcardView'
-import { ListeningView } from './components/practice/ListeningView'
+import { ALL_DECKS_ID, ArcadeHub } from './components/games/ArcadeHub'
 import { PracticeHome } from './components/practice/PracticeHome'
-import { QuizView } from './components/practice/QuizView'
-import { SpellingView } from './components/practice/SpellingView'
 import type { ActiveTab, ArcadeGameId, Deck, StudyMode, WordItem } from './types'
 import { audioService } from './utils/audio'
 import { storageService } from './utils/storage'
+
+const FlashcardView = lazy(() =>
+  import('./components/practice/FlashcardView').then((m) => ({ default: m.FlashcardView }))
+)
+const QuizView = lazy(() =>
+  import('./components/practice/QuizView').then((m) => ({ default: m.QuizView }))
+)
+const SpellingView = lazy(() =>
+  import('./components/practice/SpellingView').then((m) => ({ default: m.SpellingView }))
+)
+const ListeningView = lazy(() =>
+  import('./components/practice/ListeningView').then((m) => ({ default: m.ListeningView }))
+)
+const SkyDefenderGame = lazy(() =>
+  import('./components/games/SkyDefenderGame').then((m) => ({ default: m.SkyDefenderGame }))
+)
+const SpeedMatchGame = lazy(() =>
+  import('./components/games/SpeedMatchGame').then((m) => ({ default: m.SpeedMatchGame }))
+)
+const BlitzGame = lazy(() =>
+  import('./components/games/BlitzGame').then((m) => ({ default: m.BlitzGame }))
+)
+const AddWordView = lazy(() =>
+  import('./components/add/AddWordView').then((m) => ({ default: m.AddWordView }))
+)
+const LibraryView = lazy(() =>
+  import('./components/library/LibraryView').then((m) => ({ default: m.LibraryView }))
+)
 
 function shuffleWords(list: WordItem[]): WordItem[] {
   const arr = [...list]
@@ -29,10 +48,19 @@ function shuffleWords(list: WordItem[]): WordItem[] {
   return arr
 }
 
+function ViewLoader() {
+  return (
+    <div className="w-full flex-1 flex items-center justify-center p-8">
+      <div className="w-7 h-7 rounded-full border-3 border-indigo-500/30 border-t-indigo-500 animate-spin" />
+    </div>
+  )
+}
+
 export function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('practice')
   const [activeStudyMode, setActiveStudyMode] = useState<StudyMode | null>(null)
   const [activeGame, setActiveGame] = useState<ArcadeGameId | null>(null)
+  const [arcadeUseAllDecks, setArcadeUseAllDecks] = useState<boolean>(false)
   const [sessionWords, setSessionWords] = useState<WordItem[]>([])
 
   const [decks, setDecks] = useState<Deck[]>(() => storageService.getDecks())
@@ -40,6 +68,7 @@ export function App() {
   const [words, setWords] = useState<WordItem[]>(() =>
     storageService.getWords(storageService.getActiveDeckId())
   )
+  const [allWords, setAllWords] = useState<WordItem[]>(() => storageService.getWords())
   const [streak, setStreak] = useState<number>(() => storageService.getStudyStreak())
   const [dailyProgress, setDailyProgress] = useState(() => storageService.getDailyProgress())
   const [studyPrefs, setStudyPrefs] = useState(() => storageService.getStudyPreferences())
@@ -53,6 +82,7 @@ export function App() {
     setDecks(loadedDecks)
     setActiveDeckId(currentActiveDeckId)
     setWords(loadedWords)
+    setAllWords(storageService.getWords())
     setStreak(storageService.getStudyStreak())
     setDailyProgress(storageService.getDailyProgress())
     setHighScores(storageService.getHighScores())
@@ -62,6 +92,16 @@ export function App() {
     storageService.setActiveDeckId(deckId)
     setActiveDeckId(deckId)
     setWords(storageService.getWords(deckId))
+  }
+
+  const handleSelectArcadeDeck = (deckId: string) => {
+    if (deckId === ALL_DECKS_ID) {
+      setArcadeUseAllDecks(true)
+      setAllWords(storageService.getWords())
+    } else {
+      setArcadeUseAllDecks(false)
+      handleSelectDeck(deckId)
+    }
   }
 
   const handleResetDeck = (deckId: string) => {
@@ -102,6 +142,10 @@ export function App() {
 
   const activeDeck = decks.find((d) => d.id === activeDeckId) || decks[0] || null
   const isFullScreenSession = Boolean(activeStudyMode || activeGame)
+  const arcadeWords = arcadeUseAllDecks ? allWords : words
+  const arcadeDeckLabel = arcadeUseAllDecks
+    ? 'Tất cả kho từ'
+    : activeDeck?.name || 'Kho từ vựng'
 
   return (
     <ErrorBoundary>
@@ -127,128 +171,131 @@ export function App() {
           />
 
           {/* Main Content Area */}
-          <main className={`w-full flex-1 flex flex-col ${isFullScreenSession ? 'pb-3' : 'pb-20'}`}>
-            {/* Active Study Mode Screens */}
-            {activeStudyMode === 'flashcard' && activeDeck && (
-              <FlashcardView
-                words={sessionWords}
-                deckId={activeDeck.id}
-                deckName={activeDeck.name}
-                onBack={handleExitStudy}
-              />
-            )}
+          <main className={`w-full flex-1 flex flex-col ${isFullScreenSession ? 'pb-2' : 'pb-20'}`}>
+            <Suspense fallback={<ViewLoader />}>
+              {/* Active Study Mode Screens */}
+              {activeStudyMode === 'flashcard' && activeDeck && (
+                <FlashcardView
+                  words={sessionWords}
+                  deckId={activeDeck.id}
+                  deckName={activeDeck.name}
+                  onBack={handleExitStudy}
+                />
+              )}
 
-            {activeStudyMode === 'quiz' && activeDeck && (
-              <QuizView
-                words={sessionWords}
-                allDeckWords={words}
-                deckId={activeDeck.id}
-                deckName={activeDeck.name}
-                onBack={handleExitStudy}
-              />
-            )}
+              {activeStudyMode === 'quiz' && activeDeck && (
+                <QuizView
+                  words={sessionWords}
+                  allDeckWords={words}
+                  deckId={activeDeck.id}
+                  deckName={activeDeck.name}
+                  onBack={handleExitStudy}
+                />
+              )}
 
-            {activeStudyMode === 'spelling' && activeDeck && (
-              <SpellingView
-                words={sessionWords}
-                deckId={activeDeck.id}
-                deckName={activeDeck.name}
-                onBack={handleExitStudy}
-              />
-            )}
+              {activeStudyMode === 'spelling' && activeDeck && (
+                <SpellingView
+                  words={sessionWords}
+                  deckId={activeDeck.id}
+                  deckName={activeDeck.name}
+                  onBack={handleExitStudy}
+                />
+              )}
 
-            {activeStudyMode === 'listening' && activeDeck && (
-              <ListeningView
-                words={sessionWords}
-                allDeckWords={words}
-                deckId={activeDeck.id}
-                deckName={activeDeck.name}
-                onBack={handleExitStudy}
-              />
-            )}
+              {activeStudyMode === 'listening' && activeDeck && (
+                <ListeningView
+                  words={sessionWords}
+                  allDeckWords={words}
+                  deckId={activeDeck.id}
+                  deckName={activeDeck.name}
+                  onBack={handleExitStudy}
+                />
+              )}
 
-            {/* Active Arcade Mini-Game Screens */}
-            {activeGame === 'sky-defender' && activeDeck && (
-              <SkyDefenderGame
-                words={words}
-                deckName={activeDeck.name}
-                onBack={handleExitGame}
-              />
-            )}
+              {/* Active Arcade Mini-Game Screens */}
+              {activeGame === 'sky-defender' && activeDeck && (
+                <SkyDefenderGame
+                  words={arcadeWords}
+                  deckName={arcadeDeckLabel}
+                  onBack={handleExitGame}
+                />
+              )}
 
-            {activeGame === 'speed-match' && activeDeck && (
-              <SpeedMatchGame
-                words={words}
-                deckName={activeDeck.name}
-                onBack={handleExitGame}
-              />
-            )}
+              {activeGame === 'speed-match' && activeDeck && (
+                <SpeedMatchGame
+                  words={arcadeWords}
+                  deckName={arcadeDeckLabel}
+                  onBack={handleExitGame}
+                />
+              )}
 
-            {activeGame === 'blitz-2s' && activeDeck && (
-              <BlitzGame
-                words={words}
-                deckName={activeDeck.name}
-                onBack={handleExitGame}
-              />
-            )}
+              {activeGame === 'blitz-2s' && activeDeck && (
+                <BlitzGame
+                  words={arcadeWords}
+                  deckName={arcadeDeckLabel}
+                  onBack={handleExitGame}
+                />
+              )}
 
-            {/* Tab Views */}
-            {!isFullScreenSession && activeDeck && (
-              <>
-                {activeTab === 'practice' && (
-                  <PracticeHome
-                    decks={decks}
-                    activeDeck={activeDeck}
-                    words={words}
-                    dailyProgress={dailyProgress}
-                    shuffleEnabled={studyPrefs.shuffle}
-                    onToggleShuffle={handleToggleShuffle}
-                    onSelectDeck={handleSelectDeck}
-                    onResetDeck={handleResetDeck}
-                    onStartMode={handleStartMode}
-                    onGoToAddWord={() => setActiveTab('add')}
-                  />
-                )}
+              {/* Tab Views */}
+              {!isFullScreenSession && activeDeck && (
+                <>
+                  {activeTab === 'practice' && (
+                    <PracticeHome
+                      decks={decks}
+                      activeDeck={activeDeck}
+                      words={words}
+                      dailyProgress={dailyProgress}
+                      shuffleEnabled={studyPrefs.shuffle}
+                      onToggleShuffle={handleToggleShuffle}
+                      onSelectDeck={handleSelectDeck}
+                      onResetDeck={handleResetDeck}
+                      onStartMode={handleStartMode}
+                      onGoToAddWord={() => setActiveTab('add')}
+                    />
+                  )}
 
-                {activeTab === 'games' && (
-                  <ArcadeHub
-                    decks={decks}
-                    activeDeck={activeDeck}
-                    words={words}
-                    highScores={highScores}
-                    onSelectDeck={handleSelectDeck}
-                    onStartGame={(gameId) => setActiveGame(gameId)}
-                  />
-                )}
+                  {activeTab === 'games' && (
+                    <ArcadeHub
+                      decks={decks}
+                      selectedDeckId={arcadeUseAllDecks ? ALL_DECKS_ID : activeDeck.id}
+                      words={arcadeWords}
+                      totalAllWordsCount={allWords.length}
+                      highScores={highScores}
+                      onSelectArcadeDeck={handleSelectArcadeDeck}
+                      onStartGame={(gameId) => setActiveGame(gameId)}
+                    />
+                  )}
 
-                {activeTab === 'add' && (
-                  <AddWordView
-                    decks={decks}
-                    activeDeckId={activeDeck.id}
-                    onWordAdded={(addedDeckId) => {
-                      handleSelectDeck(addedDeckId)
-                      refreshData()
-                    }}
-                    onGoToPractice={(targetDeckId) => {
-                      handleSelectDeck(targetDeckId)
-                      refreshData()
-                      setActiveTab('practice')
-                    }}
-                  />
-                )}
+                  {activeTab === 'add' && (
+                    <AddWordView
+                      decks={decks}
+                      activeDeckId={activeDeck.id}
+                      onWordAdded={(addedDeckId) => {
+                        handleSelectDeck(addedDeckId)
+                        refreshData()
+                      }}
+                      onGoToPractice={(targetDeckId) => {
+                        handleSelectDeck(targetDeckId)
+                        refreshData()
+                        setActiveTab('practice')
+                      }}
+                    />
+                  )}
 
-                {activeTab === 'library' && (
-                  <LibraryView
-                    decks={decks}
-                    activeDeck={activeDeck}
-                    words={words}
-                    onSelectDeck={handleSelectDeck}
-                    onDataChanged={refreshData}
-                    onGoToAddWord={() => setActiveTab('add')}
-                  />
-                )}
-              </>
-            )}
+                  {activeTab === 'library' && (
+                    <LibraryView
+                      decks={decks}
+                      activeDeck={activeDeck}
+                      words={words}
+                      onSelectDeck={handleSelectDeck}
+                      onDataChanged={refreshData}
+                      onGoToAddWord={() => setActiveTab('add')}
+                    />
+                  )}
+                </>
+              )}
+            </Suspense>
           </main>
 
           {/* Bottom Navigation */}

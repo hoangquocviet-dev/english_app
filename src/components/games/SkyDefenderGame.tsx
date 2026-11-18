@@ -1,5 +1,5 @@
 import confetti from 'canvas-confetti'
-import { ArrowLeft, Crosshair, Heart, RotateCcw, Trophy, Volume2 } from 'lucide-react'
+import { ArrowLeft, Crosshair, Heart, Pause, Play, RotateCcw, Trophy, Volume2 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { INITIAL_WORDS } from '../../data/initialDecks'
 import type { WordItem } from '../../types'
@@ -58,6 +58,8 @@ interface Star {
   alpha: number
 }
 
+const LANE_RATIOS = [0.18, 0.5, 0.82] as const
+
 function shuffle<T>(arr: T[]): T[] {
   const copy = [...arr]
   for (let i = copy.length - 1; i > 0; i--) {
@@ -67,6 +69,25 @@ function shuffle<T>(arr: T[]): T[] {
     copy[j] = tmp
   }
   return copy
+}
+
+// Cross-browser rounded rect helper (safe on iOS 12-15 / iPhone 7 where ctx.roundRect is absent)
+function drawRoundedRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number
+) {
+  const radius = Math.min(r, w / 2, h / 2)
+  ctx.beginPath()
+  ctx.moveTo(x + radius, y)
+  ctx.arcTo(x + w, y, x + w, y + h, radius)
+  ctx.arcTo(x + w, y + h, x, y + h, radius)
+  ctx.arcTo(x, y + h, x, y, radius)
+  ctx.arcTo(x, y, x + w, y, radius)
+  ctx.closePath()
 }
 
 export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProps) {
@@ -79,14 +100,17 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
   const [lives, setLives] = useState(3)
   const [kills, setKills] = useState(0)
   const [targetWord, setTargetWord] = useState<WordItem | null>(null)
+  const [isPaused, setIsPaused] = useState(false)
   const [isGameOver, setIsGameOver] = useState(false)
   const [isNewRecord, setIsNewRecord] = useState(false)
-  const [bestScore, setBestScore] = useState(() => storageService.getHighScores()['sky-defender'] || 0)
+  const [bestScore, setBestScore] = useState(
+    () => storageService.getHighScores()['sky-defender'] || 0
+  )
 
   // Mutable 60fps engine state
   const engineRef = useRef({
     width: 360,
-    height: 480,
+    height: 440,
     jetX: 180,
     targetX: 180,
     keys: { left: false, right: false },
@@ -95,8 +119,8 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
     particles: [] as Particle[],
     floatingTexts: [] as FloatingText[],
     stars: [] as Star[],
-    lastFireTime: 0,
-    waveTransitionUntil: 0,
+    fireCooldown: 0,
+    waveTransitionDelay: 0,
     damageFlash: 0,
     score: 0,
     wave: 1,
@@ -104,23 +128,27 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
     lives: 3,
     kills: 0,
     running: true,
+    paused: false,
     nextPlaneId: 1,
     wordDeckQueue: [] as WordItem[],
   })
 
-  // Build full playable word pool (prefer concise terms <= 22 chars for crisp fighter labels)
+  // Build playable word pool (prefer concise terms & definitions for fast arcade reading)
   const getPlayablePool = useCallback((): WordItem[] => {
-    const concise = words.filter((w) => w.term.length <= 22)
-    if (concise.length >= 6) return concise
+    const ideal = words.filter((w) => w.term.length <= 22 && w.definition.length <= 115)
+    if (ideal.length >= 8) return ideal
+    const conciseTerm = words.filter((w) => w.term.length <= 22)
+    if (conciseTerm.length >= 6) return conciseTerm
     if (words.length >= 4) return words
+
     const combined = [...words]
     const seen = new Set(words.map((w) => w.term.toLowerCase()))
     for (const iw of INITIAL_WORDS) {
-      if (iw.term.length <= 22 && !seen.has(iw.term.toLowerCase())) {
+      if (iw.term.length <= 22 && iw.definition.length <= 115 && !seen.has(iw.term.toLowerCase())) {
         seen.add(iw.term.toLowerCase())
         combined.push(iw)
       }
-      if (combined.length >= 15) break
+      if (combined.length >= 16) break
     }
     return combined
   }, [words])
@@ -157,18 +185,21 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
       setTargetWord(chosenTarget)
 
       const distractors = shuffle(
-        pool.filter((w) => w.term.toLowerCase() !== chosenTarget.term.toLowerCase())
+        pool.filter(
+          (w) =>
+            w.term.toLowerCase() !== chosenTarget.term.toLowerCase() &&
+            w.definition.trim().toLowerCase() !== chosenTarget.definition.trim().toLowerCase()
+        )
       ).slice(0, 2)
 
       const waveWords = shuffle([chosenTarget, ...distractors])
-      const laneRatios = [0.18, 0.5, 0.82]
-      // Gentle speed scaling so players have comfortable time to read & steer
-      const baseSpeed = Math.min(78, 36 + (waveNum - 1) * 3.2)
+      // Gentle speed curve so players have plenty of time to read & steer
+      const baseSpeed = Math.min(76, 35 + (waveNum - 1) * 3.0)
 
       st.enemies = waveWords.map((w, idx) => ({
         id: st.nextPlaneId++,
         lane: idx,
-        x: st.width * laneRatios[idx],
+        x: st.width * LANE_RATIOS[idx],
         y: 10 - (idx === 1 ? 0 : 14),
         speed: baseSpeed + (idx % 2) * 3,
         word: w,
@@ -184,6 +215,9 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
   const triggerGameOver = useCallback((finalScore: number) => {
     const st = engineRef.current
     st.running = false
+    st.paused = false
+    setIsPaused(false)
+
     const isNew = storageService.saveHighScore('sky-defender', finalScore)
     setIsNewRecord(isNew)
     setBestScore(storageService.getHighScores()['sky-defender'] || finalScore)
@@ -201,6 +235,17 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
     }
   }, [])
 
+  const togglePause = useCallback(() => {
+    const st = engineRef.current
+    if (!st.running) return
+    const nextPaused = !st.paused
+    st.paused = nextPaused
+    st.keys.left = false
+    st.keys.right = false
+    setIsPaused(nextPaused)
+    audioService.playClick()
+  }, [])
+
   const startNewGame = useCallback(() => {
     const st = engineRef.current
     st.score = 0
@@ -212,9 +257,11 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
     st.particles = []
     st.floatingTexts = []
     st.enemies = []
-    st.waveTransitionUntil = 0
+    st.fireCooldown = 0.25
+    st.waveTransitionDelay = 0
     st.damageFlash = 0
     st.running = true
+    st.paused = false
     st.wordDeckQueue = []
     st.jetX = st.width / 2
     st.targetX = st.width / 2
@@ -224,6 +271,7 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
     setCombo(1)
     setLives(3)
     setKills(0)
+    setIsPaused(false)
     setIsNewRecord(false)
     setIsGameOver(false)
 
@@ -238,8 +286,8 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
 
     const updateSize = () => {
       const rect = container.getBoundingClientRect()
-      const w = Math.max(300, rect.width)
-      const h = Math.max(340, rect.height)
+      const w = Math.max(280, rect.width)
+      const h = Math.max(260, rect.height)
       const dpr = Math.min(window.devicePixelRatio || 1, 2.5)
 
       canvas.width = w * dpr
@@ -254,12 +302,13 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
       st.width = w
       st.height = h
       if (prevW !== w) {
-        const laneRatios = [0.18, 0.5, 0.82]
         st.enemies.forEach((e) => {
-          e.x = w * laneRatios[e.lane]
+          e.x = w * LANE_RATIOS[e.lane]
         })
-        st.jetX = Math.min(w - 30, Math.max(30, st.jetX))
-        st.targetX = Math.min(w - 30, Math.max(30, st.targetX))
+        const minX = w * 0.14
+        const maxX = w * 0.86
+        st.jetX = Math.min(maxX, Math.max(minX, (st.jetX / prevW) * w))
+        st.targetX = Math.min(maxX, Math.max(minX, (st.targetX / prevW) * w))
       }
     }
 
@@ -267,11 +316,11 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
 
     // Initialize starfield
     const st = engineRef.current
-    st.stars = Array.from({ length: 42 }, () => ({
+    st.stars = Array.from({ length: 40 }, () => ({
       x: Math.random() * st.width,
       y: Math.random() * st.height,
       size: 0.8 + Math.random() * 1.8,
-      speed: 18 + Math.random() * 42,
+      speed: 18 + Math.random() * 40,
       alpha: 0.25 + Math.random() * 0.65,
     }))
 
@@ -279,13 +328,39 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
 
     window.addEventListener('resize', updateSize)
 
+    const handleVisibilityChange = () => {
+      if (document.hidden && st.running && !st.paused) {
+        st.paused = true
+        st.keys.left = false
+        st.keys.right = false
+        setIsPaused(true)
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') {
+      if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') {
+        if (st.running) {
+          e.preventDefault()
+          st.paused = !st.paused
+          st.keys.left = false
+          st.keys.right = false
+          setIsPaused(st.paused)
+        }
+        return
+      }
+      if (!st.running || st.paused) return
+
+      if (e.key === '1') st.targetX = st.width * LANE_RATIOS[0]
+      else if (e.key === '2') st.targetX = st.width * LANE_RATIOS[1]
+      else if (e.key === '3') st.targetX = st.width * LANE_RATIOS[2]
+      else if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') {
         st.keys.left = true
       } else if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') {
         st.keys.right = true
       }
     }
+
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') {
         st.keys.left = false
@@ -293,6 +368,7 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
         st.keys.right = false
       }
     }
+
     window.addEventListener('keydown', handleKeyDown)
     window.addEventListener('keyup', handleKeyUp)
 
@@ -308,33 +384,38 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
 
       const W = st.width
       const H = st.height
-      const jetY = H - 50
+      const jetY = H - 46
+      const minX = W * 0.14
+      const maxX = W * 0.86
 
-      // 1. Update Game Logic if running
-      if (st.running) {
+      // 1. Update Game Logic if running & not paused
+      if (st.running && !st.paused) {
         // Keyboard steering
-        const keySpeed = 300
+        const keySpeed = 310
         if (st.keys.left) st.targetX -= keySpeed * dt
         if (st.keys.right) st.targetX += keySpeed * dt
-        st.targetX = Math.max(34, Math.min(W - 34, st.targetX))
+        st.targetX = Math.max(minX, Math.min(maxX, st.targetX))
 
         // Smooth jet interpolation
         st.jetX += (st.targetX - st.jetX) * Math.min(1, dt * 16)
 
         // Auto-fire twin laser bolts once enemy squadron enters radar zone
-        if (st.enemies.some((e) => e.y >= 42) && now - st.lastFireTime > 255) {
-          st.lastFireTime = now
+        st.fireCooldown = Math.max(0, st.fireCooldown - dt)
+        if (st.enemies.some((e) => e.y >= 38) && st.fireCooldown <= 0) {
+          st.fireCooldown = 0.24
           st.lasers.push(
-            { x: st.jetX - 10, y: jetY - 18, vy: -520 },
-            { x: st.jetX + 10, y: jetY - 18, vy: -520 }
+            { x: st.jetX - 9, y: jetY - 18, vy: -540 },
+            { x: st.jetX + 9, y: jetY - 18, vy: -540 }
           )
-          audioService.playLaser()
         }
 
-        // Check wave transition timer
-        if (st.waveTransitionUntil > 0 && now >= st.waveTransitionUntil) {
-          st.waveTransitionUntil = 0
-          spawnWave(st.wave)
+        // Check wave transition timer (dt-based so Pause freezes cleanly)
+        if (st.waveTransitionDelay > 0) {
+          st.waveTransitionDelay -= dt
+          if (st.waveTransitionDelay <= 0) {
+            st.waveTransitionDelay = 0
+            spawnWave(st.wave)
+          }
         }
 
         // Move lasers
@@ -347,6 +428,8 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
 
         // Move enemies & check laser collisions
         let correctPlaneEscaped = false
+        let playedTickThisFrame = false
+
         for (let i = st.enemies.length - 1; i >= 0; i--) {
           const enemy = st.enemies[i]
           enemy.y += enemy.speed * dt
@@ -354,10 +437,10 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
 
           // Check collision with lasers once plane enters combat zone
           let destroyed = false
-          if (enemy.y >= 38) {
+          if (enemy.y >= 34) {
             for (let j = st.lasers.length - 1; j >= 0; j--) {
               const b = st.lasers[j]
-              if (Math.abs(b.x - enemy.x) < 34 && Math.abs(b.y - enemy.y) < 24) {
+              if (Math.abs(b.x - enemy.x) < 36 && Math.abs(b.y - enemy.y) < 24) {
                 st.lasers.splice(j, 1)
                 enemy.hp -= 1
                 enemy.hitFlash = 1
@@ -366,6 +449,9 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
                 if (enemy.hp <= 0) {
                   destroyed = true
                   break
+                } else if (!playedTickThisFrame) {
+                  playedTickThisFrame = true
+                  audioService.playHitTick()
                 }
               }
             }
@@ -413,7 +499,7 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
               setCombo(st.combo)
               setWave(st.wave)
 
-              st.waveTransitionUntil = now + 520
+              st.waveTransitionDelay = 0.52
               break
             } else {
               // WRONG PLANE SHOT DOWN!
@@ -424,7 +510,7 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
               st.lives -= 1
 
               st.floatingTexts.push({
-                x: enemy.x,
+                x: Math.min(W - 65, Math.max(65, enemy.x)),
                 y: enemy.y,
                 text: 'BẮN NHẦM! -1 TIM',
                 color: '#fb7185',
@@ -467,7 +553,7 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
 
           st.floatingTexts.push({
             x: W / 2,
-            y: H - 80,
+            y: H - 76,
             text: 'LỌT MỤC TIÊU! -1 TIM',
             color: '#fbbf24',
             life: 1.0,
@@ -480,37 +566,37 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
           if (st.lives <= 0) {
             triggerGameOver(st.score)
           } else {
-            st.waveTransitionUntil = now + 550
+            st.waveTransitionDelay = 0.55
           }
         }
-      }
 
-      // Update stars, particles, floating texts
-      for (const s of st.stars) {
-        s.y += s.speed * dt
-        if (s.y > H) {
-          s.y = 0
-          s.x = Math.random() * W
+        // Update stars, particles, floating texts when unpaused
+        for (const s of st.stars) {
+          s.y += s.speed * dt
+          if (s.y > H) {
+            s.y = 0
+            s.x = Math.random() * W
+          }
         }
-      }
 
-      for (let i = st.particles.length - 1; i >= 0; i--) {
-        const p = st.particles[i]
-        p.x += p.vx * dt
-        p.y += p.vy * dt
-        p.life -= dt
-        if (p.life <= 0) st.particles.splice(i, 1)
-      }
+        for (let i = st.particles.length - 1; i >= 0; i--) {
+          const p = st.particles[i]
+          p.x += p.vx * dt
+          p.y += p.vy * dt
+          p.life -= dt
+          if (p.life <= 0) st.particles.splice(i, 1)
+        }
 
-      for (let i = st.floatingTexts.length - 1; i >= 0; i--) {
-        const ft = st.floatingTexts[i]
-        ft.y -= 35 * dt
-        ft.life -= dt
-        if (ft.life <= 0) st.floatingTexts.splice(i, 1)
-      }
+        for (let i = st.floatingTexts.length - 1; i >= 0; i--) {
+          const ft = st.floatingTexts[i]
+          ft.y -= 35 * dt
+          ft.life -= dt
+          if (ft.life <= 0) st.floatingTexts.splice(i, 1)
+        }
 
-      if (st.damageFlash > 0) {
-        st.damageFlash = Math.max(0, st.damageFlash - dt * 3)
+        if (st.damageFlash > 0) {
+          st.damageFlash = Math.max(0, st.damageFlash - dt * 3)
+        }
       }
 
       // 2. Render Scene
@@ -521,7 +607,7 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
       ctx.fillRect(0, 0, W, H)
 
       // Subtle lane guides
-      ctx.strokeStyle = 'rgba(99, 102, 241, 0.07)'
+      ctx.strokeStyle = 'rgba(99, 102, 241, 0.08)'
       ctx.lineWidth = 1
       ctx.setLineDash([6, 8])
       ;[0.34, 0.66].forEach((ratio) => {
@@ -621,8 +707,7 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
         ctx.fillStyle = 'rgba(15, 23, 42, 0.92)'
         ctx.strokeStyle = 'rgba(99, 102, 241, 0.65)'
         ctx.lineWidth = 1.2
-        ctx.beginPath()
-        ctx.roundRect(-pillW / 2, pillY, pillW, pillH, 7)
+        drawRoundedRect(ctx, -pillW / 2, pillY, pillW, pillH, 7)
         ctx.fill()
         ctx.stroke()
 
@@ -644,7 +729,7 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
       ctx.translate(st.jetX, jetY)
 
       // Thruster flame
-      const flameLen = 11 + Math.sin(now * 0.04) * 4
+      const flameLen = st.paused ? 11 : 11 + Math.sin(now * 0.04) * 4
       const flameGrad = ctx.createLinearGradient(0, 14, 0, 14 + flameLen)
       flameGrad.addColorStop(0, '#38bdf8')
       flameGrad.addColorStop(1, 'rgba(99, 102, 241, 0)')
@@ -658,8 +743,8 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
 
       // Twin cannons
       ctx.fillStyle = '#38bdf8'
-      ctx.fillRect(-12, -14, 3, 10)
-      ctx.fillRect(9, -14, 3, 10)
+      ctx.fillRect(-11, -14, 3, 10)
+      ctx.fillRect(8, -14, 3, 10)
 
       // Starfighter Hull
       ctx.fillStyle = '#e0e7ff'
@@ -720,40 +805,84 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
     return () => {
       cancelAnimationFrame(animId)
       window.removeEventListener('resize', updateSize)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
     }
   }, [spawnWave, startNewGame, triggerGameOver])
 
-  // Pointer / Touch steering on Canvas
-  const handlePointerSteer = (clientX: number) => {
+  // Pointer / Touch steering on Canvas (supports 1-tap lane snap + smooth continuous drag)
+  const handlePointerSteer = (clientX: number, snapToLane: boolean) => {
+    const st = engineRef.current
+    if (!st.running || st.paused) return
     const canvas = canvasRef.current
     if (!canvas) return
     const rect = canvas.getBoundingClientRect()
+    const w = rect.width
     const relX = clientX - rect.left
-    engineRef.current.targetX = Math.max(30, Math.min(rect.width - 30, relX))
+
+    if (snapToLane) {
+      // Snap directly to nearest of the 3 combat lanes on tap
+      let bestX = w * LANE_RATIOS[1]
+      let minDist = Infinity
+      for (const ratio of LANE_RATIOS) {
+        const lx = w * ratio
+        const d = Math.abs(relX - lx)
+        if (d < minDist) {
+          minDist = d
+          bestX = lx
+        }
+      }
+      st.targetX = bestX
+      return
+    }
+
+    // Smooth continuous drag with magnetic lock near lane centers & safe outer bounds
+    const clamped = Math.max(w * 0.14, Math.min(w * 0.86, relX))
+    for (const ratio of LANE_RATIOS) {
+      const lx = w * ratio
+      if (Math.abs(clamped - lx) <= 18) {
+        st.targetX = lx
+        return
+      }
+    }
+    st.targetX = clamped
   }
 
   return (
     <div
-      className="w-full flex-1 flex flex-col max-w-md mx-auto px-3 py-2 select-none"
+      className="w-full flex-1 flex flex-col max-w-md mx-auto px-3 py-1.5 select-none"
       data-no-pull="true"
     >
       {/* Top HUD */}
-      <div className="flex items-center justify-between mb-2">
-        <button
-          onClick={() => {
-            audioService.stopSpeech()
-            onBack()
-          }}
-          className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
-          title="Thoát trò chơi"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
+      <div className="flex items-center justify-between mb-1.5">
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => {
+              audioService.stopSpeech()
+              onBack()
+            }}
+            className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+            title="Thoát trò chơi"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
 
-        <div className="flex items-center gap-2.5">
-          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-500/15 text-indigo-600 dark:text-indigo-400">
+          {!isGameOver && (
+            <button
+              type="button"
+              onClick={togglePause}
+              className="p-2 rounded-lg text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+              title={isPaused ? 'Tiếp tục (P)' : 'Tạm dừng (P)'}
+            >
+              {isPaused ? <Play className="w-4 h-4 fill-current" /> : <Pause className="w-4 h-4" />}
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/15 text-indigo-600 dark:text-indigo-400">
             Đợt {wave}
           </span>
           <span className="text-sm font-extrabold text-slate-900 dark:text-slate-100">
@@ -782,11 +911,11 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
       </div>
 
       {/* Target Meaning Radar Bar */}
-      <div className="bg-slate-900 text-white rounded-2xl px-3.5 py-2.5 mb-2 border border-indigo-500/40 shadow-md flex items-center justify-between gap-2">
+      <div className="bg-slate-900 text-white rounded-2xl px-3.5 py-2 mb-2 border border-indigo-500/40 shadow-md flex items-center justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-cyan-400">
-            <Crosshair className="w-3.5 h-3.5" />
-            <span>Mục tiêu cần bắn hạ ({deckName})</span>
+            <Crosshair className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">Mục tiêu cần bắn hạ ({deckName})</span>
           </div>
           <div className="text-sm font-bold text-white leading-snug line-clamp-2 mt-0.5">
             {targetWord ? targetWord.definition : 'Đang dò mục tiêu...'}
@@ -808,32 +937,65 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
       <div
         ref={containerRef}
         data-no-pull="true"
-        className="flex-1 min-h-[360px] w-full rounded-3xl overflow-hidden relative border-2 border-slate-800 shadow-xl touch-none"
-        onTouchStart={(e) => handlePointerSteer(e.touches[0].clientX)}
-        onTouchMove={(e) => handlePointerSteer(e.touches[0].clientX)}
+        className="flex-1 min-h-[270px] w-full rounded-3xl overflow-hidden relative border-2 border-slate-800 shadow-xl touch-none"
+        onTouchStart={(e) => handlePointerSteer(e.touches[0].clientX, true)}
+        onTouchMove={(e) => handlePointerSteer(e.touches[0].clientX, false)}
+        onMouseDown={(e) => handlePointerSteer(e.clientX, true)}
         onMouseMove={(e) => {
-          if (e.buttons === 1 || !isGameOver) {
-            handlePointerSteer(e.clientX)
+          if (e.buttons === 1 || (!isGameOver && !isPaused)) {
+            handlePointerSteer(e.clientX, false)
           }
         }}
-        onClick={(e) => handlePointerSteer(e.clientX)}
       >
         <canvas ref={canvasRef} className="w-full h-full block" />
 
         {/* Subtle Control Hint on Wave 1 */}
-        {wave === 1 && !isGameOver && (
-          <div className="absolute bottom-2 left-0 right-0 text-center pointer-events-none">
-            <span className="text-[11px] font-medium px-3 py-1 rounded-full bg-slate-900/75 text-slate-300 border border-white/10">
-              Chạm hoặc kéo ngang để lái phi thuyền bắn đúng từ
+        {wave === 1 && !isGameOver && !isPaused && (
+          <div className="absolute bottom-2 left-2 right-2 text-center pointer-events-none">
+            <span className="text-[11px] font-medium px-3 py-1 rounded-full bg-slate-900/75 text-slate-300 border border-white/10 inline-block">
+              Chạm vào làn bay hoặc kéo ngang để bắn đúng từ
             </span>
+          </div>
+        )}
+
+        {/* Pause Overlay */}
+        {isPaused && !isGameOver && (
+          <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center animate-fadeIn">
+            <div className="w-14 h-14 rounded-2xl bg-indigo-500/20 border border-indigo-500/40 text-indigo-400 flex items-center justify-center mb-3">
+              <Pause className="w-7 h-7" />
+            </div>
+            <h3 className="text-lg font-extrabold text-white mb-1">Tạm dừng Không Chiến</h3>
+            <p className="text-xs text-slate-400 mb-5">
+              Đợt {wave} • Điểm hiện tại: <strong>{score.toLocaleString()}</strong>
+            </p>
+            <div className="w-full max-w-xs space-y-2.5">
+              <button
+                type="button"
+                onClick={togglePause}
+                className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform"
+              >
+                <Play className="w-4 h-4 fill-current" />
+                <span>Tiếp tục chiến đấu</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  audioService.stopSpeech()
+                  onBack()
+                }}
+                className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs"
+              >
+                Về Đấu Trường chọn trò khác
+              </button>
+            </div>
           </div>
         )}
 
         {/* Game Over Overlay */}
         {isGameOver && (
-          <div className="absolute inset-0 bg-slate-950/88 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center animate-fadeIn">
-            <div className="w-16 h-16 rounded-2xl bg-indigo-500/20 border border-indigo-500/40 text-amber-400 flex items-center justify-center mb-3">
-              <Trophy className="w-8 h-8" />
+          <div className="absolute inset-0 bg-slate-950/88 backdrop-blur-xs flex flex-col items-center justify-center p-5 text-center animate-fadeIn">
+            <div className="w-15 h-15 rounded-2xl bg-indigo-500/20 border border-indigo-500/40 text-amber-400 flex items-center justify-center mb-2.5">
+              <Trophy className="w-7 h-7" />
             </div>
 
             {isNewRecord && (
@@ -847,7 +1009,7 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
               Đã bắn hạ chuẩn <strong>{kills}</strong> máy bay từ vựng
             </p>
 
-            <div className="w-full max-w-xs grid grid-cols-2 gap-2.5 mb-5">
+            <div className="w-full max-w-xs grid grid-cols-2 gap-2.5 mb-4">
               <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800">
                 <div className="text-lg font-extrabold text-cyan-400">
                   {score.toLocaleString()}
@@ -862,7 +1024,7 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
               </div>
             </div>
 
-            <div className="w-full max-w-xs space-y-2.5">
+            <div className="w-full max-w-xs space-y-2">
               <button
                 type="button"
                 onClick={() => {
@@ -876,7 +1038,10 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
               </button>
               <button
                 type="button"
-                onClick={onBack}
+                onClick={() => {
+                  audioService.stopSpeech()
+                  onBack()
+                }}
                 className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs"
               >
                 Về Đấu Trường chọn trò khác

@@ -2,21 +2,25 @@ import { ChevronRight, Crosshair, Flame, Gamepad2, Rocket, Trophy, Zap } from 'l
 import type { ArcadeGameId, Deck, GameHighScores, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
 
+export const ALL_DECKS_ID = '__all__'
+
 interface ArcadeHubProps {
   decks: Deck[]
-  activeDeck: Deck
+  selectedDeckId: string
   words: WordItem[]
+  totalAllWordsCount: number
   highScores: GameHighScores
-  onSelectDeck: (deckId: string) => void
+  onSelectArcadeDeck: (deckId: string) => void
   onStartGame: (gameId: ArcadeGameId) => void
 }
 
 export function ArcadeHub({
   decks,
-  activeDeck,
+  selectedDeckId,
   words,
+  totalAllWordsCount,
   highScores,
-  onSelectDeck,
+  onSelectArcadeDeck,
   onStartGame,
 }: ArcadeHubProps) {
   const totalBestScore =
@@ -33,22 +37,22 @@ export function ArcadeHub({
     <div className="w-full max-w-md mx-auto px-3.5 py-4 space-y-4 animate-fadeIn">
       {/* Header Banner */}
       <div className="rounded-3xl p-4 bg-gradient-to-br from-indigo-600 via-violet-600 to-sky-600 text-white shadow-lg relative overflow-hidden">
-        <div className="flex items-center justify-between relative z-10">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-white/15 backdrop-blur-xs flex items-center justify-center border border-white/20">
+        <div className="flex items-center justify-between gap-2 relative z-10">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-11 h-11 rounded-2xl bg-white/15 backdrop-blur-xs flex items-center justify-center border border-white/20 shrink-0">
               <Gamepad2 className="w-6 h-6 text-white" />
             </div>
-            <div>
+            <div className="min-w-0">
               <h2 className="text-lg font-extrabold tracking-tight leading-tight">
                 Đấu Trường Từ Vựng
               </h2>
-              <p className="text-xs text-indigo-100 mt-0.5">
+              <p className="text-xs text-indigo-100 mt-0.5 leading-snug">
                 Vừa chơi vừa rèn phản xạ tiếng Anh tốc độ cao
               </p>
             </div>
           </div>
 
-          <div className="text-right bg-black/20 backdrop-blur-xs px-3 py-1.5 rounded-2xl border border-white/15">
+          <div className="text-right bg-black/20 backdrop-blur-xs px-3 py-1.5 rounded-2xl border border-white/15 shrink-0">
             <div className="text-[10px] uppercase tracking-wider text-indigo-100 font-semibold">
               Tổng kỷ lục
             </div>
@@ -66,10 +70,13 @@ export function ArcadeHub({
           </label>
           <div className="relative">
             <select
-              value={activeDeck.id}
-              onChange={(e) => onSelectDeck(e.target.value)}
+              value={selectedDeckId}
+              onChange={(e) => onSelectArcadeDeck(e.target.value)}
               className="w-full py-2 px-3 pr-9 rounded-xl bg-slate-900/40 hover:bg-slate-900/55 border border-white/20 text-white font-semibold text-xs appearance-none focus:outline-none focus:ring-2 focus:ring-white/50"
             >
+              <option value={ALL_DECKS_ID} className="text-slate-900 bg-white font-bold">
+                Tất cả kho từ vựng ({totalAllWordsCount} từ)
+              </option>
               {decks.map((deck) => (
                 <option key={deck.id} value={deck.id} className="text-slate-900 bg-white">
                   {deck.name}
@@ -100,7 +107,7 @@ export function ArcadeHub({
                 </h3>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
                   <Crosshair className="w-3 h-3" />
-                  Kỷ lục: {highScores['sky-defender'] || 0}
+                  Kỷ lục: {(highScores['sky-defender'] || 0).toLocaleString()}
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
@@ -127,7 +134,7 @@ export function ArcadeHub({
                   2. Ghép Cặp Siêu Tốc 60s
                 </h3>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                  Kỷ lục: {highScores['speed-match'] || 0}
+                  Kỷ lục: {(highScores['speed-match'] || 0).toLocaleString()}
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
@@ -138,7 +145,7 @@ export function ArcadeHub({
           <ChevronRight className="w-4 h-4 text-slate-400 shrink-0 ml-2 group-hover:translate-x-1 transition-transform" />
         </button>
 
-        {/* Game 5: 2-Second Blitz */}
+        {/* Game 3: 2-Second Blitz */}
         <button
           type="button"
           onClick={() => handleLaunch('blitz-2s')}
@@ -154,7 +161,7 @@ export function ArcadeHub({
                   3. Đúng Hay Sai Trong 2 Giây
                 </h3>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400">
-                  Kỷ lục: {highScores['blitz-2s'] || 0}
+                  Kỷ lục: {(highScores['blitz-2s'] || 0).toLocaleString()}
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
