@@ -1,4 +1,5 @@
-import { ChevronRight, Crosshair, Flame, Gamepad2, Rocket, Trophy, Zap } from 'lucide-react'
+import { ChevronRight, Crosshair, Flame, Gamepad2, Info, Rocket, Trophy, Zap } from 'lucide-react'
+import { useMemo } from 'react'
 import type { ArcadeGameId, Deck, GameHighScores, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
 
@@ -8,7 +9,7 @@ interface ArcadeHubProps {
   decks: Deck[]
   selectedDeckId: string
   words: WordItem[]
-  totalAllWordsCount: number
+  allWords: WordItem[]
   highScores: GameHighScores
   onSelectArcadeDeck: (deckId: string) => void
   onStartGame: (gameId: ArcadeGameId) => void
@@ -18,7 +19,7 @@ export function ArcadeHub({
   decks,
   selectedDeckId,
   words,
-  totalAllWordsCount,
+  allWords,
   highScores,
   onSelectArcadeDeck,
   onStartGame,
@@ -27,6 +28,14 @@ export function ArcadeHub({
     (highScores['sky-defender'] || 0) +
     (highScores['speed-match'] || 0) +
     (highScores['blitz-2s'] || 0)
+
+  const deckCounts = useMemo(() => {
+    const map: Record<string, number> = {}
+    for (const w of allWords) {
+      map[w.deckId] = (map[w.deckId] || 0) + 1
+    }
+    return map
+  }, [allWords])
 
   const handleLaunch = (gameId: ArcadeGameId) => {
     audioService.playClick()
@@ -66,7 +75,7 @@ export function ArcadeHub({
         {/* Deck Selector inside Arcade */}
         <div className="mt-3.5 pt-3 border-t border-white/15 relative z-10">
           <label className="text-[11px] font-semibold text-indigo-100 uppercase tracking-wider block mb-1.5">
-            Đạn từ vựng sử dụng ({words.length} từ)
+            Đạn từ vựng sử dụng ({words.length.toLocaleString()} từ)
           </label>
           <div className="relative">
             <select
@@ -75,16 +84,23 @@ export function ArcadeHub({
               className="w-full py-2 px-3 pr-9 rounded-xl bg-slate-900/40 hover:bg-slate-900/55 border border-white/20 text-white font-semibold text-xs appearance-none focus:outline-none focus:ring-2 focus:ring-white/50"
             >
               <option value={ALL_DECKS_ID} className="text-slate-900 bg-white font-bold">
-                Tất cả kho từ vựng ({totalAllWordsCount} từ)
+                Tất cả kho từ vựng ({allWords.length.toLocaleString()} từ)
               </option>
               {decks.map((deck) => (
                 <option key={deck.id} value={deck.id} className="text-slate-900 bg-white">
-                  {deck.name}
+                  {deck.name} ({deckCounts[deck.id] || 0} từ)
                 </option>
               ))}
             </select>
             <ChevronRight className="w-4 h-4 text-white/80 rotate-90 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
+
+          {selectedDeckId !== ALL_DECKS_ID && words.length < 6 && (
+            <p className="mt-2 text-[11px] text-amber-200 flex items-center gap-1.5 leading-snug">
+              <Info className="w-3.5 h-3.5 shrink-0" />
+              <span>Bộ này có ít từ nên hệ thống sẽ tự mượn thêm từ kho chung khi thi đấu.</span>
+            </p>
+          )}
         </div>
       </div>
 
@@ -111,7 +127,7 @@ export function ArcadeHub({
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                Lái phi thuyền nã đạn laser bắn hạ đúng máy bay mang từ tiếng Anh khớp với nghĩa mục tiêu.
+                Chạm chọn làn bay để khai hỏa laser bắn hạ đúng máy bay mang từ khớp với nghĩa mục tiêu.
               </p>
             </div>
           </div>
@@ -165,7 +181,7 @@ export function ArcadeHub({
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                Phán đoán chớp nhoáng cặp Từ — Nghĩa là thật hay bẫy trước khi thanh 2 giây chạm đáy!
+                Phán đoán chớp nhoáng cặp Từ — Nghĩa là thật hay bẫy trước khi thanh thời gian chạm đáy!
               </p>
             </div>
           </div>

@@ -129,6 +129,7 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
     kills: 0,
     running: true,
     paused: false,
+    armedForWave: false,
     nextPlaneId: 1,
     wordDeckQueue: [] as WordItem[],
   })
@@ -194,7 +195,10 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
 
       const waveWords = shuffle([chosenTarget, ...distractors])
       // Gentle speed curve so players have plenty of time to read & steer
-      const baseSpeed = Math.min(76, 35 + (waveNum - 1) * 3.0)
+      const baseSpeed = Math.min(72, 33 + (waveNum - 1) * 2.8)
+
+      // Hold weapons on standby at wave start so player can calmly read target meaning first!
+      st.armedForWave = false
 
       st.enemies = waveWords.map((w, idx) => ({
         id: st.nextPlaneId++,
@@ -351,13 +355,24 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
       }
       if (!st.running || st.paused) return
 
-      if (e.key === '1') st.targetX = st.width * LANE_RATIOS[0]
-      else if (e.key === '2') st.targetX = st.width * LANE_RATIOS[1]
-      else if (e.key === '3') st.targetX = st.width * LANE_RATIOS[2]
-      else if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') {
+      if (e.key === '1') {
+        st.targetX = st.width * LANE_RATIOS[0]
+        st.armedForWave = true
+      } else if (e.key === '2') {
+        st.targetX = st.width * LANE_RATIOS[1]
+        st.armedForWave = true
+      } else if (e.key === '3') {
+        st.targetX = st.width * LANE_RATIOS[2]
+        st.armedForWave = true
+      } else if (e.key === ' ') {
+        e.preventDefault()
+        st.armedForWave = true
+      } else if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') {
         st.keys.left = true
+        st.armedForWave = true
       } else if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') {
         st.keys.right = true
+        st.armedForWave = true
       }
     }
 
@@ -399,13 +414,13 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
         // Smooth jet interpolation
         st.jetX += (st.targetX - st.jetX) * Math.min(1, dt * 16)
 
-        // Auto-fire twin laser bolts once enemy squadron enters radar zone
+        // Fire twin laser bolts once player engages lane & enemy enters combat zone
         st.fireCooldown = Math.max(0, st.fireCooldown - dt)
-        if (st.enemies.some((e) => e.y >= 38) && st.fireCooldown <= 0) {
-          st.fireCooldown = 0.24
+        if (st.armedForWave && st.enemies.some((e) => e.y >= 32) && st.fireCooldown <= 0) {
+          st.fireCooldown = 0.22
           st.lasers.push(
-            { x: st.jetX - 9, y: jetY - 18, vy: -540 },
-            { x: st.jetX + 9, y: jetY - 18, vy: -540 }
+            { x: st.jetX - 9, y: jetY - 18, vy: -560 },
+            { x: st.jetX + 9, y: jetY - 18, vy: -560 }
           )
         }
 
@@ -505,6 +520,8 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
               // WRONG PLANE SHOT DOWN!
               spawnExplosion(enemy.x, enemy.y, '#f43f5e', 22)
               st.enemies.splice(i, 1)
+              st.lasers = []
+              st.armedForWave = false
               st.damageFlash = 1
               st.combo = 1
               st.lives -= 1
@@ -715,13 +732,25 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
         if (lines.length === 1) {
-          ctx.fillText(lines[0], 0, pillY + pillH / 2)
+          ctx.fillText(lines[0], 0, pillY + pillH / 2, pillW - 10)
         } else {
-          ctx.fillText(lines[0], 0, pillY + 10)
-          ctx.fillText(lines[1], 0, pillY + 23)
+          ctx.fillText(lines[0], 0, pillY + 10, pillW - 10)
+          ctx.fillText(lines[1], 0, pillY + 23, pillW - 10)
         }
 
         ctx.restore()
+      }
+
+      // Subtle tactical laser sightline when weapons are locked & armed
+      if (st.armedForWave && st.enemies.length > 0 && !st.paused) {
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.22)'
+        ctx.lineWidth = 1.5
+        ctx.setLineDash([4, 6])
+        ctx.beginPath()
+        ctx.moveTo(st.jetX, jetY - 24)
+        ctx.lineTo(st.jetX, 36)
+        ctx.stroke()
+        ctx.setLineDash([])
       }
 
       // Player Starfighter
@@ -820,6 +849,9 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
     const rect = canvas.getBoundingClientRect()
     const w = rect.width
     const relX = clientX - rect.left
+
+    // Engage weapons as soon as player steers/taps in current wave
+    st.armedForWave = true
 
     if (snapToLane) {
       // Snap directly to nearest of the 3 combat lanes on tap
@@ -942,18 +974,18 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
         onTouchMove={(e) => handlePointerSteer(e.touches[0].clientX, false)}
         onMouseDown={(e) => handlePointerSteer(e.clientX, true)}
         onMouseMove={(e) => {
-          if (e.buttons === 1 || (!isGameOver && !isPaused)) {
+          if (e.buttons === 1) {
             handlePointerSteer(e.clientX, false)
           }
         }}
       >
         <canvas ref={canvasRef} className="w-full h-full block" />
 
-        {/* Subtle Control Hint on Wave 1 */}
-        {wave === 1 && !isGameOver && !isPaused && (
+        {/* Subtle Control Hint when waiting for player to lock onto target lane */}
+        {!isGameOver && !isPaused && wave <= 2 && (
           <div className="absolute bottom-2 left-2 right-2 text-center pointer-events-none">
-            <span className="text-[11px] font-medium px-3 py-1 rounded-full bg-slate-900/75 text-slate-300 border border-white/10 inline-block">
-              Chạm vào làn bay hoặc kéo ngang để bắn đúng từ
+            <span className="text-[11px] font-medium px-3 py-1 rounded-full bg-slate-900/80 text-cyan-200 border border-cyan-500/20 inline-block">
+              Đọc nghĩa phía trên rồi chạm vào làn máy bay đúng để khai hỏa
             </span>
           </div>
         )}

@@ -182,7 +182,7 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
   const [combo, setCombo] = useState(0)
   const [maxCombo, setMaxCombo] = useState(0)
   const [matchedCount, setMatchedCount] = useState(0)
-  const [timeLeft, setTimeLeft] = useState(INITIAL_TIME)
+  const [displaySeconds, setDisplaySeconds] = useState(INITIAL_TIME)
   const [bonusToast, setBonusToast] = useState<string | null>(null)
   const [isPaused, setIsPaused] = useState(false)
   const [isFinished, setIsFinished] = useState(false)
@@ -191,10 +191,26 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
     () => storageService.getHighScores()['speed-match'] || 0
   )
 
+  const timerBarRef = useRef<HTMLDivElement | null>(null)
   const scoreRef = useRef(0)
   const comboRef = useRef(0)
   const timeLeftRef = useRef(INITIAL_TIME)
+  const lastShownSecRef = useRef(INITIAL_TIME)
   const lastMatchAtRef = useRef(0)
+
+  const syncTimerBarDom = useCallback((secondsRemaining: number) => {
+    const el = timerBarRef.current
+    if (!el) return
+    const pct = Math.min(100, Math.max(0, (secondsRemaining / INITIAL_TIME) * 100))
+    el.style.width = `${pct}%`
+    const color =
+      secondsRemaining <= 10
+        ? 'bg-rose-500'
+        : secondsRemaining <= 25
+        ? 'bg-amber-500'
+        : 'bg-emerald-500'
+    el.className = `h-full rounded-full ${color}`
+  }, [])
 
   const finishGame = useCallback(
     (finalScore: number) => {
@@ -214,37 +230,60 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
     [clearAllTimeouts]
   )
 
-  // Cleanup timeouts on unmount & auto-pause on tab switch
+  // Cleanup timeouts on unmount, auto-pause on tab switch & keyboard Pause (P / Escape)
   useEffect(() => {
     const onVisibility = () => {
       if (document.hidden && !isFinished) {
         setIsPaused(true)
       }
     }
+    const onKey = (e: KeyboardEvent) => {
+      if (isFinished) return
+      if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') {
+        e.preventDefault()
+        setIsPaused((p) => !p)
+      }
+    }
     document.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('keydown', onKey)
     return () => {
       document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('keydown', onKey)
       clearAllTimeouts()
     }
   }, [isFinished, clearAllTimeouts])
 
-  // Pure countdown timer (no nested state setters)
+  // 60fps DOM timer bar + 1x/sec state update (prevents 10x/sec button re-renders during fast taps!)
   useEffect(() => {
     if (isFinished || isPaused) return
 
-    const timer = window.setInterval(() => {
-      const nextTime = Math.max(0, Number((timeLeftRef.current - 0.1).toFixed(1)))
+    let rafId = 0
+    let lastNow = performance.now()
+
+    const tick = (now: number) => {
+      const dt = Math.min(0.05, (now - lastNow) / 1000)
+      lastNow = now
+
+      const nextTime = Math.max(0, timeLeftRef.current - dt)
       timeLeftRef.current = nextTime
-      setTimeLeft(nextTime)
+      syncTimerBarDom(nextTime)
+
+      const ceilSec = Math.ceil(nextTime)
+      if (ceilSec !== lastShownSecRef.current) {
+        lastShownSecRef.current = ceilSec
+        setDisplaySeconds(ceilSec)
+      }
 
       if (nextTime <= 0) {
-        window.clearInterval(timer)
         finishGame(scoreRef.current)
+        return
       }
-    }, 100)
+      rafId = requestAnimationFrame(tick)
+    }
 
-    return () => window.clearInterval(timer)
-  }, [isFinished, isPaused, finishGame])
+    rafId = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(rafId)
+  }, [isFinished, isPaused, finishGame, syncTimerBarDom])
 
   const restartGame = useCallback(() => {
     audioService.playClick()
@@ -256,6 +295,7 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
     scoreRef.current = 0
     comboRef.current = 0
     timeLeftRef.current = INITIAL_TIME
+    lastShownSecRef.current = INITIAL_TIME
     lastMatchAtRef.current = 0
 
     setScore(0)
@@ -266,10 +306,11 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
     updateSelectedRight(null)
     setBonusToast(null)
     setIsNewRecord(false)
-    setTimeLeft(INITIAL_TIME)
+    setDisplaySeconds(INITIAL_TIME)
+    syncTimerBarDom(INITIAL_TIME)
     setIsPaused(false)
     setIsFinished(false)
-  }, [clearAllTimeouts, commitBoard, getPool, updateSelectedLeft, updateSelectedRight])
+  }, [clearAllTimeouts, commitBoard, getPool, syncTimerBarDom, updateSelectedLeft, updateSelectedRight])
 
   const checkPair = useCallback(
     (lIdx: number, rIdx: number) => {
@@ -307,9 +348,12 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
 
         // Bonus +3 seconds every 5 combo streak!
         if (nextCombo > 0 && nextCombo % 5 === 0) {
-          const boosted = Math.min(90, Number((timeLeftRef.current + 3).toFixed(1)))
+          const boosted = Math.min(90, timeLeftRef.current + 3)
           timeLeftRef.current = boosted
-          setTimeLeft(boosted)
+          const ceilSec = Math.ceil(boosted)
+          lastShownSecRef.current = ceilSec
+          setDisplaySeconds(ceilSec)
+          syncTimerBarDom(boosted)
           setBonusToast(`Combo x${nextCombo}! +3 giây`)
           scheduleTimeout(() => setBonusToast(null), 1300)
         }
@@ -419,7 +463,7 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
         }, 350)
       }
     },
-    [commitBoard, pullNextWords, scheduleTimeout, updateSelectedLeft, updateSelectedRight]
+    [commitBoard, pullNextWords, scheduleTimeout, syncTimerBarDom, updateSelectedLeft, updateSelectedRight]
   )
 
   const handleSelectLeft = (idx: number) => {
@@ -456,8 +500,6 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
     }
   }
 
-  const timePercent = Math.min(100, (timeLeft / INITIAL_TIME) * 100)
-
   return (
     <div
       className="w-full flex-1 flex flex-col max-w-md mx-auto px-3.5 py-1.5 select-none relative"
@@ -483,7 +525,7 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
                 setIsPaused((p) => !p)
               }}
               className="p-2 rounded-lg text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400"
-              title={isPaused ? 'Tiếp tục' : 'Tạm dừng'}
+              title={isPaused ? 'Tiếp tục (P)' : 'Tạm dừng (P)'}
             >
               {isPaused ? <Play className="w-4 h-4 fill-current" /> : <Pause className="w-4 h-4" />}
             </button>
@@ -493,13 +535,13 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
         <div className="flex items-center gap-2.5">
           <div
             className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-extrabold ${
-              timeLeft <= 10
+              displaySeconds <= 10
                 ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 animate-pulse'
                 : 'bg-slate-200/70 dark:bg-slate-800 text-slate-800 dark:text-slate-200'
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
-            <span>{Math.ceil(timeLeft)}s</span>
+            <span>{displaySeconds}s</span>
           </div>
 
           <span className="text-sm font-extrabold text-slate-900 dark:text-slate-100">
@@ -520,14 +562,9 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
       {/* Timer Bar */}
       <div className="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden mb-2 relative">
         <div
-          className={`h-full transition-all duration-100 rounded-full ${
-            timeLeft <= 10
-              ? 'bg-rose-500'
-              : timeLeft <= 25
-              ? 'bg-amber-500'
-              : 'bg-emerald-500'
-          }`}
-          style={{ width: `${timePercent}%` }}
+          ref={timerBarRef}
+          className="h-full rounded-full bg-emerald-500"
+          style={{ width: '100%' }}
         />
       </div>
 
@@ -632,7 +669,7 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
               </div>
               <h3 className="text-lg font-extrabold text-white mb-1">Đang tạm dừng</h3>
               <p className="text-xs text-slate-400 mb-5">
-                Còn {Math.ceil(timeLeft)} giây • Điểm hiện tại: <strong>{score.toLocaleString()}</strong>
+                Còn {displaySeconds} giây • Điểm hiện tại: <strong>{score.toLocaleString()}</strong>
               </p>
               <div className="w-full max-w-xs space-y-2.5">
                 <button

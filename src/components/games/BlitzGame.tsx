@@ -19,11 +19,16 @@ interface BlitzPrompt {
   durationMs: number
 }
 
-function getDurationForRound(round: number): number {
-  if (round <= 5) return 2600
-  if (round <= 12) return 2250
-  if (round <= 20) return 2000
-  return 1750
+function getDurationForRound(round: number, defLength: number): number {
+  let base = 2050
+  if (round === 1) base = 3400
+  else if (round <= 6) base = 2900
+  else if (round <= 14) base = 2550
+  else if (round <= 24) base = 2250
+
+  // Fair reading allowance for multi-clause Vietnamese meanings
+  const lengthBonus = defLength > 52 ? 450 : 0
+  return base + lengthBonus
 }
 
 function buildBlitzPool(words: WordItem[]): WordItem[] {
@@ -87,7 +92,7 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
             word,
             shownDefinition: word.definition,
             isMatch: true,
-            durationMs: getDurationForRound(roundNum),
+            durationMs: getDurationForRound(roundNum, word.definition.length),
           }
         }
       }
@@ -96,7 +101,7 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
         word,
         shownDefinition,
         isMatch,
-        durationMs: getDurationForRound(roundNum),
+        durationMs: getDurationForRound(roundNum, shownDefinition.length),
       }
     },
     [getPool]
@@ -110,7 +115,9 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
   const [correctTotal, setCorrectTotal] = useState(0)
   const [lives, setLives] = useState(3)
   const [feedback, setFeedback] = useState<'none' | 'correct' | 'wrong' | 'timeout'>('none')
-  const [secondsLeft, setSecondsLeft] = useState(2.6)
+  const [secondsLeft, setSecondsLeft] = useState(() =>
+    Number((prompt.durationMs / 1000).toFixed(1))
+  )
   const [isUrgentText, setIsUrgentText] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
   const [isGameOver, setIsGameOver] = useState(false)
@@ -121,8 +128,8 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
 
   const barRef = useRef<HTMLDivElement | null>(null)
   const progressPctRef = useRef(100)
-  const remainingMsRef = useRef(2600)
-  const lastTenthsRef = useRef(26)
+  const remainingMsRef = useRef(prompt.durationMs)
+  const lastTenthsRef = useRef(Math.round(prompt.durationMs / 100))
   const scoreRef = useRef(0)
   const livesRef = useRef(3)
   const lockedRef = useRef(false)
@@ -208,7 +215,7 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
       } else {
         advanceNextRound(round + 1, prompt.word.id)
       }
-    }, 1150)
+    }, 1400)
   }, [isGameOver, round, prompt.word.id, applyBarVisual, clearFeedbackTimeout, endGame, advanceNextRound])
 
   // Cleanup on unmount & auto-pause on tab hide
@@ -368,7 +375,7 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
     setRound(1)
     setFeedback('none')
     setIsUrgentText(false)
-    setSecondsLeft(2.6)
+    setSecondsLeft(Number((first.durationMs / 1000).toFixed(1)))
     applyBarVisual(100)
   }
 
@@ -498,10 +505,24 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
             </p>
 
             {(feedback === 'wrong' || feedback === 'timeout') && (
-              <div className="mt-3 p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/25 text-xs text-rose-600 dark:text-rose-300 font-semibold animate-fadeIn">
-                {feedback === 'timeout' ? 'Hết 2 giây! ' : 'Chưa chuẩn! '}
-                Nghĩa thật của <strong>{prompt.word.term}</strong> là:{' '}
-                <span className="underline">{prompt.word.definition}</span>
+              <div className="mt-3 p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/25 text-xs text-rose-600 dark:text-rose-300 font-semibold animate-fadeIn leading-relaxed">
+                {feedback === 'timeout' ? (
+                  <>
+                    Hết giờ! Đáp án là <strong>{prompt.isMatch ? 'ĐÚNG' : 'SAI'}</strong> — Nghĩa của{' '}
+                    <strong>{prompt.word.term}</strong> là:{' '}
+                    <span className="underline">{prompt.word.definition}</span>
+                  </>
+                ) : prompt.isMatch ? (
+                  <>
+                    Cặp này <strong>ĐÚNG</strong> đấy! <strong>{prompt.word.term}</strong> chính là:{' '}
+                    <span className="underline">{prompt.word.definition}</span>
+                  </>
+                ) : (
+                  <>
+                    Bẫy đấy (<strong>SAI</strong>)! Nghĩa thật của <strong>{prompt.word.term}</strong> là:{' '}
+                    <span className="underline">{prompt.word.definition}</span>
+                  </>
+                )}
               </div>
             )}
           </div>

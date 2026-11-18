@@ -260,7 +260,9 @@ export function App() {
               )}
 
               {/* Active Arcade Mini-Game Screens */}
-              {activeGame === 'sky-defender' && activeDeck && (
+              {activeGame && isSeedLoading && allWords.length === 0 && <ViewLoader />}
+
+              {activeGame === 'sky-defender' && activeDeck && (!isSeedLoading || allWords.length > 0) && (
                 <SkyDefenderGame
                   words={arcadeWords}
                   deckName={arcadeDeckLabel}
@@ -268,7 +270,7 @@ export function App() {
                 />
               )}
 
-              {activeGame === 'speed-match' && activeDeck && (
+              {activeGame === 'speed-match' && activeDeck && (!isSeedLoading || allWords.length > 0) && (
                 <SpeedMatchGame
                   words={arcadeWords}
                   deckName={arcadeDeckLabel}
@@ -276,7 +278,7 @@ export function App() {
                 />
               )}
 
-              {activeGame === 'blitz-2s' && activeDeck && (
+              {activeGame === 'blitz-2s' && activeDeck && (!isSeedLoading || allWords.length > 0) && (
                 <BlitzGame
                   words={arcadeWords}
                   deckName={arcadeDeckLabel}
@@ -310,7 +312,7 @@ export function App() {
                       decks={decks}
                       selectedDeckId={arcadeUseAllDecks ? ALL_DECKS_ID : activeDeck.id}
                       words={arcadeWords}
-                      totalAllWordsCount={allWords.length}
+                      allWords={allWords}
                       highScores={highScores}
                       onSelectArcadeDeck={handleSelectArcadeDeck}
                       onStartGame={(gameId) => setActiveGame(gameId)}
