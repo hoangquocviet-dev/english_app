@@ -50,6 +50,7 @@ export function LibraryView({
   const [isCreatingDeck, setIsCreatingDeck] = useState(false)
   const [newDeckName, setNewDeckName] = useState('')
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
+  const activeDeckCardRef = useRef<HTMLDivElement | null>(null)
 
   // Community Decks State
   const [isCommunityOpen, setIsCommunityOpen] = useState(false)
@@ -120,6 +121,15 @@ export function LibraryView({
     observer.observe(el)
     return () => observer.disconnect()
   }, [hasMore, filteredWords.length])
+
+  // Keep active deck card visible inside horizontal carousel when switching decks/tabs
+  useEffect(() => {
+    activeDeckCardRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'center',
+    })
+  }, [activeDeck.id])
 
   const fetchCommunityList = async () => {
     setIsLoadingCommunity(true)
@@ -499,7 +509,14 @@ export function LibraryView({
           </form>
         )}
 
-        <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-none">
+        <div
+          onWheel={(e) => {
+            if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+              e.currentTarget.scrollLeft += e.deltaY
+            }
+          }}
+          className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-none"
+        >
           {decks.map((deck) => {
             const isSelected = deck.id === activeDeck.id
             const deckWordCount = deckCountMap[deck.id] || 0
@@ -509,6 +526,7 @@ export function LibraryView({
             return (
               <div
                 key={deck.id}
+                ref={isSelected ? activeDeckCardRef : null}
                 onClick={() => {
                   setSearchAllDecks(false)
                   setVisibleLimit(PAGE_SIZE)
@@ -834,8 +852,15 @@ export function LibraryView({
 
       {/* Edit Word Modal */}
       {editingWord && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+        <div
+          role="dialog"
+          aria-modal="true"
+          data-no-pull="true"
+          onClick={() => setEditingWord(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn"
+        >
           <form
+            onClick={(e) => e.stopPropagation()}
             onSubmit={handleSaveEdit}
             className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-5 space-y-3.5"
           >
@@ -938,8 +963,17 @@ export function LibraryView({
 
       {/* Custom Confirmation Modal */}
       {confirmAction && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-          <div className="w-full max-w-xs bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-5 space-y-4 text-center">
+        <div
+          role="dialog"
+          aria-modal="true"
+          data-no-pull="true"
+          onClick={() => setConfirmAction(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-xs bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-5 space-y-4 text-center"
+          >
             <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
               {confirmAction.title}
             </h3>

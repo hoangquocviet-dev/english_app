@@ -352,7 +352,7 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
             transformStyle: 'preserve-3d',
             WebkitTransformStyle: 'preserve-3d',
           }}
-          className="relative w-full max-w-sm h-96 rounded-3xl cursor-pointer shadow-xl border border-slate-200/80 dark:border-slate-800"
+          className="relative w-full max-w-sm h-80 sm:h-96 rounded-3xl cursor-pointer shadow-xl border border-slate-200/80 dark:border-slate-800"
         >
           {/* FRONT CARD */}
           <div
@@ -469,20 +469,20 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
       </div>
 
       {/* Action Buttons */}
-      <div className="grid grid-cols-2 gap-3 pt-4 pb-2">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3 pt-3 pb-2">
         <button
           onClick={() => handleAction('review')}
-          className="py-3 px-4 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all"
+          className="py-3 px-3 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-bold text-xs sm:text-sm whitespace-nowrap flex items-center justify-center gap-1.5 active:scale-95 transition-all"
         >
-          <X className="w-4 h-4" />
-          <span>Chưa nhớ (Ôn lại)</span>
+          <X className="w-4 h-4 shrink-0" />
+          <span>Chưa nhớ</span>
         </button>
 
         <button
           onClick={() => handleAction('mastered')}
-          className="py-3 px-4 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all"
+          className="py-3 px-3 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold text-xs sm:text-sm whitespace-nowrap flex items-center justify-center gap-1.5 active:scale-95 transition-all"
         >
-          <Check className="w-4 h-4" />
+          <Check className="w-4 h-4 shrink-0" />
           <span>Đã thuộc</span>
         </button>
       </div>

@@ -29,10 +29,24 @@ export function PullToRefresh({ children }: PullToRefreshProps) {
       }
 
       const target = e.target as HTMLElement | null
-      // Do not hijack card swiping or form text inputs
-      if (target?.closest('[data-no-pull="true"], input, textarea')) {
+      // Do not hijack modals, fixed overlays, games canvas, card swiping, or form controls
+      if (
+        target?.closest(
+          '[role="dialog"], [data-no-pull="true"], .fixed, input, textarea, select, canvas'
+        )
+      ) {
         canPullRef.current = false
         return
+      }
+
+      // Do not hijack inner scrollable containers
+      let node: HTMLElement | null = target
+      while (node && node !== document.body && node !== document.documentElement) {
+        if (node.scrollHeight > node.clientHeight + 2 && node.scrollTop > 0) {
+          canPullRef.current = false
+          return
+        }
+        node = node.parentElement
       }
 
       touchStartYRef.current = e.touches[0].clientY

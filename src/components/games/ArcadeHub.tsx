@@ -107,21 +107,21 @@ export function ArcadeHub({
       {/* Header Banner */}
       <div className="rounded-3xl p-4 bg-gradient-to-br from-indigo-600 via-violet-600 to-sky-600 text-white shadow-lg relative overflow-hidden">
         <div className="flex items-center justify-between gap-2 relative z-10">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-11 h-11 rounded-2xl bg-white/15 backdrop-blur-xs flex items-center justify-center border border-white/20 shrink-0">
-              <Gamepad2 className="w-6 h-6 text-white" />
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-white/15 backdrop-blur-xs flex items-center justify-center border border-white/20 shrink-0">
+              <Gamepad2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
             <div className="min-w-0">
-              <h2 className="text-lg font-extrabold tracking-tight leading-tight">
+              <h2 className="text-[15px] sm:text-lg font-extrabold tracking-tight leading-tight whitespace-nowrap">
                 Đấu Trường Từ Vựng
               </h2>
-              <p className="text-xs text-indigo-100 mt-0.5 leading-snug">
-                Vừa chơi vừa rèn phản xạ tiếng Anh tốc độ cao
+              <p className="text-[11px] sm:text-xs text-indigo-100 mt-0.5 leading-snug">
+                Vừa chơi vừa rèn phản xạ tốc độ cao
               </p>
             </div>
           </div>
 
-          <div className="text-right bg-black/20 backdrop-blur-xs px-3 py-1.5 rounded-2xl border border-white/15 shrink-0">
+          <div className="text-right bg-black/20 backdrop-blur-xs px-2.5 py-1.5 rounded-2xl border border-white/15 shrink-0">
             <div className="text-[10px] uppercase tracking-wider text-indigo-100 font-semibold">
               Tổng kỷ lục
             </div>
@@ -252,21 +252,21 @@ export function ArcadeHub({
       {/* Live Cloud Leaderboard Card */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             <div className="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
               <Crown className="w-4 h-4" />
             </div>
-            <div>
-              <h3 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 leading-tight">
-                Bảng Phong Thần Toàn Server
+            <div className="min-w-0">
+              <h3 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 leading-tight truncate">
+                Bảng Xếp Hạng Cao Thủ
               </h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Top 10 cao thủ tổng điểm 3 chế độ
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                Top 10 tổng điểm 3 trò chơi
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 shrink-0">
             {onOpenCloudSync && (
               <button
                 type="button"
@@ -274,9 +274,9 @@ export function ArcadeHub({
                   audioService.playClick()
                   onOpenCloudSync()
                 }}
-                className="py-1.5 px-2.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-[11px] font-bold flex items-center gap-1 transition-colors"
+                className="py-1.5 px-2.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-[11px] font-bold flex items-center gap-1 whitespace-nowrap shrink-0 transition-colors"
               >
-                <UserPen className="w-3 h-3" />
+                <UserPen className="w-3 h-3 shrink-0" />
                 <span>Đặt tên</span>
               </button>
             )}

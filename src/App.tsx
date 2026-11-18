@@ -182,9 +182,16 @@ export function App() {
     storageService.setStudyPreferences(next)
   }
 
-  const handleStartMode = (mode: StudyMode) => {
+  const handleChangeDailyGoal = (goal: number) => {
+    const nextDaily = storageService.setDailyGoal(goal)
+    setDailyProgress(nextDaily)
+  }
+
+  const handleStartMode = (mode: StudyMode, onlyLearning = false) => {
     const freshWords = storageService.getWords(activeDeckId)
-    let targetList = freshWords.filter((w) => w.status !== 'mastered')
+    let targetList = freshWords.filter((w) =>
+      onlyLearning ? w.status === 'learning' : w.status !== 'mastered'
+    )
     if (targetList.length === 0) return
 
     if (studyPrefs.shuffle) {
@@ -353,10 +360,12 @@ export function App() {
                       batchSize={studyPrefs.batchSize}
                       onToggleShuffle={handleToggleShuffle}
                       onChangeBatchSize={handleChangeBatchSize}
+                      onChangeDailyGoal={handleChangeDailyGoal}
                       onSelectDeck={handleSelectDeck}
                       onResetDeck={handleResetDeck}
                       onStartMode={handleStartMode}
                       onGoToAddWord={() => setActiveTab('add')}
+                      onGoToLibrary={() => setActiveTab('library')}
                     />
                   )}
 

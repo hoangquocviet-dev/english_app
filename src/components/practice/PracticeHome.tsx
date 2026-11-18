@@ -1,4 +1,6 @@
 import {
+  AlertTriangle,
+  BookOpen,
   CheckCircle2,
   ChevronRight,
   Flame,
@@ -7,7 +9,6 @@ import {
   Layers,
   Plus,
   RotateCcw,
-  RotateCw,
   Shuffle,
   Sparkles,
   Trophy,
@@ -15,8 +16,9 @@ import {
 import { useState } from 'react'
 import type { Deck, StudyMode, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
-import { forceReloadApp } from '../../utils/reload'
 import type { DailyProgress } from '../../utils/storage'
+
+const DAILY_GOAL_PRESETS = [10, 20, 30, 50]
 
 interface PracticeHomeProps {
   decks: Deck[]
@@ -28,10 +30,12 @@ interface PracticeHomeProps {
   batchSize: number
   onToggleShuffle: () => void
   onChangeBatchSize: (size: number) => void
+  onChangeDailyGoal: (goal: number) => void
   onSelectDeck: (deckId: string) => void
   onResetDeck: (deckId: string) => void
-  onStartMode: (mode: StudyMode) => void
+  onStartMode: (mode: StudyMode, onlyLearning?: boolean) => void
   onGoToAddWord: () => void
+  onGoToLibrary: () => void
 }
 
 export function PracticeHome({
@@ -44,15 +48,21 @@ export function PracticeHome({
   batchSize,
   onToggleShuffle,
   onChangeBatchSize,
+  onChangeDailyGoal,
   onSelectDeck,
   onResetDeck,
   onStartMode,
   onGoToAddWord,
+  onGoToLibrary,
 }: PracticeHomeProps) {
   const [showResetConfirm, setShowResetConfirm] = useState(false)
+  const [onlyLearning, setOnlyLearning] = useState(false)
 
   const masteredCount = words.filter((w) => w.status === 'mastered').length
+  const learningCount = words.filter((w) => w.status === 'learning').length
   const unmasteredCount = words.length - masteredCount
+  const effectiveOnlyLearning = onlyLearning && learningCount > 0
+  const activePoolCount = effectiveOnlyLearning ? learningCount : unmasteredCount
   const masteryPercent = words.length > 0 ? Math.round((masteredCount / words.length) * 100) : 0
 
   const dailyPercent = Math.min(
@@ -61,10 +71,17 @@ export function PracticeHome({
   )
   const isGoalReached = dailyProgress.count >= dailyProgress.goal
 
-  const handleStart = (mode: StudyMode) => {
-    if (unmasteredCount === 0) return
+  const handleCycleGoal = () => {
     audioService.playClick()
-    onStartMode(mode)
+    const curIdx = DAILY_GOAL_PRESETS.indexOf(dailyProgress.goal)
+    const nextGoal = DAILY_GOAL_PRESETS[(curIdx + 1) % DAILY_GOAL_PRESETS.length]
+    onChangeDailyGoal(nextGoal)
+  }
+
+  const handleStart = (mode: StudyMode) => {
+    if (activePoolCount === 0) return
+    audioService.playClick()
+    onStartMode(mode, effectiveOnlyLearning)
   }
 
   const handleConfirmReset = () => {
@@ -75,12 +92,12 @@ export function PracticeHome({
 
   return (
     <div className="w-full flex flex-col max-w-md mx-auto px-3.5 py-4 space-y-4 animate-fadeIn">
-      {/* Daily Goal Card */}
+      {/* Daily Goal Card (Interactive Goal Selector) */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-800 shadow-xs">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <div className="flex items-center gap-2 min-w-0">
             <div
-              className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+              className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
                 isGoalReached
                   ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
                   : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
@@ -88,26 +105,29 @@ export function PracticeHome({
             >
               <Flame className="w-4 h-4" />
             </div>
-            <div>
+            <div className="min-w-0">
               <span className="text-xs font-bold text-slate-900 dark:text-slate-100 block leading-none">
                 Mục tiêu hôm nay
               </span>
-              <span className="text-[11px] text-slate-500 dark:text-slate-400">
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 truncate block mt-0.5">
                 {isGoalReached
-                  ? 'Xuất sắc! Bạn đã hoàn thành mục tiêu ngày'
-                  : 'Duy trì đều đặn mỗi ngày để nhớ sâu'}
+                  ? 'Xuất sắc! Đã đạt mục tiêu ngày'
+                  : 'Chạm số lượt để đổi mục tiêu'}
               </span>
             </div>
           </div>
-          <span
-            className={`text-xs font-extrabold px-2 py-0.5 rounded-full ${
+          <button
+            type="button"
+            onClick={handleCycleGoal}
+            title="Chạm để đổi mục tiêu ngày (10 / 20 / 30 / 50 lượt)"
+            className={`text-xs font-extrabold px-2.5 py-1 rounded-full whitespace-nowrap shrink-0 transition-transform active:scale-95 ${
               isGoalReached
                 ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-                : 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+                : 'bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400'
             }`}
           >
             {dailyProgress.count} / {dailyProgress.goal} lượt
-          </span>
+          </button>
         </div>
 
         <div className="w-full bg-slate-100 dark:bg-slate-900 h-2 rounded-full overflow-hidden">
@@ -136,7 +156,10 @@ export function PracticeHome({
         <div className="relative">
           <select
             value={activeDeck.id}
-            onChange={(e) => onSelectDeck(e.target.value)}
+            onChange={(e) => {
+              setOnlyLearning(false)
+              onSelectDeck(e.target.value)
+            }}
             className="w-full py-2.5 px-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-semibold text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500 pr-10"
           >
             {decks.map((deck) => (
@@ -180,40 +203,46 @@ export function PracticeHome({
           </div>
         </div>
 
-        {/* Action Buttons Row: Reset Deck (when mastered > 0) + Reload App */}
-        <div className={`grid gap-2 mt-3 ${masteredCount > 0 ? 'grid-cols-2' : 'grid-cols-1'}`}>
-          {masteredCount > 0 && (
+        {/* Purposeful Quick Actions: View Deck Words + Reset (or Add Word) */}
+        <div className="grid grid-cols-2 gap-2 mt-3">
+          <button
+            type="button"
+            onClick={() => {
+              audioService.playClick()
+              onGoToLibrary()
+            }}
+            className="py-2 px-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-900/60 dark:hover:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-center gap-1.5 border border-slate-200 dark:border-slate-700/80 whitespace-nowrap transition-all active:scale-98"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+            <span className="truncate">Danh sách thẻ</span>
+          </button>
+
+          {masteredCount > 0 ? (
             <button
               type="button"
               onClick={() => {
                 audioService.playClick()
                 setShowResetConfirm(true)
               }}
-              className="py-2 px-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center justify-center gap-1.5 border border-amber-500/25 transition-all active:scale-98"
+              className="py-2 px-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center justify-center gap-1.5 border border-amber-500/25 whitespace-nowrap transition-all active:scale-98"
               title="Hiện lại các thẻ đã thuộc để học lại từ đầu"
             >
               <RotateCcw className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">Reset học lại ({masteredCount})</span>
+              <span className="truncate">Reset ({masteredCount})</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                audioService.playClick()
+                onGoToAddWord()
+              }}
+              className="py-2 px-2.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-xs font-semibold text-indigo-600 dark:text-indigo-400 flex items-center justify-center gap-1.5 border border-indigo-500/20 whitespace-nowrap transition-all active:scale-98"
+            >
+              <Plus className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">Thêm từ mới</span>
             </button>
           )}
-
-          <button
-            type="button"
-            onClick={() => {
-              audioService.playClick()
-              if (typeof navigator !== 'undefined' && navigator.vibrate) {
-                try {
-                  navigator.vibrate(25)
-                } catch {}
-              }
-              void forceReloadApp()
-            }}
-            className="py-2 px-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-900/60 dark:hover:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-center gap-1.5 border border-slate-200 dark:border-slate-700/80 transition-all active:scale-98"
-            title="Tải lại toàn bộ ứng dụng"
-          >
-            <RotateCw className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
-            <span className="truncate">Tải lại trang</span>
-          </button>
         </div>
       </div>
 
@@ -266,37 +295,30 @@ export function PracticeHome({
         </div>
       ) : (
         <div className="space-y-3">
-          {/* Header & Shuffle + Batch Size Controls */}
-          <div className="flex items-center justify-between gap-2 px-1 flex-wrap">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              Chọn chế độ học ({unmasteredCount} thẻ)
+          {/* Clean Row 1: Section Label + Hard-Words Filter + Shuffle */}
+          <div className="flex items-center justify-between gap-1.5 px-0.5">
+            <span className="text-[11px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide truncate">
+              Chế độ học ({activePoolCount} thẻ)
             </span>
 
-            <div className="flex items-center gap-1.5">
-              {unmasteredCount > 25 && (
-                <div className="inline-flex rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 p-0.5 text-[11px] font-semibold">
-                  {[
-                    { label: '25 thẻ', value: 25 },
-                    { label: '50 thẻ', value: 50 },
-                    { label: 'Tất cả', value: 0 },
-                  ].map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => {
-                        audioService.playClick()
-                        onChangeBatchSize(opt.value)
-                      }}
-                      className={`px-2 py-1 rounded-lg transition-colors ${
-                        batchSize === opt.value
-                          ? 'bg-indigo-600 text-white'
-                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              {learningCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    audioService.playClick()
+                    setOnlyLearning((prev) => !prev)
+                  }}
+                  title="Chỉ lọc riêng những từ bạn từng trả lời sai hoặc đánh dấu Chưa nhớ"
+                  className={`py-1.5 px-2.5 rounded-xl text-xs font-semibold border flex items-center gap-1 whitespace-nowrap transition-all active:scale-95 ${
+                    effectiveOnlyLearning
+                      ? 'bg-amber-500 text-white border-amber-500 shadow-2xs'
+                      : 'bg-white dark:bg-slate-800 border-amber-500/35 text-amber-600 dark:text-amber-400'
+                  }`}
+                >
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                  <span>Từ khó ({learningCount})</span>
+                </button>
               )}
 
               <button
@@ -305,18 +327,50 @@ export function PracticeHome({
                   audioService.playClick()
                   onToggleShuffle()
                 }}
-                className={`py-1.5 px-2.5 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all active:scale-95 ${
+                className={`py-1.5 px-2.5 rounded-xl text-xs font-semibold border flex items-center gap-1.5 whitespace-nowrap transition-all active:scale-95 ${
                   shuffleEnabled
                     ? 'bg-indigo-500/15 border-indigo-500/40 text-indigo-600 dark:text-indigo-400'
                     : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400'
                 }`}
                 title="Trộn ngẫu nhiên thứ tự thẻ chưa thuộc"
               >
-                <Shuffle className="w-3.5 h-3.5" />
+                <Shuffle className="w-3.5 h-3.5 shrink-0" />
                 <span>Trộn</span>
               </button>
             </div>
           </div>
+
+          {/* Clean Row 2: Full-width Segmented Batch Selector when > 25 cards */}
+          {activePoolCount > 25 && (
+            <div className="flex items-center justify-between gap-2 py-1.5 px-3 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 shadow-2xs">
+              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                Số thẻ mỗi lượt:
+              </span>
+              <div className="inline-flex rounded-xl bg-slate-100 dark:bg-slate-900 p-0.5 text-[11px] font-bold">
+                {[
+                  { label: '25 thẻ', value: 25 },
+                  { label: '50 thẻ', value: 50 },
+                  { label: `Tất cả (${activePoolCount})`, value: 0 },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => {
+                      audioService.playClick()
+                      onChangeBatchSize(opt.value)
+                    }}
+                    className={`px-2.5 py-1 rounded-lg whitespace-nowrap transition-colors ${
+                      batchSize === opt.value
+                        ? 'bg-indigo-600 text-white shadow-2xs'
+                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Mode 1: Flashcard 3D */}
           <button
@@ -413,14 +467,23 @@ export function PracticeHome({
       <div className="rounded-2xl p-4 bg-gradient-to-r from-indigo-500/10 via-sky-500/10 to-transparent border border-indigo-500/15 flex items-center gap-3">
         <Sparkles className="w-5 h-5 text-indigo-500 shrink-0" />
         <p className="text-xs text-slate-600 dark:text-slate-300 leading-snug">
-          Thẻ bạn đánh dấu <strong>Đã thuộc</strong> sẽ tự động ẩn đi. Bất cứ lúc nào muốn ôn lại toàn bộ, chỉ cần bấm nút <strong>Reset học lại</strong>!
+          Thẻ bạn đánh dấu <strong>Đã thuộc</strong> sẽ tự động ẩn đi. Bất cứ lúc nào muốn ôn lại toàn bộ, chỉ cần bấm nút <strong>Reset</strong>!
         </p>
       </div>
 
       {/* Reset Confirmation Modal */}
       {showResetConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-          <div className="w-full max-w-xs bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-5 space-y-4 text-center">
+        <div
+          role="dialog"
+          aria-modal="true"
+          data-no-pull="true"
+          onClick={() => setShowResetConfirm(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-xs bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-5 space-y-4 text-center"
+          >
             <div className="w-12 h-12 rounded-2xl bg-amber-500/15 text-amber-500 flex items-center justify-center mx-auto">
               <RotateCcw className="w-6 h-6" />
             </div>

@@ -473,6 +473,17 @@ class SafeStorageService {
     return saved
   }
 
+  public setDailyGoal(goal: number): DailyProgress {
+    const cur = this.getDailyProgress()
+    const next: DailyProgress = {
+      ...cur,
+      goal: Math.max(5, Math.min(200, goal)),
+    }
+    this.set(STORAGE_KEYS.DAILY_PROGRESS, next)
+    this.emitMutation()
+    return next
+  }
+
   public getStudyStreak(): number {
     return this.get<number>(STORAGE_KEYS.STREAK, 1)
   }
