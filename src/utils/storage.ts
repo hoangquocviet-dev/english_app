@@ -1,5 +1,12 @@
 import { INITIAL_DECKS } from '../data/deckMeta'
-import type { ArcadeGameId, Deck, GameHighScores, WordItem } from '../types'
+import type {
+  ArcadeGameId,
+  BuiltInWordProgress,
+  CommunityDeck,
+  Deck,
+  GameHighScores,
+  WordItem,
+} from '../types'
 
 const CURRENT_SEED_VERSION = 6
 
@@ -36,6 +43,24 @@ class SafeStorageService {
   private flushTimerId: number | null = null
   private wordsDirty = false
   private seedPromise: Promise<boolean> | null = null
+  private mutationListeners = new Set<() => void>()
+  private suppressMutationNotify = false
+
+  public subscribeMutations(listener: () => void): () => void {
+    this.mutationListeners.add(listener)
+    return () => {
+      this.mutationListeners.delete(listener)
+    }
+  }
+
+  private emitMutation(): void {
+    if (this.suppressMutationNotify) return
+    for (const fn of this.mutationListeners) {
+      try {
+        fn()
+      } catch {}
+    }
+  }
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -96,10 +121,13 @@ class SafeStorageService {
     }
   }
 
-  private commitWordsCache(nextWords: WordItem[], immediate = false): void {
+  private commitWordsCache(nextWords: WordItem[], immediate = false, notify = true): void {
     this.wordsCache = nextWords
     this.wordsByDeckCache.clear()
     this.wordsDirty = true
+    if (notify) {
+      this.emitMutation()
+    }
 
     if (immediate || typeof window === 'undefined') {
       this.flushPendingWrites()
@@ -161,6 +189,7 @@ class SafeStorageService {
     const nextDecks = [...decks, newDeck]
     this.decksCache = nextDecks
     this.set(STORAGE_KEYS.DECKS, nextDecks)
+    this.emitMutation()
     return newDeck
   }
 
@@ -220,7 +249,7 @@ class SafeStorageService {
         const deletedBuiltIns = new Set(this.get<string[]>(STORAGE_KEYS.DELETED_BUILTINS, []))
 
         if (existing.length === 0) {
-          this.commitWordsCache(INITIAL_WORDS, true)
+          this.commitWordsCache(INITIAL_WORDS, true, false)
           this.set(STORAGE_KEYS.SEED_VERSION, CURRENT_SEED_VERSION)
           return true
         }
@@ -255,7 +284,7 @@ class SafeStorageService {
         const merged =
           missingBuiltIns.length > 0 ? [...syncedExisting, ...missingBuiltIns] : syncedExisting
 
-        this.commitWordsCache(merged, true)
+        this.commitWordsCache(merged, true, false)
         this.set(STORAGE_KEYS.SEED_VERSION, CURRENT_SEED_VERSION)
         return true
       } catch (e) {
@@ -505,9 +534,225 @@ class SafeStorageService {
         ...scores,
         [gameId]: score,
       })
+      this.emitMutation()
       return true
     }
     return false
+  }
+
+  public getDeletedBuiltIns(): string[] {
+    return this.get<string[]>(STORAGE_KEYS.DELETED_BUILTINS, [])
+  }
+
+  public getLastActiveDate(): string {
+    return this.get<string>(STORAGE_KEYS.LAST_ACTIVE_DATE, '')
+  }
+
+  // CLOUD SYNC HYDRATION (Delta Restore & Cross-Device Merge)
+  public async applyCloudData(
+    cloud: {
+      built_in_progress?: Record<string, BuiltInWordProgress>
+      deleted_builtins?: string[]
+      custom_decks?: Deck[]
+      custom_words?: WordItem[]
+      study_prefs?: Partial<StudyPreferences>
+      daily_progress?: Partial<DailyProgress>
+      streak?: number
+      last_active_date?: string
+      high_scores?: Partial<GameHighScores>
+    },
+    mode: 'replace' | 'merge'
+  ): Promise<void> {
+    this.suppressMutationNotify = true
+    try {
+      const { INITIAL_WORDS } = await import('../data/initialDecks')
+      const cloudDeleted = Array.isArray(cloud.deleted_builtins) ? cloud.deleted_builtins : []
+      const localDeleted = mode === 'merge' ? this.getDeletedBuiltIns() : []
+      const deletedSet = new Set([...cloudDeleted, ...localDeleted])
+      this.set(STORAGE_KEYS.DELETED_BUILTINS, [...deletedSet])
+
+      const progressMap = cloud.built_in_progress || {}
+      const localWordsMap = new Map(this.getWords().map((w) => [w.id, w]))
+
+      const rankStatus = (s: WordItem['status']) =>
+        s === 'mastered' ? 2 : s === 'learning' ? 1 : 0
+
+      // 1. Reconstruct built-in words with merged/restored progress
+      const hydratedBuiltIns: WordItem[] = []
+      for (const bw of INITIAL_WORDS) {
+        if (deletedSet.has(bw.id)) continue
+        const cp = progressMap[bw.id]
+        const lw = localWordsMap.get(bw.id)
+
+        if (mode === 'replace') {
+          hydratedBuiltIns.push(
+            cp
+              ? { ...bw, status: cp.s, reviewCount: cp.r || 0, lastReviewed: cp.t }
+              : bw
+          )
+        } else {
+          const cs = cp?.s || 'new'
+          const ls = lw?.status || 'new'
+          const bestStatus = rankStatus(cs) >= rankStatus(ls) ? cs : ls
+          const bestReviews = Math.max(cp?.r || 0, lw?.reviewCount || 0)
+          const latestTime = Math.max(cp?.t || 0, lw?.lastReviewed || 0) || undefined
+          hydratedBuiltIns.push({
+            ...bw,
+            status: bestStatus,
+            reviewCount: bestReviews,
+            lastReviewed: latestTime,
+          })
+        }
+      }
+
+      // 2. Merge custom decks + community decks
+      const cloudDecks = Array.isArray(cloud.custom_decks)
+        ? cloud.custom_decks.filter((d) => !d.isBuiltIn)
+        : []
+      const localCustomDecks = this.getDecks().filter((d) => !d.isBuiltIn)
+
+      const customDeckMap = new Map<string, Deck>()
+      if (mode === 'merge') {
+        for (const ld of localCustomDecks) customDeckMap.set(ld.id, ld)
+      } else {
+        // Keep locally downloaded community decks even on replace
+        for (const ld of localCustomDecks) {
+          if (ld.id.startsWith('commdeck-')) customDeckMap.set(ld.id, ld)
+        }
+      }
+      for (const cd of cloudDecks) customDeckMap.set(cd.id, cd)
+
+      const mergedDecks = [...INITIAL_DECKS, ...customDeckMap.values()]
+      this.decksCache = mergedDecks
+      this.set(STORAGE_KEYS.DECKS, mergedDecks)
+
+      // 3. Merge custom words + community words
+      const validCustomDeckIds = new Set(Array.from(customDeckMap.keys()))
+      const cloudWords = Array.isArray(cloud.custom_words) ? cloud.custom_words : []
+      const customWordMap = new Map<string, WordItem>()
+
+      if (mode === 'merge') {
+        for (const lw of this.getWords()) {
+          if ((lw.id.startsWith('w-') || lw.id.startsWith('commword-')) && validCustomDeckIds.has(lw.deckId)) {
+            customWordMap.set(lw.id, lw)
+          }
+        }
+      } else {
+        for (const lw of this.getWords()) {
+          if (lw.id.startsWith('commword-') && validCustomDeckIds.has(lw.deckId)) {
+            customWordMap.set(lw.id, lw)
+          }
+        }
+      }
+      for (const cw of cloudWords) {
+        if (validCustomDeckIds.has(cw.deckId)) {
+          customWordMap.set(cw.id, cw)
+        }
+      }
+
+      const finalWords = [...customWordMap.values(), ...hydratedBuiltIns]
+      this.commitWordsCache(finalWords, true, false)
+      this.set(STORAGE_KEYS.SEED_VERSION, CURRENT_SEED_VERSION)
+
+      // 4. High scores, streak, prefs & daily progress
+      const localScores = this.getHighScores()
+      const cs = cloud.high_scores || {}
+      const nextScores: GameHighScores =
+        mode === 'replace'
+          ? {
+              'sky-defender': cs['sky-defender'] || 0,
+              'speed-match': cs['speed-match'] || 0,
+              'blitz-2s': cs['blitz-2s'] || 0,
+            }
+          : {
+              'sky-defender': Math.max(localScores['sky-defender'] || 0, cs['sky-defender'] || 0),
+              'speed-match': Math.max(localScores['speed-match'] || 0, cs['speed-match'] || 0),
+              'blitz-2s': Math.max(localScores['blitz-2s'] || 0, cs['blitz-2s'] || 0),
+            }
+      this.set(STORAGE_KEYS.HIGH_SCORES, nextScores)
+
+      if (typeof cloud.streak === 'number') {
+        const nextStreak =
+          mode === 'replace' ? cloud.streak : Math.max(this.getStudyStreak(), cloud.streak)
+        this.set(STORAGE_KEYS.STREAK, nextStreak)
+      }
+      if (cloud.last_active_date) {
+        this.set(STORAGE_KEYS.LAST_ACTIVE_DATE, cloud.last_active_date)
+      }
+      if (cloud.study_prefs && typeof cloud.study_prefs === 'object') {
+        this.setStudyPreferences({
+          ...this.getStudyPreferences(),
+          ...cloud.study_prefs,
+        })
+      }
+      if (cloud.daily_progress && cloud.daily_progress.dateKey === this.getTodayKey()) {
+        const curDaily = this.getDailyProgress()
+        this.set(STORAGE_KEYS.DAILY_PROGRESS, {
+          dateKey: curDaily.dateKey,
+          goal: cloud.daily_progress.goal || curDaily.goal,
+          count:
+            mode === 'replace'
+              ? cloud.daily_progress.count || 0
+              : Math.max(curDaily.count, cloud.daily_progress.count || 0),
+        })
+      }
+    } finally {
+      this.suppressMutationNotify = false
+    }
+  }
+
+  // Install or refresh a Community Shared Deck locally for offline study & games
+  public upsertCommunityDeckLocally(commDeck: CommunityDeck): string {
+    const localDeckId = `commdeck-${commDeck.id}`
+    const decks = this.getDecks()
+    const desc = commDeck.description
+      ? `${commDeck.description} (Chia sẻ bởi ${commDeck.author_name})`
+      : `Bộ từ cộng đồng chia sẻ bởi ${commDeck.author_name}`
+
+    const existingDeck = decks.find((d) => d.id === localDeckId)
+    const nextDecks = existingDeck
+      ? decks.map((d) => (d.id === localDeckId ? { ...d, name: commDeck.name, description: desc } : d))
+      : [
+          ...decks,
+          {
+            id: localDeckId,
+            name: commDeck.name,
+            description: desc,
+            isBuiltIn: false,
+            createdAt: Date.now(),
+          },
+        ]
+
+    this.decksCache = nextDecks
+    this.set(STORAGE_KEYS.DECKS, nextDecks)
+
+    const allWords = this.getWords()
+    const existingByTerm = new Map<string, WordItem>()
+    for (const w of allWords) {
+      if (w.deckId === localDeckId) {
+        existingByTerm.set(w.term.trim().toLowerCase(), w)
+      }
+    }
+
+    const syncedDeckWords: WordItem[] = commDeck.words.map((cw, idx) => {
+      const prev = existingByTerm.get(cw.term.trim().toLowerCase())
+      return {
+        id: prev?.id || `commword-${commDeck.id}-${idx}`,
+        deckId: localDeckId,
+        term: cw.term.trim(),
+        ipa: cw.ipa?.trim() || undefined,
+        definition: cw.definition.trim(),
+        example: cw.example?.trim() || undefined,
+        partOfSpeech: cw.partOfSpeech || undefined,
+        status: prev?.status || 'new',
+        reviewCount: prev?.reviewCount || 0,
+        lastReviewed: prev?.lastReviewed,
+      }
+    })
+
+    const otherWords = allWords.filter((w) => w.deckId !== localDeckId)
+    this.commitWordsCache([...syncedDeckWords, ...otherWords], true, false)
+    return localDeckId
   }
 
   // RESET TO FACTORY DEFAULTS

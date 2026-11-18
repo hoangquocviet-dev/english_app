@@ -1,3 +1,4 @@
+import { Check, AlertCircle, X } from 'lucide-react'
 import { type ComponentType, lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { BottomNav } from './components/common/BottomNav'
 import { ErrorBoundary } from './components/common/ErrorBoundary'
@@ -7,6 +8,7 @@ import { ALL_DECKS_ID, ArcadeHub } from './components/games/ArcadeHub'
 import { PracticeHome } from './components/practice/PracticeHome'
 import type { ActiveTab, ArcadeGameId, Deck, StudyMode, WordItem } from './types'
 import { audioService } from './utils/audio'
+import { cloudSyncService } from './utils/cloudSync'
 import { forceReloadApp } from './utils/reload'
 import { storageService } from './utils/storage'
 
@@ -57,6 +59,9 @@ const AddWordView = lazyWithRetry(() =>
 const LibraryView = lazyWithRetry(() =>
   import('./components/library/LibraryView').then((m) => ({ default: m.LibraryView }))
 )
+const CloudSyncModal = lazyWithRetry(() =>
+  import('./components/common/CloudSyncModal').then((m) => ({ default: m.CloudSyncModal }))
+)
 
 function shuffleWords(list: WordItem[]): WordItem[] {
   const arr = [...list]
@@ -83,6 +88,8 @@ export function App() {
   const [activeGame, setActiveGame] = useState<ArcadeGameId | null>(null)
   const [arcadeUseAllDecks, setArcadeUseAllDecks] = useState<boolean>(false)
   const [sessionWords, setSessionWords] = useState<WordItem[]>([])
+  const [isCloudModalOpen, setIsCloudModalOpen] = useState(false)
+  const [syncToast, setSyncToast] = useState<{ ok: boolean; message: string } | null>(null)
 
   const [decks, setDecks] = useState<Deck[]>(() => storageService.getDecks())
   const [activeDeckId, setActiveDeckId] = useState<string>(() => storageService.getActiveDeckId())
@@ -99,27 +106,43 @@ export function App() {
   const refreshData = useCallback(() => {
     const loadedDecks = storageService.getDecks()
     const currentActiveDeckId = storageService.getActiveDeckId()
-    const loadedWords = storageService.getWords(currentActiveDeckId)
+    const validDeckId = loadedDecks.some((d) => d.id === currentActiveDeckId)
+      ? currentActiveDeckId
+      : loadedDecks[0]?.id || currentActiveDeckId
+    const loadedWords = storageService.getWords(validDeckId)
 
     setDecks(loadedDecks)
-    setActiveDeckId(currentActiveDeckId)
+    setActiveDeckId(validDeckId)
     setWords(loadedWords)
     setAllWords(storageService.getWords())
     setStreak(storageService.getStudyStreak())
     setDailyProgress(storageService.getDailyProgress())
+    setStudyPrefs(storageService.getStudyPreferences())
     setHighScores(storageService.getHighScores())
   }, [])
 
-  // Lazy non-blocking background hydration for 1,000+ built-in vocabulary words
+  // Lazy non-blocking background hydration + Supabase Cloud Sync boot
   useEffect(() => {
     let active = true
-    void storageService.ensureSeedLoaded().then((changed) => {
-      if (!active) return
-      if (changed) {
-        refreshData()
-      }
-      setIsSeedLoading(false)
-    })
+    void storageService
+      .ensureSeedLoaded()
+      .then(async (changed) => {
+        if (!active) return
+        if (changed) {
+          refreshData()
+        }
+        setIsSeedLoading(false)
+
+        const magicOutcome = await cloudSyncService.init(() => {
+          if (active) refreshData()
+        })
+        if (active && magicOutcome) {
+          setSyncToast({ ok: magicOutcome.ok, message: magicOutcome.message })
+          window.setTimeout(() => {
+            if (active) setSyncToast(null)
+          }, 5500)
+        }
+      })
     return () => {
       active = false
     }
@@ -215,7 +238,37 @@ export function App() {
               setActiveGame(null)
               setActiveTab('library')
             }}
+            onOpenCloudSync={() => setIsCloudModalOpen(true)}
           />
+
+          {/* Magic QR Link Restore Toast */}
+          {syncToast && (
+            <div className="w-full max-w-md mx-auto px-3.5 pt-2.5 animate-fadeIn">
+              <div
+                className={`p-3 rounded-2xl border text-xs font-bold flex items-center justify-between gap-2 shadow-sm ${
+                  syncToast.ok
+                    ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
+                    : 'bg-rose-500/15 border-rose-500/30 text-rose-600 dark:text-rose-300'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  {syncToast.ok ? (
+                    <Check className="w-4 h-4 shrink-0" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                  )}
+                  <span>{syncToast.message}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSyncToast(null)}
+                  className="p-1 opacity-70 hover:opacity-100"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Main Content Area */}
           <main className={`w-full flex-1 flex flex-col ${isFullScreenSession ? 'pb-2' : 'pb-20'}`}>
@@ -316,6 +369,7 @@ export function App() {
                       highScores={highScores}
                       onSelectArcadeDeck={handleSelectArcadeDeck}
                       onStartGame={(gameId) => setActiveGame(gameId)}
+                      onOpenCloudSync={() => setIsCloudModalOpen(true)}
                     />
                   )}
 
@@ -351,6 +405,19 @@ export function App() {
               )}
             </Suspense>
           </main>
+
+          {/* Cloud Sync & Recovery ID Modal */}
+          {isCloudModalOpen && (
+            <Suspense fallback={null}>
+              <CloudSyncModal
+                isOpen={isCloudModalOpen}
+                onClose={() => setIsCloudModalOpen(false)}
+                onDataRestored={() => {
+                  refreshData()
+                }}
+              />
+            </Suspense>
+          )}
 
           {/* Bottom Navigation */}
           {!isFullScreenSession && (

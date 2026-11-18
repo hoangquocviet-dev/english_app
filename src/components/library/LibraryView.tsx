@@ -1,7 +1,23 @@
-import { Check, FileText, Globe, Pencil, Plus, RotateCcw, Search, Trash2, Volume2, X } from 'lucide-react'
+import {
+  Check,
+  Download,
+  FileText,
+  Globe,
+  Pencil,
+  Plus,
+  RefreshCw,
+  RotateCcw,
+  Search,
+  Share2,
+  Trash2,
+  Users,
+  Volume2,
+  X,
+} from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { Deck, WordItem } from '../../types'
+import type { CommunityDeck, Deck, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
+import { cloudSyncService } from '../../utils/cloudSync'
 import { storageService } from '../../utils/storage'
 import { ImportExportModal } from './ImportExportModal'
 
@@ -34,6 +50,16 @@ export function LibraryView({
   const [isCreatingDeck, setIsCreatingDeck] = useState(false)
   const [newDeckName, setNewDeckName] = useState('')
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
+
+  // Community Decks State
+  const [isCommunityOpen, setIsCommunityOpen] = useState(false)
+  const [communityDecks, setCommunityDecks] = useState<CommunityDeck[]>([])
+  const [isLoadingCommunity, setIsLoadingCommunity] = useState(false)
+  const [sharedDeckIds, setSharedDeckIds] = useState<Set<string>>(() =>
+    cloudSyncService.getSharedDeckIds()
+  )
+  const [isPublishingDeck, setIsPublishingDeck] = useState(false)
+  const [communityFeedback, setCommunityFeedback] = useState<string | null>(null)
 
   // Edit Word Modal State
   const [editingWord, setEditingWord] = useState<WordItem | null>(null)
@@ -95,6 +121,69 @@ export function LibraryView({
     return () => observer.disconnect()
   }, [hasMore, filteredWords.length])
 
+  const fetchCommunityList = async () => {
+    setIsLoadingCommunity(true)
+    const list = await cloudSyncService.fetchCommunityDecks(25)
+    setCommunityDecks(list)
+    setIsLoadingCommunity(false)
+  }
+
+  const handleToggleCommunityPanel = () => {
+    audioService.playClick()
+    const next = !isCommunityOpen
+    setIsCommunityOpen(next)
+    if (next) {
+      void fetchCommunityList()
+    }
+  }
+
+  const handleToggleShareDeck = async (deck: Deck) => {
+    if (deck.isBuiltIn || deck.id.startsWith('commdeck-') || isPublishingDeck) return
+    audioService.playClick()
+    const deckWords = storageService.getWords(deck.id)
+
+    if (!sharedDeckIds.has(deck.id) && deckWords.length === 0) {
+      setCommunityFeedback('Hãy thêm ít nhất 1 từ vào bộ này trước khi chia sẻ lên Cộng đồng nhé!')
+      return
+    }
+
+    setIsPublishingDeck(true)
+    setCommunityFeedback(null)
+
+    if (sharedDeckIds.has(deck.id)) {
+      const ok = await cloudSyncService.unpublishCommunityDeck(deck.id)
+      setSharedDeckIds(cloudSyncService.getSharedDeckIds())
+      setCommunityFeedback(
+        ok ? `Đã gỡ bộ "${deck.name}" khỏi Kho Cộng đồng.` : 'Chưa kết nối được Cloud.'
+      )
+    } else {
+      const ok = await cloudSyncService.publishCommunityDeck(deck, deckWords)
+      setSharedDeckIds(cloudSyncService.getSharedDeckIds())
+      if (ok) {
+        audioService.playSuccessChime()
+        setCommunityFeedback(
+          `Đã chia sẻ bộ "${deck.name}" (${deckWords.length} từ) lên Kho Cộng đồng!`
+        )
+        if (isCommunityOpen) {
+          void fetchCommunityList()
+        }
+      } else {
+        setCommunityFeedback('Không thể chia sẻ lúc này. Vui lòng kiểm tra kết nối mạng.')
+      }
+    }
+    setIsPublishingDeck(false)
+  }
+
+  const handleDownloadCommunityDeck = (commDeck: CommunityDeck) => {
+    const localDeckId = storageService.upsertCommunityDeckLocally(commDeck)
+    audioService.playSuccessChime()
+    setSearchAllDecks(false)
+    setVisibleLimit(PAGE_SIZE)
+    onSelectDeck(localDeckId)
+    onDataChanged()
+    setCommunityFeedback(`Đã tải bộ "${commDeck.name}" (${commDeck.word_count} từ) về máy!`)
+  }
+
   const handleCreateDeck = (e: React.FormEvent) => {
     e.preventDefault()
     const name = newDeckName.trim()
@@ -116,6 +205,11 @@ export function LibraryView({
       confirmLabel: 'Xóa bộ từ',
       isDanger: true,
       onConfirm: () => {
+        if (sharedDeckIds.has(deck.id)) {
+          void cloudSyncService.unpublishCommunityDeck(deck.id).then(() => {
+            setSharedDeckIds(cloudSyncService.getSharedDeckIds())
+          })
+        }
         storageService.deleteDeck(deck.id)
         audioService.playClick()
         onDataChanged()
@@ -215,29 +309,159 @@ export function LibraryView({
     [decks]
   )
 
+  const isOwnCustomDeck =
+    !activeDeck.isBuiltIn && !activeDeck.id.startsWith('commdeck-') && !searchAllDecks
+  const isActiveDeckShared = sharedDeckIds.has(activeDeck.id)
+
   return (
     <div className="w-full max-w-md mx-auto px-3.5 py-4 space-y-4 animate-fadeIn">
-      {/* Top Header & Sync Button */}
-      <div className="flex items-center justify-between gap-2">
-        <div>
-          <div className="flex items-center gap-2">
+      {/* Top Header & Action Buttons */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
             <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Kho từ vựng</h2>
             <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-600 dark:text-indigo-400">
               {allWords.length.toLocaleString()} từ
             </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Tổng {decks.length} bộ chủ đề • Đã thuộc toàn kho: {allMasteredTotal}/{allWords.length.toLocaleString()} từ
+            {decks.length} bộ chủ đề • Đã thuộc: {allMasteredTotal}/{allWords.length.toLocaleString()} từ
           </p>
         </div>
-        <button
-          onClick={() => setIsSyncModalOpen(true)}
-          className="py-2 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium text-xs flex items-center gap-1.5 transition-transform active:scale-95 border border-slate-200 dark:border-slate-700 shrink-0"
-        >
-          <FileText className="w-3.5 h-3.5 text-indigo-500" />
-          <span>Đồng bộ file</span>
-        </button>
+
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            type="button"
+            onClick={handleToggleCommunityPanel}
+            className={`py-2 px-2.5 rounded-xl font-semibold text-xs flex items-center gap-1.5 transition-all active:scale-95 border ${
+              isCommunityOpen
+                ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                : 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 hover:bg-indigo-500/20'
+            }`}
+          >
+            <Users className="w-3.5 h-3.5" />
+            <span>Cộng đồng</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsSyncModalOpen(true)}
+            title="Nhập / Xuất file CSV hoặc JSON"
+            className="py-2 px-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium text-xs flex items-center gap-1 transition-transform active:scale-95 border border-slate-200 dark:border-slate-700"
+          >
+            <FileText className="w-3.5 h-3.5 text-indigo-500" />
+            <span>File</span>
+          </button>
+        </div>
       </div>
+
+      {communityFeedback && (
+        <div className="p-2.5 px-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center justify-between gap-2 animate-fadeIn">
+          <span>{communityFeedback}</span>
+          <button
+            type="button"
+            onClick={() => setCommunityFeedback(null)}
+            className="text-emerald-600 dark:text-emerald-400 p-0.5"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* Community Shared Decks Drawer */}
+      {isCommunityOpen && (
+        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800 border border-indigo-500/30 shadow-sm space-y-3 animate-fadeIn">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <h3 className="text-xs font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-indigo-500" />
+                <span>Kho Bộ Từ Cộng Đồng Chia Sẻ</span>
+              </h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                Tải miễn phí các bộ từ chuyên ngành do người học khác đóng góp
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void fetchCommunityList()}
+              aria-label="Làm mới kho cộng đồng"
+              className="p-1.5 rounded-xl text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isLoadingCommunity ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+
+          {isLoadingCommunity ? (
+            <div className="py-5 text-center text-xs text-slate-400 font-medium">
+              Đang tải danh sách bộ từ cộng đồng...
+            </div>
+          ) : communityDecks.length === 0 ? (
+            <div className="py-4 px-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-dashed border-slate-200 dark:border-slate-700 text-center space-y-1">
+              <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                Kho cộng đồng đang chờ bộ từ đầu tiên!
+              </p>
+              <p className="text-[11px] text-slate-400">
+                Tạo bộ từ riêng của bạn rồi bấm nút "Chia sẻ lên Cộng đồng" để mọi người cùng học nhé.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-64 overflow-y-auto pr-0.5">
+              {communityDecks.map((cd) => {
+                const localId = `commdeck-${cd.id}`
+                const alreadyInstalled = Boolean(deckNameMap[localId])
+                const sampleTerms = cd.words
+                  .slice(0, 3)
+                  .map((w) => w.term)
+                  .join(', ')
+
+                return (
+                  <div
+                    key={cd.id}
+                    className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-700/70 flex items-center justify-between gap-2.5"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
+                          {cd.name}
+                        </span>
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                          {cd.word_count} từ
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                        Bởi <span className="font-semibold">{cd.author_name}</span>
+                        {sampleTerms ? ` • VD: ${sampleTerms}` : ''}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadCommunityDeck(cd)}
+                      className={`py-1.5 px-2.5 rounded-xl text-[11px] font-bold flex items-center gap-1 shrink-0 transition-all active:scale-95 ${
+                        alreadyInstalled
+                          ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30'
+                          : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-2xs'
+                      }`}
+                    >
+                      {alreadyInstalled ? (
+                        <>
+                          <RefreshCw className="w-3 h-3" />
+                          <span>Cập nhật</span>
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-3 h-3" />
+                          <span>Tải về</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Decks Horizontal Carousel */}
       <div className="space-y-2">
@@ -245,7 +469,7 @@ export function LibraryView({
           <span>Danh sách bộ từ ({decks.length} bộ)</span>
           <button
             onClick={() => setIsCreatingDeck((prev) => !prev)}
-            className="text-indigo-600 dark:text-indigo-400 font-bold flex items-center gap-1 hover:underline lowercase first-letter:uppercase"
+            className="text-indigo-600 dark:text-indigo-400 font-bold flex items-center gap-1 hover:underline normal-case"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Tạo bộ mới</span>
@@ -279,6 +503,8 @@ export function LibraryView({
           {decks.map((deck) => {
             const isSelected = deck.id === activeDeck.id
             const deckWordCount = deckCountMap[deck.id] || 0
+            const isShared = sharedDeckIds.has(deck.id)
+            const isCommunityDownloaded = deck.id.startsWith('commdeck-')
 
             return (
               <div
@@ -322,14 +548,62 @@ export function LibraryView({
                   )}
                 </div>
 
-                <div className="flex items-center justify-between text-[11px] opacity-80 pt-1">
+                <div className="flex items-center justify-between text-[11px] opacity-85 pt-1">
                   <span>{deckWordCount} từ</span>
-                  {deck.isBuiltIn && <span className="text-[10px] font-medium">Hệ thống</span>}
+                  {deck.isBuiltIn ? (
+                    <span className="text-[10px] font-medium">Hệ thống</span>
+                  ) : isCommunityDownloaded ? (
+                    <span className="text-[10px] font-semibold">Cộng đồng</span>
+                  ) : isShared ? (
+                    <span className="text-[10px] font-bold">Đã chia sẻ</span>
+                  ) : (
+                    <span className="text-[10px] font-medium">Cá nhân</span>
+                  )}
                 </div>
               </div>
             )
           })}
         </div>
+
+        {/* Share Custom Deck Banner (Visible whenever user selects their own custom deck) */}
+        {isOwnCustomDeck && (
+          <div className="p-2.5 px-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
+                {isActiveDeckShared
+                  ? 'Bộ từ này đang chia sẻ công khai trên Cộng đồng'
+                  : 'Chia sẻ bộ từ riêng này cho mọi người cùng học?'}
+              </div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                {isActiveDeckShared
+                  ? 'Khi bạn thêm từ mới, hệ thống tự động cập nhật lên Kho Cộng đồng'
+                  : 'Giúp bạn bè và cộng đồng VocabFlow tải về học chỉ với 1 chạm'}
+              </div>
+            </div>
+            <button
+              type="button"
+              disabled={isPublishingDeck}
+              onClick={() => void handleToggleShareDeck(activeDeck)}
+              className={`py-1.5 px-3 rounded-xl text-xs font-bold flex items-center gap-1.5 shrink-0 transition-all active:scale-95 ${
+                isActiveDeckShared
+                  ? 'bg-emerald-600 text-white hover:bg-emerald-500'
+                  : 'bg-indigo-600 text-white hover:bg-indigo-500'
+              }`}
+            >
+              {isActiveDeckShared ? (
+                <>
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Đã chia sẻ</span>
+                </>
+              ) : (
+                <>
+                  <Share2 className="w-3.5 h-3.5" />
+                  <span>Chia sẻ</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Word Search & Status Filter */}

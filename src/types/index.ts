@@ -52,3 +52,39 @@ export interface ImportResult {
   deckId: string
   deckName: string
 }
+
+export interface BuiltInWordProgress {
+  s: StudyStatus
+  r: number
+  t?: number
+}
+
+export interface LeaderboardEntry {
+  player_tag: string
+  nickname: string
+  sky_score: number
+  match_score: number
+  blitz_score: number
+  total_score: number
+  mastered_count: number
+  updated_at: string
+}
+
+export interface CommunityDeckWord {
+  term: string
+  ipa?: string
+  definition: string
+  example?: string
+  partOfSpeech?: string
+}
+
+export interface CommunityDeck {
+  id: string
+  author_tag: string
+  author_name: string
+  name: string
+  description: string
+  words: CommunityDeckWord[]
+  word_count: number
+  updated_at: string
+}
