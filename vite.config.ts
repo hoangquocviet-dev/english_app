@@ -66,5 +66,14 @@ export default defineConfig({
   ],
   build: {
     target: ['es2020', 'safari15', 'chrome100'],
+    rolldownOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('initialDecks')) {
+            return 'vocab-data'
+          }
+        },
+      },
+    },
   },
 })
