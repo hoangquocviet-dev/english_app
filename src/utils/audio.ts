@@ -1,3 +1,5 @@
+const SOUND_STORAGE_KEY = 'vocabflow_sound_enabled'
+
 class AudioManager {
   private ctx: AudioContext | null = null
   private voices: SpeechSynthesisVoice[] = []
@@ -5,6 +7,14 @@ class AudioManager {
   private isSoundEnabled: boolean = true
 
   constructor() {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = window.localStorage.getItem(SOUND_STORAGE_KEY)
+        if (saved !== null) {
+          this.isSoundEnabled = saved !== 'false'
+        }
+      } catch {}
+    }
     this.initVoices()
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.onvoiceschanged = () => {
@@ -43,6 +53,14 @@ class AudioManager {
 
   public setSoundEnabled(enabled: boolean): void {
     this.isSoundEnabled = enabled
+    if (!enabled) {
+      this.stopSpeech()
+    }
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.setItem(SOUND_STORAGE_KEY, String(enabled))
+      } catch {}
+    }
   }
 
   public getSoundEnabled(): boolean {
@@ -177,6 +195,12 @@ class AudioManager {
         resolve()
       }
     })
+  }
+
+  // Auto-speak only when sound is enabled (respects mute button)
+  public speakAuto(text: string, rate: number = 0.9): Promise<void> {
+    if (!this.isSoundEnabled) return Promise.resolve()
+    return this.speak(text, rate)
   }
 
   // Stop any active speech

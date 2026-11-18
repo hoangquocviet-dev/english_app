@@ -1,5 +1,7 @@
 import { INITIAL_DECKS, INITIAL_WORDS } from '../data/initialDecks'
-import type { Deck, WordItem } from '../types'
+import type { Deck, StudyFilter, WordItem } from '../types'
+
+const CURRENT_SEED_VERSION = 3
 
 const STORAGE_KEYS = {
   DECKS: 'vocabflow_decks',
@@ -7,7 +9,22 @@ const STORAGE_KEYS = {
   ACTIVE_DECK: 'vocabflow_active_deck',
   LAST_ACTIVE_DATE: 'vocabflow_last_date',
   STREAK: 'vocabflow_streak',
+  DAILY_PROGRESS: 'vocabflow_daily_progress',
+  STUDY_PREFS: 'vocabflow_study_prefs',
+  DELETED_BUILTINS: 'vocabflow_deleted_builtins',
+  SEED_VERSION: 'vocabflow_seed_version',
   BACKUP: 'vocabflow_backup_corrupted',
+}
+
+export interface DailyProgress {
+  dateKey: string
+  count: number
+  goal: number
+}
+
+export interface StudyPreferences {
+  filter: StudyFilter
+  shuffle: boolean
 }
 
 class SafeStorageService {
@@ -21,6 +38,13 @@ class SafeStorageService {
     } catch {
       return false
     }
+  }
+
+  private getTodayKey(): string {
+    const now = new Date()
+    // Adjust by 4 hours backwards so midnight to 4:00 AM counts as previous study day
+    const adjustedTime = new Date(now.getTime() - 4 * 60 * 60 * 1000)
+    return `${adjustedTime.getFullYear()}-${adjustedTime.getMonth() + 1}-${adjustedTime.getDate()}`
   }
 
   // Generic safe get
@@ -90,18 +114,15 @@ class SafeStorageService {
     const decks = this.getDecks()
     const target = decks.find((d) => d.id === deckId)
     if (!target || target.isBuiltIn) {
-      // Cannot delete built-in deck
       return false
     }
     const updatedDecks = decks.filter((d) => d.id !== deckId)
     this.set(STORAGE_KEYS.DECKS, updatedDecks)
 
-    // Remove all associated words
     const words = this.getWords()
     const updatedWords = words.filter((w) => w.deckId !== deckId)
     this.set(STORAGE_KEYS.WORDS, updatedWords)
 
-    // Reset active deck if it was the deleted one
     const activeDeckId = this.getActiveDeckId()
     if (activeDeckId === deckId) {
       this.setActiveDeckId(INITIAL_DECKS[0].id)
@@ -127,37 +148,45 @@ class SafeStorageService {
   // WORDS CRUD
   public getWords(deckId?: string): WordItem[] {
     const words = this.get<WordItem[]>(STORAGE_KEYS.WORDS, [])
+    const deletedBuiltIns = new Set(this.get<string[]>(STORAGE_KEYS.DELETED_BUILTINS, []))
+    const savedSeedVersion = this.get<number>(STORAGE_KEYS.SEED_VERSION, 0)
+
     if (!words || words.length === 0) {
       this.set(STORAGE_KEYS.WORDS, INITIAL_WORDS)
+      this.set(STORAGE_KEYS.SEED_VERSION, CURRENT_SEED_VERSION)
       return deckId ? INITIAL_WORDS.filter((w) => w.deckId === deckId) : INITIAL_WORDS
     }
 
-    // Ensure newly added built-in words are merged into existing local storage
-    const missingBuiltIns = INITIAL_WORDS.filter(
-      (initW) => !words.some((w) => w.id === initW.id)
-    )
     let currentWords = words
     let hasChanges = false
+
+    // Merge newly added built-in words (respecting user deletions)
+    const missingBuiltIns = INITIAL_WORDS.filter(
+      (initW) => !deletedBuiltIns.has(initW.id) && !words.some((w) => w.id === initW.id)
+    )
 
     if (missingBuiltIns.length > 0) {
       currentWords = [...words, ...missingBuiltIns]
       hasChanges = true
     }
 
-    // Sync updated term, IPA, or definition for built-in words
-    currentWords = currentWords.map((w) => {
-      const builtIn = INITIAL_WORDS.find((initW) => initW.id === w.id)
-      if (
-        builtIn &&
-        (builtIn.ipa !== w.ipa ||
-          builtIn.definition !== w.definition ||
-          builtIn.term !== w.term)
-      ) {
-        hasChanges = true
-        return { ...builtIn, status: w.status, reviewCount: w.reviewCount }
-      }
-      return w
-    })
+    // Only run built-in metadata sync once per seed version bump so user edits are preserved
+    if (savedSeedVersion < CURRENT_SEED_VERSION) {
+      currentWords = currentWords.map((w) => {
+        const builtIn = INITIAL_WORDS.find((initW) => initW.id === w.id)
+        if (
+          builtIn &&
+          (builtIn.ipa !== w.ipa ||
+            builtIn.definition !== w.definition ||
+            builtIn.term !== w.term)
+        ) {
+          hasChanges = true
+          return { ...builtIn, status: w.status, reviewCount: w.reviewCount, lastReviewed: w.lastReviewed }
+        }
+        return w
+      })
+      this.set(STORAGE_KEYS.SEED_VERSION, CURRENT_SEED_VERSION)
+    }
 
     if (hasChanges) {
       this.set(STORAGE_KEYS.WORDS, currentWords)
@@ -189,11 +218,18 @@ class SafeStorageService {
 
   public deleteWord(id: string): void {
     const words = this.getWords()
+    const isBuiltIn = INITIAL_WORDS.some((w) => w.id === id)
+    if (isBuiltIn) {
+      const deleted = this.get<string[]>(STORAGE_KEYS.DELETED_BUILTINS, [])
+      if (!deleted.includes(id)) {
+        this.set(STORAGE_KEYS.DELETED_BUILTINS, [...deleted, id])
+      }
+    }
     const updated = words.filter((w) => w.id !== id)
     this.set(STORAGE_KEYS.WORDS, updated)
   }
 
-  public updateWordStatus(id: string, status: WordItem['status']): void {
+  public updateWordStatus(id: string, status: WordItem['status'], countActivity: boolean = true): void {
     const words = this.getWords()
     const updated = words.map((w) => {
       if (w.id === id) {
@@ -207,7 +243,35 @@ class SafeStorageService {
       return w
     })
     this.set(STORAGE_KEYS.WORDS, updated)
-    this.recordDailyActivity()
+    if (countActivity) {
+      this.recordDailyActivity(true)
+    }
+  }
+
+  public resetDeckProgress(deckId: string): void {
+    // Also restore any deleted built-in words belonging to this deck
+    const deckBuiltInIds = new Set(
+      INITIAL_WORDS.filter((w) => w.deckId === deckId).map((w) => w.id)
+    )
+    if (deckBuiltInIds.size > 0) {
+      const deleted = this.get<string[]>(STORAGE_KEYS.DELETED_BUILTINS, [])
+      const filteredDeleted = deleted.filter((id) => !deckBuiltInIds.has(id))
+      this.set(STORAGE_KEYS.DELETED_BUILTINS, filteredDeleted)
+    }
+
+    const words = this.getWords()
+    const updated = words.map((w) => {
+      if (w.deckId === deckId) {
+        return {
+          ...w,
+          status: 'new' as const,
+          reviewCount: 0,
+          lastReviewed: undefined,
+        }
+      }
+      return w
+    })
+    this.set(STORAGE_KEYS.WORDS, updated)
   }
 
   // IMPORT BULK
@@ -248,16 +312,50 @@ class SafeStorageService {
     }
   }
 
-  // STREAK & ACTIVITY (4 AM reset boundary)
+  // STUDY PREFERENCES
+  public getStudyPreferences(): StudyPreferences {
+    return this.get<StudyPreferences>(STORAGE_KEYS.STUDY_PREFS, {
+      filter: 'all',
+      shuffle: false,
+    })
+  }
+
+  public setStudyPreferences(prefs: StudyPreferences): void {
+    this.set(STORAGE_KEYS.STUDY_PREFS, prefs)
+  }
+
+  // DAILY GOAL & STREAK (4 AM reset boundary)
+  public getDailyProgress(): DailyProgress {
+    const todayKey = this.getTodayKey()
+    const saved = this.get<DailyProgress>(STORAGE_KEYS.DAILY_PROGRESS, {
+      dateKey: todayKey,
+      count: 0,
+      goal: 20,
+    })
+    if (saved.dateKey !== todayKey) {
+      return { dateKey: todayKey, count: 0, goal: saved.goal || 20 }
+    }
+    return saved
+  }
+
   public getStudyStreak(): number {
     return this.get<number>(STORAGE_KEYS.STREAK, 1)
   }
 
-  public recordDailyActivity(): void {
+  public recordDailyActivity(incrementWordCount: boolean = true): void {
     const now = new Date()
-    // Adjust by 4 hours backwards so that midnight to 4:00 AM counts as the previous calendar day
     const adjustedTime = new Date(now.getTime() - 4 * 60 * 60 * 1000)
     const todayKey = `${adjustedTime.getFullYear()}-${adjustedTime.getMonth() + 1}-${adjustedTime.getDate()}`
+
+    // Update daily review counter
+    if (incrementWordCount) {
+      const currentDaily = this.getDailyProgress()
+      this.set(STORAGE_KEYS.DAILY_PROGRESS, {
+        ...currentDaily,
+        dateKey: todayKey,
+        count: currentDaily.count + 1,
+      })
+    }
 
     const lastActive = this.get<string>(STORAGE_KEYS.LAST_ACTIVE_DATE, '')
     let streak = this.get<number>(STORAGE_KEYS.STREAK, 1)
@@ -269,11 +367,9 @@ class SafeStorageService {
     }
 
     if (lastActive === todayKey) {
-      // Already recorded today
       return
     }
 
-    // Check if last active was yesterday
     const yesterdayAdjusted = new Date(adjustedTime.getTime() - 24 * 60 * 60 * 1000)
     const yesterdayKey = `${yesterdayAdjusted.getFullYear()}-${yesterdayAdjusted.getMonth() + 1}-${yesterdayAdjusted.getDate()}`
 
@@ -290,9 +386,11 @@ class SafeStorageService {
   // RESET TO FACTORY DEFAULTS
   public resetToDefaults(): void {
     if (!this.isLocalStorageAvailable()) return
+    this.set(STORAGE_KEYS.DELETED_BUILTINS, [])
     this.set(STORAGE_KEYS.DECKS, INITIAL_DECKS)
     this.set(STORAGE_KEYS.WORDS, INITIAL_WORDS)
     this.set(STORAGE_KEYS.ACTIVE_DECK, INITIAL_DECKS[0].id)
+    this.set(STORAGE_KEYS.SEED_VERSION, CURRENT_SEED_VERSION)
   }
 }
 

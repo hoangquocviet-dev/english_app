@@ -1,5 +1,5 @@
-import { ArrowLeft, Check, RotateCw, Volume2, X } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { ArrowLeft, Check, RotateCw, Undo2, Volume2, X } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { StudySessionStats, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
 import { storageService } from '../../utils/storage'
@@ -16,14 +16,22 @@ interface QueuedWord {
   repetitionCount: number
 }
 
+interface HistoryEntry {
+  word: WordItem
+  prevStatus: WordItem['status']
+  action: 'mastered' | 'review'
+  wasRequeued: boolean
+}
+
 export function FlashcardView({ words, deckName, onBack }: FlashcardViewProps) {
-  // Queue with repetition counter (Max 3 repeats per B5 fix)
   const [queue, setQueue] = useState<QueuedWord[]>(() =>
     words.map((w) => ({ word: w, repetitionCount: 0 }))
   )
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isFlipped, setIsFlipped] = useState(false)
   const [stats, setStats] = useState({ mastered: 0, review: 0 })
+  const [history, setHistory] = useState<HistoryEntry[]>([])
+  const [missedWordsMap, setMissedWordsMap] = useState<Record<string, WordItem>>({})
   const [isCompleted, setIsCompleted] = useState(false)
 
   // Touch gesture state
@@ -34,13 +42,96 @@ export function FlashcardView({ words, deckName, onBack }: FlashcardViewProps) {
   const currentItem = queue[currentIndex]
   const currentWord = currentItem?.word
 
-  // Auto pronounce word on card appear
+  // Auto pronounce word on card appear (respects global mute)
   useEffect(() => {
     if (currentWord && !isCompleted) {
-      setIsFlipped(false)
-      audioService.speak(currentWord.term)
+      audioService.speakAuto(currentWord.term)
     }
   }, [currentIndex, currentWord, isCompleted])
+
+  const handleFlip = useCallback(() => {
+    audioService.playClick()
+    setIsFlipped((prev) => !prev)
+  }, [])
+
+  const handleAction = useCallback(
+    (action: 'mastered' | 'review') => {
+      if (!currentWord || !currentItem || isCompleted) return
+
+      const prevStatus = currentWord.status
+      let wasRequeued = false
+
+      if (action === 'mastered') {
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+          try {
+            navigator.vibrate(25)
+          } catch {}
+        }
+        audioService.playSuccessChime()
+        storageService.updateWordStatus(currentWord.id, 'mastered')
+        setStats((prev) => ({ ...prev, mastered: prev.mastered + 1 }))
+      } else {
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+          try {
+            navigator.vibrate(40)
+          } catch {}
+        }
+        audioService.playClick()
+        storageService.updateWordStatus(currentWord.id, 'learning')
+        setStats((prev) => ({ ...prev, review: prev.review + 1 }))
+        setMissedWordsMap((prev) => ({ ...prev, [currentWord.id]: currentWord }))
+
+        // Re-queue only if repetition count < 3
+        if (currentItem.repetitionCount < 3) {
+          wasRequeued = true
+          setQueue((prev) => [
+            ...prev,
+            { word: currentWord, repetitionCount: currentItem.repetitionCount + 1 },
+          ])
+        }
+      }
+
+      setHistory((prev) => [
+        ...prev,
+        { word: currentWord, prevStatus, action, wasRequeued },
+      ])
+
+      setDragOffset({ x: 0, y: 0 })
+      setIsDragging(false)
+
+      const nextLength = queue.length + (wasRequeued ? 1 : 0)
+      if (currentIndex + 1 >= nextLength) {
+        setIsCompleted(true)
+      } else {
+        setCurrentIndex((prev) => prev + 1)
+        setIsFlipped(false)
+      }
+    },
+    [currentWord, currentItem, isCompleted, queue.length, currentIndex]
+  )
+
+  const handleUndo = useCallback(() => {
+    if (history.length === 0 || currentIndex === 0 || isCompleted) return
+
+    const last = history[history.length - 1]
+    audioService.playClick()
+
+    // Restore previous word status without incrementing daily count
+    storageService.updateWordStatus(last.word.id, last.prevStatus, false)
+
+    setStats((prev) => ({
+      mastered: last.action === 'mastered' ? Math.max(0, prev.mastered - 1) : prev.mastered,
+      review: last.action === 'review' ? Math.max(0, prev.review - 1) : prev.review,
+    }))
+
+    if (last.wasRequeued) {
+      setQueue((prev) => prev.slice(0, -1))
+    }
+
+    setHistory((prev) => prev.slice(0, -1))
+    setCurrentIndex((prev) => Math.max(0, prev - 1))
+    setIsFlipped(false)
+  }, [history, currentIndex, isCompleted])
 
   // Keyboard navigation
   useEffect(() => {
@@ -55,60 +146,32 @@ export function FlashcardView({ words, deckName, onBack }: FlashcardViewProps) {
       } else if (e.code === 'ArrowLeft') {
         e.preventDefault()
         handleAction('review')
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault()
+        handleUndo()
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isFlipped, currentIndex, queue, isCompleted])
+  }, [isCompleted, handleFlip, handleAction, handleUndo])
 
-  const handleFlip = () => {
-    audioService.playClick()
-    setIsFlipped((prev) => !prev)
-  }
-
-  const handleSpeak = (e: React.MouseEvent) => {
+  const handleSpeak = (e: React.MouseEvent, rate: number = 0.9) => {
     e.stopPropagation()
     if (currentWord) {
-      audioService.speak(currentWord.term)
+      audioService.speak(currentWord.term, rate)
     }
   }
 
-  const handleAction = (action: 'mastered' | 'review') => {
-    if (!currentWord || isCompleted) return
-
-    if (action === 'mastered') {
-      audioService.playSuccessChime()
-      storageService.updateWordStatus(currentWord.id, 'mastered')
-      setStats((prev) => ({ ...prev, mastered: prev.mastered + 1 }))
-    } else {
-      audioService.playClick()
-      storageService.updateWordStatus(currentWord.id, 'learning')
-      setStats((prev) => ({ ...prev, review: prev.review + 1 }))
-
-      // B5 Fix: Re-queue only if repetition count < 3
-      if (currentItem.repetitionCount < 3) {
-        setQueue((prev) => [
-          ...prev,
-          { word: currentWord, repetitionCount: currentItem.repetitionCount + 1 },
-        ])
-      }
-    }
-
-    setDragOffset({ x: 0, y: 0 })
-    setIsDragging(false)
-
-    if (currentIndex + 1 >= queue.length) {
-      setIsCompleted(true)
-    } else {
-      setCurrentIndex((prev) => prev + 1)
-      setIsFlipped(false)
+  const handleSpeakExample = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (currentWord?.example) {
+      audioService.speak(currentWord.example, 0.9)
     }
   }
 
   // Touch Handlers
   const handleTouchStart = (e: React.TouchEvent) => {
     const touch = e.touches[0]
-    // 24px dead-zone check for iOS Safari edge back swipe
     if (touch.clientX < 24) return
 
     touchStartRef.current = {
@@ -134,42 +197,49 @@ export function FlashcardView({ words, deckName, onBack }: FlashcardViewProps) {
     const absY = Math.abs(y)
     const threshold = 70
 
-    // Check swipe up or down to flip
+    // Swipe up or down to flip
     if (absY > threshold && absY > absX * 1.2) {
       handleFlip()
     }
-    // Check swipe right -> mastered
+    // Swipe right -> mastered
     else if (x > threshold && absX > absY * 1.2) {
       handleAction('mastered')
     }
-    // Check swipe left -> review
+    // Swipe left -> review
     else if (x < -threshold && absX > absY * 1.2) {
       handleAction('review')
     }
 
-    // Snap back
     setDragOffset({ x: 0, y: 0 })
     setIsDragging(false)
     touchStartRef.current = null
   }
 
+  const startSessionWithWords = (targetWords: WordItem[]) => {
+    setQueue(targetWords.map((w) => ({ word: w, repetitionCount: 0 })))
+    setCurrentIndex(0)
+    setStats({ mastered: 0, review: 0 })
+    setHistory([])
+    setMissedWordsMap({})
+    setIsFlipped(false)
+    setIsCompleted(false)
+  }
+
   if (isCompleted) {
+    const missedList = Object.values(missedWordsMap)
     const sessionStats: StudySessionStats = {
       totalWords: words.length,
       masteredCount: stats.mastered,
       reviewCount: stats.review,
       mode: 'flashcard',
       deckName,
+      missedWords: missedList,
     }
     return (
       <StudySummary
         stats={sessionStats}
-        onRestart={() => {
-          setQueue(words.map((w) => ({ word: w, repetitionCount: 0 })))
-          setCurrentIndex(0)
-          setStats({ mastered: 0, review: 0 })
-          setIsCompleted(false)
-        }}
+        onRestart={() => startSessionWithWords(words)}
+        onPracticeMissed={(missed) => startSessionWithWords(missed)}
         onBackToHome={onBack}
       />
     )
@@ -178,6 +248,8 @@ export function FlashcardView({ words, deckName, onBack }: FlashcardViewProps) {
   if (!currentWord) return null
 
   const progressPercent = Math.round(((currentIndex + 1) / queue.length) * 100)
+  const rightSwipeOpacity = Math.min(1, Math.max(0, (dragOffset.x - 20) / 60))
+  const leftSwipeOpacity = Math.min(1, Math.max(0, (-dragOffset.x - 20) / 60))
 
   return (
     <div className="w-full flex flex-col h-full max-w-md mx-auto px-3.5 py-2 select-none">
@@ -185,37 +257,69 @@ export function FlashcardView({ words, deckName, onBack }: FlashcardViewProps) {
       <div className="flex items-center justify-between mb-3">
         <button
           onClick={onBack}
+          title="Quay lại"
           className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
+
         <div className="flex flex-col items-center">
           <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
             Thẻ {currentIndex + 1} / {queue.length}
           </span>
-          <div className="w-24 bg-slate-200 dark:bg-slate-800 h-1 rounded-full mt-1 overflow-hidden">
+          <div className="w-28 bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full mt-1 overflow-hidden">
             <div
               className="bg-indigo-600 dark:bg-indigo-400 h-full transition-all duration-300"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
         </div>
-        <button
-          onClick={handleFlip}
-          className="p-2 -mr-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
-        >
-          <RotateCw className="w-5 h-5" />
-        </button>
+
+        <div className="flex items-center gap-1 -mr-2">
+          <button
+            onClick={handleUndo}
+            disabled={history.length === 0}
+            title="Hoàn tác thẻ trước"
+            className="p-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 disabled:opacity-30 transition-colors"
+          >
+            <Undo2 className="w-4 h-4" />
+          </button>
+          <button
+            onClick={handleFlip}
+            title="Lật thẻ"
+            className="p-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+          >
+            <RotateCw className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       {/* 3D Flashcard Container */}
       <div
-        className="flex-1 flex items-center justify-center perspective-1000 my-auto py-2"
+        className="flex-1 flex items-center justify-center perspective-1000 my-auto py-2 relative"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         data-no-pull="true"
       >
+        {/* Dynamic Swipe Stamps */}
+        {rightSwipeOpacity > 0.05 && (
+          <div
+            style={{ opacity: rightSwipeOpacity }}
+            className="absolute top-6 left-6 z-20 pointer-events-none px-3 py-1.5 rounded-xl border-2 border-emerald-500 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-extrabold text-sm uppercase tracking-wider -rotate-12 shadow-sm"
+          >
+            Đã thuộc
+          </div>
+        )}
+        {leftSwipeOpacity > 0.05 && (
+          <div
+            style={{ opacity: leftSwipeOpacity }}
+            className="absolute top-6 right-6 z-20 pointer-events-none px-3 py-1.5 rounded-xl border-2 border-amber-500 bg-amber-500/15 text-amber-600 dark:text-amber-400 font-extrabold text-sm uppercase tracking-wider rotate-12 shadow-sm"
+          >
+            Ôn lại
+          </div>
+        )}
+
         <div
           onClick={handleFlip}
           data-no-pull="true"
@@ -241,21 +345,33 @@ export function FlashcardView({ words, deckName, onBack }: FlashcardViewProps) {
             className="absolute inset-0 rounded-3xl bg-white dark:bg-slate-800 p-6 flex flex-col justify-between items-center text-center shadow-xs select-none"
           >
             <div className="w-full flex justify-between items-center">
-              {currentWord.partOfSpeech && (
+              {currentWord.partOfSpeech ? (
                 <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                   {currentWord.partOfSpeech}
                 </span>
+              ) : (
+                <span />
               )}
-              <button
-                onClick={handleSpeak}
-                className="ml-auto w-9 h-9 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
-                title="Phát âm"
-              >
-                <Volume2 className="w-4 h-4" />
-              </button>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={(e) => handleSpeak(e, 0.6)}
+                  className="h-9 px-2.5 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+                  title="Nghe chậm (0.6x)"
+                >
+                  0.6x
+                </button>
+                <button
+                  onClick={(e) => handleSpeak(e, 0.9)}
+                  className="w-9 h-9 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+                  title="Phát âm chuẩn"
+                >
+                  <Volume2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
-            <div className="my-auto">
+            <div className="my-auto px-2">
               <h2 className="text-3xl font-extrabold text-slate-900 dark:text-slate-50 tracking-tight break-words">
                 {currentWord.term}
               </h2>
@@ -285,24 +401,39 @@ export function FlashcardView({ words, deckName, onBack }: FlashcardViewProps) {
               <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
                 Giải nghĩa
               </span>
-              <button
-                onClick={handleSpeak}
-                className="w-9 h-9 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
-                title="Phát âm"
-              >
-                <Volume2 className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={(e) => handleSpeak(e, 0.6)}
+                  className="h-9 px-2.5 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+                  title="Nghe chậm (0.6x)"
+                >
+                  0.6x
+                </button>
+                <button
+                  onClick={(e) => handleSpeak(e, 0.9)}
+                  className="w-9 h-9 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+                  title="Phát âm chuẩn"
+                >
+                  <Volume2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
-            <div className="my-auto space-y-4 px-2 w-full">
+            <div className="my-auto space-y-4 px-1 w-full">
               <div className="text-xl font-bold text-slate-900 dark:text-slate-100 leading-snug break-words">
                 {currentWord.definition}
               </div>
 
               {currentWord.example && (
-                <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-700/60 text-xs italic text-slate-700 dark:text-slate-200 leading-relaxed text-left border-l-4 border-indigo-500">
-                  "{currentWord.example}"
-                </div>
+                <button
+                  type="button"
+                  onClick={handleSpeakExample}
+                  title="Chạm để nghe đọc cả câu ví dụ"
+                  className="w-full p-3 rounded-xl bg-slate-100 hover:bg-slate-200/70 dark:bg-slate-700/60 dark:hover:bg-slate-700 text-xs italic text-slate-700 dark:text-slate-200 leading-relaxed text-left border-l-4 border-indigo-500 flex items-start justify-between gap-2 transition-colors"
+                >
+                  <span>"{currentWord.example}"</span>
+                  <Volume2 className="w-3.5 h-3.5 text-indigo-500 shrink-0 mt-0.5" />
+                </button>
               )}
             </div>
 
@@ -313,7 +444,7 @@ export function FlashcardView({ words, deckName, onBack }: FlashcardViewProps) {
         </div>
       </div>
 
-      {/* Action Buttons (Alternative to swiping) */}
+      {/* Action Buttons */}
       <div className="grid grid-cols-2 gap-3 pt-4 pb-2">
         <button
           onClick={() => handleAction('review')}

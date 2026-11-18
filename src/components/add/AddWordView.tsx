@@ -1,4 +1,4 @@
-import { AlertCircle, Check, Loader2, Plus, Search, Volume2 } from 'lucide-react'
+import { AlertCircle, ArrowRight, Check, Loader2, Plus, Search, Sparkles, Volume2 } from 'lucide-react'
 import { useState } from 'react'
 import type { Deck, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
@@ -7,21 +7,27 @@ import { storageService } from '../../utils/storage'
 interface AddWordViewProps {
   decks: Deck[]
   activeDeckId: string
-  onWordAdded: () => void
+  onWordAdded: (deckId: string) => void
+  onGoToPractice: (deckId: string) => void
 }
 
-export function AddWordView({ decks, activeDeckId, onWordAdded }: AddWordViewProps) {
+export function AddWordView({
+  decks,
+  activeDeckId,
+  onWordAdded,
+  onGoToPractice,
+}: AddWordViewProps) {
   const [selectedDeckId, setSelectedDeckId] = useState(activeDeckId)
   const [term, setTerm] = useState('')
   const [ipa, setIpa] = useState('')
   const [partOfSpeech, setPartOfSpeech] = useState('noun')
   const [definition, setDefinition] = useState('')
+  const [englishHint, setEnglishHint] = useState('')
   const [example, setExample] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
 
-  // Look up Free Dictionary API
   const handleLookup = async () => {
     const cleanTerm = term.trim().toLowerCase()
     if (!cleanTerm) {
@@ -32,53 +38,89 @@ export function AddWordView({ decks, activeDeckId, onWordAdded }: AddWordViewPro
     setIsLoading(true)
     setErrorMsg('')
     setSuccessMsg('')
+    setEnglishHint('')
 
     try {
-      const response = await fetch(
-        `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(cleanTerm)}`
-      )
+      const [dictRes, transRes] = await Promise.allSettled([
+        fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(cleanTerm)}`),
+        fetch(
+          `https://api.mymemory.translated.net/get?q=${encodeURIComponent(cleanTerm)}&langpair=en|vi`
+        ),
+      ])
 
-      if (!response.ok) {
-        if (response.status === 404) {
-          setErrorMsg('Từ này chưa có trong từ điển mở. Bạn có thể tự điền phiên âm và nghĩa bên dưới.')
-        } else {
-          setErrorMsg('Không thể kết nối đến từ điển mở. Mời bạn tự điền thông tin.')
+      let foundDict = false
+
+      if (dictRes.status === 'fulfilled' && dictRes.value.ok) {
+        const data = await dictRes.value.json()
+        if (Array.isArray(data) && data.length > 0) {
+          foundDict = true
+          const entry = data[0]
+
+          const phonetic =
+            entry.phonetic ||
+            entry.phonetics?.find((p: { text?: string }) => p.text)?.text ||
+            ''
+          if (phonetic) {
+            setIpa(phonetic.startsWith('/') ? phonetic : `/${phonetic}/`)
+          }
+
+          if (entry.meanings && entry.meanings.length > 0) {
+            const firstMeaning = entry.meanings[0]
+            if (firstMeaning.partOfSpeech) {
+              const posMap: Record<string, string> = {
+                adjective: 'adj',
+                adverb: 'adv',
+                verb: 'verb',
+                noun: 'noun',
+              }
+              setPartOfSpeech(posMap[firstMeaning.partOfSpeech] || 'phrase')
+            }
+
+            const firstDefObj = firstMeaning.definitions?.[0]
+            if (firstDefObj?.definition) {
+              setEnglishHint(firstDefObj.definition)
+            }
+
+            const defWithExample = firstMeaning.definitions?.find(
+              (d: { example?: string }) => d.example
+            )
+            if (defWithExample?.example) {
+              setExample(defWithExample.example)
+            }
+          }
         }
-        setIsLoading(false)
-        return
       }
 
-      const data = await response.json()
-      if (Array.isArray(data) && data.length > 0) {
-        const entry = data[0]
-
-        // Extract IPA
-        const phonetic =
-          entry.phonetic ||
-          entry.phonetics?.find((p: { text?: string }) => p.text)?.text ||
-          ''
-        if (phonetic) {
-          setIpa(phonetic.startsWith('/') ? phonetic : `/${phonetic}/`)
-        }
-
-        // Extract Part of Speech & Example
-        if (entry.meanings && entry.meanings.length > 0) {
-          const firstMeaning = entry.meanings[0]
-          if (firstMeaning.partOfSpeech) {
-            setPartOfSpeech(firstMeaning.partOfSpeech)
-          }
-
-          const defWithExample = firstMeaning.definitions?.find((d: { example?: string }) => d.example)
-          if (defWithExample?.example) {
-            setExample(defWithExample.example)
+      // Auto-fill Vietnamese suggestion if available and user hasn't typed one yet
+      let foundVi = false
+      if (transRes.status === 'fulfilled' && transRes.value.ok) {
+        const transData = await transRes.value.json()
+        const translatedText = transData?.responseData?.translatedText
+        if (
+          translatedText &&
+          typeof translatedText === 'string' &&
+          translatedText.trim().toLowerCase() !== cleanTerm
+        ) {
+          foundVi = true
+          if (!definition.trim()) {
+            setDefinition(translatedText.trim())
           }
         }
+      }
 
-        audioService.speak(cleanTerm)
-        setSuccessMsg('Đã tra cứu xong phiên âm và ví dụ! Mời bạn nhập nghĩa tiếng Việt.')
+      audioService.speak(cleanTerm)
+
+      if (foundDict || foundVi) {
+        setSuccessMsg(
+          foundVi
+            ? 'Đã tự động điền phiên âm, gợi ý nghĩa tiếng Việt và câu ví dụ!'
+            : 'Đã tra cứu xong phiên âm và ví dụ! Mời bạn nhập nghĩa tiếng Việt.'
+        )
+      } else {
+        setErrorMsg('Chưa tìm thấy từ này trên từ điển tự động. Bạn có thể tự nhập bên dưới.')
       }
     } catch {
-      setErrorMsg('Lỗi mạng khi tra cứu từ điển. Vui lòng tự nhập thông tin.')
+      setErrorMsg('Không kết nối được máy chủ từ điển. Mời bạn tự điền thông tin.')
     } finally {
       setIsLoading(false)
     }
@@ -102,14 +144,13 @@ export function AddWordView({ decks, activeDeckId, onWordAdded }: AddWordViewPro
       return
     }
 
-    // Duplicate check
     const existingWords = storageService.getWords(selectedDeckId)
     const isDuplicate = existingWords.some(
       (w) => w.term.trim().toLowerCase() === cleanTerm.toLowerCase()
     )
 
     if (isDuplicate) {
-      setErrorMsg(`Từ "${cleanTerm}" đã tồn tại trong bộ từ này rồi!`)
+      setErrorMsg(`Từ "${cleanTerm}" đã có sẵn trong bộ từ này rồi!`)
       return
     }
 
@@ -125,31 +166,29 @@ export function AddWordView({ decks, activeDeckId, onWordAdded }: AddWordViewPro
     storageService.addWord(newWord)
     audioService.playSuccessChime()
 
-    // Reset form
     setTerm('')
     setIpa('')
     setDefinition('')
+    setEnglishHint('')
     setExample('')
-    setSuccessMsg(`Đã lưu thành công thẻ từ "${cleanTerm}"!`)
+    setSuccessMsg(`Đã lưu thẻ "${cleanTerm}"! Bạn có thể tiếp tục thêm từ khác.`)
 
-    onWordAdded()
+    onWordAdded(selectedDeckId)
   }
 
   return (
     <div className="w-full max-w-md mx-auto px-3.5 py-4 space-y-4 animate-fadeIn">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-            Thêm từ vựng mới
-          </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Tra cứu tự động hoặc tự điền từ vựng theo nhu cầu học tập
-          </p>
-        </div>
+      <div>
+        <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Thêm từ vựng mới</h2>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          Gõ từ tiếng Anh và bấm Tra từ để tự động lấy phiên âm, nghĩa gợi ý & câu ví dụ
+        </p>
       </div>
 
-      {/* Form */}
-      <form onSubmit={handleSave} className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+      <form
+        onSubmit={handleSave}
+        className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4"
+      >
         {/* Deck Select */}
         <div>
           <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-1.5">
@@ -171,14 +210,20 @@ export function AddWordView({ decks, activeDeckId, onWordAdded }: AddWordViewPro
         {/* English Term + Lookup Button */}
         <div>
           <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-1.5">
-            Từ tiếng Anh <span className="text-rose-500">*</span>
+            Từ hoặc cụm từ tiếng Anh <span className="text-rose-500">*</span>
           </label>
           <div className="flex gap-2">
             <input
               type="text"
               value={term}
               onChange={(e) => setTerm(e.target.value)}
-              placeholder="Ví dụ: retrieve, compile..."
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !definition.trim() && term.trim()) {
+                  e.preventDefault()
+                  handleLookup()
+                }
+              }}
+              placeholder="Ví dụ: resilient, breakthrough..."
               className="flex-1 py-2.5 px-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
             <button
@@ -219,8 +264,8 @@ export function AddWordView({ decks, activeDeckId, onWordAdded }: AddWordViewPro
               type="text"
               value={ipa}
               onChange={(e) => setIpa(e.target.value)}
-              placeholder="/rɪˈtriːv/"
-              className="w-full py-2 px-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="/rɪˈzɪliənt/"
+              className="w-full py-2 px-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-xs font-sans font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
@@ -242,7 +287,7 @@ export function AddWordView({ decks, activeDeckId, onWordAdded }: AddWordViewPro
           </div>
         </div>
 
-        {/* Vietnamese Definition (Mandatory per B1) */}
+        {/* Vietnamese Definition */}
         <div>
           <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-1.5">
             Nghĩa tiếng Việt <span className="text-rose-500">*</span>
@@ -251,21 +296,27 @@ export function AddWordView({ decks, activeDeckId, onWordAdded }: AddWordViewPro
             type="text"
             value={definition}
             onChange={(e) => setDefinition(e.target.value)}
-            placeholder="Ví dụ: Truy xuất, lấy lại dữ liệu"
+            placeholder="Ví dụ: Kiên cường, bền bỉ"
             className="w-full py-2.5 px-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
+          {englishHint && (
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1.5 flex items-start gap-1 leading-snug">
+              <Sparkles className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5" />
+              <span>Giải nghĩa gốc: {englishHint}</span>
+            </p>
+          )}
         </div>
 
         {/* Example Sentence */}
         <div>
           <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-1.5">
-            Câu ví dụ (Không bắt buộc)
+            Câu ví dụ ngữ cảnh (Không bắt buộc)
           </label>
           <textarea
             value={example}
             rows={2}
             onChange={(e) => setExample(e.target.value)}
-            placeholder="We need to retrieve the user record..."
+            placeholder="She remained resilient despite facing setbacks..."
             className="w-full py-2 px-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
           />
         </div>
@@ -279,9 +330,21 @@ export function AddWordView({ decks, activeDeckId, onWordAdded }: AddWordViewPro
         )}
 
         {successMsg && (
-          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs flex items-center gap-2">
-            <Check className="w-4 h-4 shrink-0" />
-            <span>{successMsg}</span>
+          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs space-y-2">
+            <div className="flex items-center gap-2">
+              <Check className="w-4 h-4 shrink-0" />
+              <span>{successMsg}</span>
+            </div>
+            {!term && (
+              <button
+                type="button"
+                onClick={() => onGoToPractice(selectedDeckId)}
+                className="w-full py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <span>Luyện tập ngay bộ từ này</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         )}
 

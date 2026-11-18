@@ -1,28 +1,21 @@
 import { Flame, Moon, RotateCw, Sun, Volume2, VolumeX } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { Deck } from '../../types'
 import { audioService } from '../../utils/audio'
-import { storageService } from '../../utils/storage'
 
 interface NavbarProps {
   activeDeck: Deck | null
+  streak: number
+  onGoHome?: () => void
   onOpenDeckSelector?: () => void
 }
 
-export function Navbar({ activeDeck, onOpenDeckSelector }: NavbarProps) {
-  const [streak, setStreak] = useState(1)
-  const [soundEnabled, setSoundEnabled] = useState(true)
-  const [isDark, setIsDark] = useState(true)
+export function Navbar({ activeDeck, streak, onGoHome, onOpenDeckSelector }: NavbarProps) {
+  const [soundEnabled, setSoundEnabled] = useState(() => audioService.getSoundEnabled())
+  const [isDark, setIsDark] = useState(() =>
+    typeof document !== 'undefined' ? document.documentElement.classList.contains('dark') : true
+  )
   const [isReloading, setIsReloading] = useState(false)
-
-  useEffect(() => {
-    setStreak(storageService.getStudyStreak())
-    setSoundEnabled(audioService.getSoundEnabled())
-
-    // Initial theme detection
-    const isDarkMode = document.documentElement.classList.contains('dark')
-    setIsDark(isDarkMode)
-  }, [])
 
   const toggleSound = () => {
     const next = !soundEnabled
@@ -62,13 +55,22 @@ export function Navbar({ activeDeck, onOpenDeckSelector }: NavbarProps) {
       <div className="w-full max-w-md mx-auto px-3.5 h-14 flex items-center justify-between">
         {/* Brand & Active Deck */}
         <div className="flex items-center gap-2 overflow-hidden mr-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-600 to-sky-500 flex items-center justify-center font-bold text-white text-base shadow-sm shrink-0">
+          <button
+            type="button"
+            onClick={onGoHome}
+            title="Về Trang chủ"
+            className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-600 to-sky-500 flex items-center justify-center font-bold text-white text-base shadow-sm shrink-0 active:scale-95 transition-transform"
+          >
             V
-          </div>
+          </button>
           <div className="flex flex-col min-w-0">
-            <span className="text-sm font-bold tracking-tight text-slate-900 dark:text-slate-100 leading-none">
+            <button
+              type="button"
+              onClick={onGoHome}
+              className="text-sm font-bold tracking-tight text-slate-900 dark:text-slate-100 leading-none text-left"
+            >
               VocabFlow
-            </span>
+            </button>
             {activeDeck && (
               <button
                 onClick={onOpenDeckSelector}
@@ -80,11 +82,11 @@ export function Navbar({ activeDeck, onOpenDeckSelector }: NavbarProps) {
           </div>
         </div>
 
-        {/* Right Actions: Streak, Sound, Theme */}
+        {/* Right Actions: Streak, Sound, Reload, Theme */}
         <div className="flex items-center gap-1 shrink-0">
           {/* Streak indicator */}
           <div
-            title={`Chuỗi học: ${streak} ngày`}
+            title={`Chuỗi học liên tiếp: ${streak} ngày`}
             className="flex items-center gap-1 px-1.5 py-1 rounded-full bg-amber-500/10 dark:bg-amber-400/10 text-amber-600 dark:text-amber-400 text-xs font-semibold"
           >
             <Flame className="w-3.5 h-3.5 fill-amber-500 stroke-amber-500" />
@@ -95,12 +97,13 @@ export function Navbar({ activeDeck, onOpenDeckSelector }: NavbarProps) {
           <button
             onClick={toggleSound}
             aria-label="Bật/Tắt âm thanh"
+            title={soundEnabled ? 'Đang bật âm thanh (Chạm để tắt)' : 'Đang tắt âm thanh (Chạm để bật)'}
             className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             {soundEnabled ? (
               <Volume2 className="w-4 h-4" />
             ) : (
-              <VolumeX className="w-4 h-4 text-slate-400 dark:text-slate-600" />
+              <VolumeX className="w-4 h-4 text-rose-400" />
             )}
           </button>
 
@@ -118,6 +121,7 @@ export function Navbar({ activeDeck, onOpenDeckSelector }: NavbarProps) {
           <button
             onClick={toggleTheme}
             aria-label="Đổi giao diện sáng/tối"
+            title="Đổi giao diện Sáng / Tối"
             className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             {isDark ? (
