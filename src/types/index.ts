@@ -1,6 +1,10 @@
 export type StudyMode = 'flashcard' | 'quiz' | 'spelling' | 'listening'
 
-export type ActiveTab = 'practice' | 'add' | 'library'
+export type ArcadeGameId = 'sky-defender' | 'speed-match' | 'blitz-2s'
+
+export type GameHighScores = Record<ArcadeGameId, number>
+
+export type ActiveTab = 'practice' | 'games' | 'add' | 'library'
 
 export type StudyStatus = 'new' | 'learning' | 'mastered'
 

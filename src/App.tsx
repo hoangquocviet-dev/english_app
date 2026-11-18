@@ -4,13 +4,17 @@ import { BottomNav } from './components/common/BottomNav'
 import { ErrorBoundary } from './components/common/ErrorBoundary'
 import { Navbar } from './components/common/Navbar'
 import { PullToRefresh } from './components/common/PullToRefresh'
+import { ArcadeHub } from './components/games/ArcadeHub'
+import { BlitzGame } from './components/games/BlitzGame'
+import { SkyDefenderGame } from './components/games/SkyDefenderGame'
+import { SpeedMatchGame } from './components/games/SpeedMatchGame'
 import { LibraryView } from './components/library/LibraryView'
 import { FlashcardView } from './components/practice/FlashcardView'
 import { ListeningView } from './components/practice/ListeningView'
 import { PracticeHome } from './components/practice/PracticeHome'
 import { QuizView } from './components/practice/QuizView'
 import { SpellingView } from './components/practice/SpellingView'
-import type { ActiveTab, Deck, StudyMode, WordItem } from './types'
+import type { ActiveTab, ArcadeGameId, Deck, StudyMode, WordItem } from './types'
 import { audioService } from './utils/audio'
 import { storageService } from './utils/storage'
 
@@ -28,6 +32,7 @@ function shuffleWords(list: WordItem[]): WordItem[] {
 export function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('practice')
   const [activeStudyMode, setActiveStudyMode] = useState<StudyMode | null>(null)
+  const [activeGame, setActiveGame] = useState<ArcadeGameId | null>(null)
   const [sessionWords, setSessionWords] = useState<WordItem[]>([])
 
   const [decks, setDecks] = useState<Deck[]>(() => storageService.getDecks())
@@ -38,6 +43,7 @@ export function App() {
   const [streak, setStreak] = useState<number>(() => storageService.getStudyStreak())
   const [dailyProgress, setDailyProgress] = useState(() => storageService.getDailyProgress())
   const [studyPrefs, setStudyPrefs] = useState(() => storageService.getStudyPreferences())
+  const [highScores, setHighScores] = useState(() => storageService.getHighScores())
 
   const refreshData = useCallback(() => {
     const loadedDecks = storageService.getDecks()
@@ -49,6 +55,7 @@ export function App() {
     setWords(loadedWords)
     setStreak(storageService.getStudyStreak())
     setDailyProgress(storageService.getDailyProgress())
+    setHighScores(storageService.getHighScores())
   }, [])
 
   const handleSelectDeck = (deckId: string) => {
@@ -69,7 +76,6 @@ export function App() {
   }
 
   const handleStartMode = (mode: StudyMode) => {
-    // Strictly exclude words already marked as mastered until user resets the deck
     const freshWords = storageService.getWords(activeDeckId)
     let targetList = freshWords.filter((w) => w.status !== 'mastered')
     if (targetList.length === 0) return
@@ -88,7 +94,14 @@ export function App() {
     refreshData()
   }
 
+  const handleExitGame = () => {
+    audioService.stopSpeech()
+    setActiveGame(null)
+    refreshData()
+  }
+
   const activeDeck = decks.find((d) => d.id === activeDeckId) || decks[0] || null
+  const isFullScreenSession = Boolean(activeStudyMode || activeGame)
 
   return (
     <ErrorBoundary>
@@ -101,18 +114,20 @@ export function App() {
             onGoHome={() => {
               audioService.stopSpeech()
               setActiveStudyMode(null)
+              setActiveGame(null)
               setActiveTab('practice')
               refreshData()
             }}
             onOpenDeckSelector={() => {
               audioService.stopSpeech()
               setActiveStudyMode(null)
+              setActiveGame(null)
               setActiveTab('library')
             }}
           />
 
           {/* Main Content Area */}
-          <main className={`w-full flex-1 flex flex-col ${activeStudyMode ? 'pb-4' : 'pb-20'}`}>
+          <main className={`w-full flex-1 flex flex-col ${isFullScreenSession ? 'pb-3' : 'pb-20'}`}>
             {/* Active Study Mode Screens */}
             {activeStudyMode === 'flashcard' && activeDeck && (
               <FlashcardView
@@ -152,8 +167,33 @@ export function App() {
               />
             )}
 
+            {/* Active Arcade Mini-Game Screens */}
+            {activeGame === 'sky-defender' && activeDeck && (
+              <SkyDefenderGame
+                words={words}
+                deckName={activeDeck.name}
+                onBack={handleExitGame}
+              />
+            )}
+
+            {activeGame === 'speed-match' && activeDeck && (
+              <SpeedMatchGame
+                words={words}
+                deckName={activeDeck.name}
+                onBack={handleExitGame}
+              />
+            )}
+
+            {activeGame === 'blitz-2s' && activeDeck && (
+              <BlitzGame
+                words={words}
+                deckName={activeDeck.name}
+                onBack={handleExitGame}
+              />
+            )}
+
             {/* Tab Views */}
-            {!activeStudyMode && activeDeck && (
+            {!isFullScreenSession && activeDeck && (
               <>
                 {activeTab === 'practice' && (
                   <PracticeHome
@@ -167,6 +207,17 @@ export function App() {
                     onResetDeck={handleResetDeck}
                     onStartMode={handleStartMode}
                     onGoToAddWord={() => setActiveTab('add')}
+                  />
+                )}
+
+                {activeTab === 'games' && (
+                  <ArcadeHub
+                    decks={decks}
+                    activeDeck={activeDeck}
+                    words={words}
+                    highScores={highScores}
+                    onSelectDeck={handleSelectDeck}
+                    onStartGame={(gameId) => setActiveGame(gameId)}
                   />
                 )}
 
@@ -201,7 +252,7 @@ export function App() {
           </main>
 
           {/* Bottom Navigation */}
-          {!activeStudyMode && (
+          {!isFullScreenSession && (
             <BottomNav
               currentTab={activeTab}
               onTabChange={(tab) => {

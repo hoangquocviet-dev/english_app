@@ -157,6 +157,57 @@ class AudioManager {
     }
   }
 
+  // Arcade Laser Pew (Sky Defender)
+  public playLaser(): void {
+    if (!this.isSoundEnabled) return
+    try {
+      const ctx = this.getAudioContext()
+      if (!ctx) return
+      const now = ctx.currentTime
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+
+      osc.type = 'triangle'
+      osc.frequency.setValueAtTime(920, now)
+      osc.frequency.exponentialRampToValueAtTime(220, now + 0.06)
+
+      gain.gain.setValueAtTime(0.05, now)
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06)
+
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+
+      osc.start(now)
+      osc.stop(now + 0.06)
+    } catch {}
+  }
+
+  // Arcade Ascending Combo Chime (Speed Match & Blitz)
+  public playCombo(combo: number = 1): void {
+    if (!this.isSoundEnabled) return
+    try {
+      const ctx = this.getAudioContext()
+      if (!ctx) return
+      const now = ctx.currentTime
+      const baseFreq = 523.25 * Math.min(1.8, 1 + Math.max(0, combo - 1) * 0.08)
+
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(baseFreq, now)
+      osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.25, now + 0.14)
+
+      gain.gain.setValueAtTime(0.12, now)
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18)
+
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+
+      osc.start(now)
+      osc.stop(now + 0.18)
+    } catch {}
+  }
+
   // Speak word using native SpeechSynthesis
   public speak(text: string, rate: number = 0.9): Promise<void> {
     return new Promise((resolve) => {

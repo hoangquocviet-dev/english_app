@@ -1,5 +1,5 @@
 import { INITIAL_DECKS, INITIAL_WORDS } from '../data/initialDecks'
-import type { Deck, WordItem } from '../types'
+import type { ArcadeGameId, Deck, GameHighScores, WordItem } from '../types'
 
 const CURRENT_SEED_VERSION = 3
 
@@ -11,6 +11,7 @@ const STORAGE_KEYS = {
   STREAK: 'vocabflow_streak',
   DAILY_PROGRESS: 'vocabflow_daily_progress',
   STUDY_PREFS: 'vocabflow_study_prefs',
+  HIGH_SCORES: 'vocabflow_high_scores',
   DELETED_BUILTINS: 'vocabflow_deleted_builtins',
   SEED_VERSION: 'vocabflow_seed_version',
   BACKUP: 'vocabflow_backup_corrupted',
@@ -379,6 +380,28 @@ class SafeStorageService {
 
     this.set(STORAGE_KEYS.LAST_ACTIVE_DATE, todayKey)
     this.set(STORAGE_KEYS.STREAK, streak)
+  }
+
+  // ARCADE HIGH SCORES
+  public getHighScores(): GameHighScores {
+    return this.get<GameHighScores>(STORAGE_KEYS.HIGH_SCORES, {
+      'sky-defender': 0,
+      'speed-match': 0,
+      'blitz-2s': 0,
+    })
+  }
+
+  public saveHighScore(gameId: ArcadeGameId, score: number): boolean {
+    const scores = this.getHighScores()
+    const prevBest = scores[gameId] || 0
+    if (score > prevBest) {
+      this.set(STORAGE_KEYS.HIGH_SCORES, {
+        ...scores,
+        [gameId]: score,
+      })
+      return true
+    }
+    return false
   }
 
   // RESET TO FACTORY DEFAULTS
