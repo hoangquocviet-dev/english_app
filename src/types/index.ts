@@ -13,6 +13,7 @@ export type StudyFilterMode =
   | 'due'
   | 'global-due'
   | 'starred'
+  | 'global-starred'
   | 'custom'
 
 export type ArcadeGameId = 'sky-defender' | 'speed-match' | 'blitz-2s' | 'word-bomb'

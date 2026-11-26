@@ -73,6 +73,32 @@ function createTilesForWord(term: string): {
   return { pool: shuffled, placed: newPlaced }
 }
 
+function SpellingAccentButton({ term }: { term: string }) {
+  const [voiceAccent, setVoiceAccent] = useState(() => audioService.getVoiceAccent())
+
+  useEffect(() => {
+    return audioService.subscribeAccent(() => {
+      setVoiceAccent(audioService.getVoiceAccent())
+    })
+  }, [])
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        const next = audioService.toggleVoiceAccent()
+        setVoiceAccent(next)
+        audioService.playClick()
+        void audioService.speak(term, 0.9)
+      }}
+      className="h-8 px-2 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+      title="Đổi giọng đọc Anh-Mỹ (US) / Anh-Anh (UK)"
+    >
+      {voiceAccent === 'en-US' ? '🇺🇸 US' : '🇬🇧 UK'}
+    </button>
+  )
+}
+
 export function SpellingView({
   words,
   deckId,
@@ -442,12 +468,6 @@ export function SpellingView({
 
   const progressPercent = Math.round(((currentIndex + 1) / queue.length) * 100)
   const termLen = currentWord.term.length
-  const sizeClasses =
-    termLen > 14
-      ? 'w-7 h-9 text-xs sm:w-8 sm:h-10 sm:text-sm'
-      : termLen >= 8
-      ? 'w-8 h-10 text-sm sm:w-9 sm:h-11 sm:text-base'
-      : 'w-10 h-12 text-lg'
 
   // Group character indices into non-breaking word segments separated by spaces
   const wordGroups: number[][] = []
@@ -465,6 +485,18 @@ export function SpellingView({
   if (currentGroup.length > 0) {
     wordGroups.push(currentGroup)
   }
+
+  const maxWordGroupLen = Math.max(...wordGroups.map((g) => g.length), 1)
+  const sizeClasses =
+    maxWordGroupLen >= 13
+      ? 'w-5 h-8 text-[11px] sm:w-7 sm:h-9 sm:text-xs'
+      : maxWordGroupLen >= 10
+      ? 'w-6 h-8.5 text-xs sm:w-8 sm:h-10 sm:text-sm'
+      : termLen > 14
+      ? 'w-7 h-9 text-xs sm:w-8 sm:h-10 sm:text-sm'
+      : termLen >= 8
+      ? 'w-8 h-10 text-sm sm:w-9 sm:h-11 sm:text-base'
+      : 'w-10 h-12 text-lg'
 
   return (
     <div className="w-full flex flex-col my-auto max-w-md sm:max-w-lg mx-auto px-3.5 py-2 select-none">
@@ -520,11 +552,11 @@ export function SpellingView({
 
       {/* Meaning & Audio Hint Card */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 text-center border border-slate-200 dark:border-slate-800 shadow-sm mb-4 relative">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-            Ghép chữ cái tiếng Anh
+        <div className="flex items-center justify-between gap-1.5 mb-2">
+          <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">
+            Ghép chữ cái
           </span>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 shrink-0">
             <button
               type="button"
               onClick={() => {
@@ -548,9 +580,10 @@ export function SpellingView({
                 className={`w-4 h-4 ${starredIds.has(currentWord.id) ? 'fill-amber-400' : ''}`}
               />
             </button>
+            <SpellingAccentButton term={currentWord.term} />
             <button
               onClick={() => audioService.speak(currentWord.term, 0.6)}
-              className="h-8 px-2.5 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+              className="h-8 px-2 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
               title="Nghe chậm (0.6x)"
             >
               0.6x
@@ -576,9 +609,9 @@ export function SpellingView({
         )}
       </div>
 
-      {/* Target Letter Slots Grouped by Word (No mid-word line breaks) */}
+      {/* Target Letter Slots Grouped by Word (Responsive sizing + wrap guard prevents 360px overflow) */}
       <div
-        className={`min-h-16 flex flex-wrap items-center justify-center gap-x-3.5 gap-y-2.5 p-3.5 rounded-2xl border transition-all my-auto ${
+        className={`min-h-16 flex flex-wrap items-center justify-center gap-x-3 gap-y-2.5 p-3 rounded-2xl border transition-all my-auto ${
           isSuccess
             ? 'bg-emerald-500/10 border-emerald-500 shadow-sm'
             : isWrong
@@ -587,7 +620,10 @@ export function SpellingView({
         }`}
       >
         {wordGroups.map((groupIndices, gIdx) => (
-          <div key={gIdx} className="inline-flex items-center gap-1">
+          <div
+            key={gIdx}
+            className="inline-flex flex-wrap items-center justify-center gap-0.5 sm:gap-1 max-w-full"
+          >
             {groupIndices.map((index) => {
               const char = currentWord.term[index]
               const tile = placedTiles[index]

@@ -27,6 +27,8 @@ interface StatsModalProps {
   highScores: GameHighScores
   onJumpToDeck: (deckId: string) => void
   onStartGlobalWeakReview?: (mode: StudyMode) => void
+  onStartGlobalStarredReview?: (mode: StudyMode) => void
+  onStartGlobalDueReview?: (mode: StudyMode) => void
 }
 
 export function StatsModal({
@@ -38,6 +40,8 @@ export function StatsModal({
   highScores,
   onJumpToDeck,
   onStartGlobalWeakReview,
+  onStartGlobalStarredReview,
+  onStartGlobalDueReview,
 }: StatsModalProps) {
   useEffect(() => {
     if (!isOpen) return
@@ -210,7 +214,7 @@ export function StatsModal({
           </button>
         </div>
 
-        {/* 4 Hero KPIs */}
+        {/* 4 Hero KPIs (Interactive SRS Due & Global Starred Launchers!) */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20">
             <div className="flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400">
@@ -222,28 +226,77 @@ export function StatsModal({
             </div>
           </div>
 
-          <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
-            <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Đã thuộc</span>
+          {summary.due > 0 && onStartGlobalDueReview ? (
+            <button
+              type="button"
+              onClick={() => {
+                audioService.playClick()
+                onStartGlobalDueReview('smart-mix')
+              }}
+              title="Chạm để ôn ngay các thẻ SRS đã đến hạn toàn kho"
+              className="p-3 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/18 border border-emerald-500/30 text-left transition-all active:scale-97"
+            >
+              <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                <span>Đã thuộc</span>
+              </div>
+              <div className="text-lg font-extrabold text-slate-900 dark:text-white mt-0.5 leading-tight">
+                {summary.mastered}{' '}
+                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                  ({summary.overallPct}%)
+                </span>
+              </div>
+              <div className="text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 mt-1 whitespace-nowrap">
+                Ôn {summary.due} đến hạn →
+              </div>
+            </button>
+          ) : (
+            <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+              <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                <span>Đã thuộc</span>
+              </div>
+              <div className="text-lg font-extrabold text-slate-900 dark:text-white mt-0.5">
+                {summary.mastered}{' '}
+                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                  ({summary.overallPct}%)
+                </span>
+              </div>
             </div>
-            <div className="text-lg font-extrabold text-slate-900 dark:text-white mt-0.5">
-              {summary.mastered}{' '}
-              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                ({summary.overallPct}%)
-              </span>
-            </div>
-          </div>
+          )}
 
-          <div className="p-3 rounded-2xl bg-sky-500/10 border border-sky-500/20">
-            <div className="flex items-center gap-1 text-[11px] font-bold text-sky-600 dark:text-sky-400">
-              <Star className="w-3.5 h-3.5 fill-current" />
-              <span>Đã lưu sao</span>
+          {summary.starred > 0 && onStartGlobalStarredReview ? (
+            <button
+              type="button"
+              onClick={() => {
+                audioService.playClick()
+                onStartGlobalStarredReview('smart-mix')
+              }}
+              title="Chạm để luyện tổng hợp toàn bộ từ đã đánh dấu sao trên mọi bộ từ"
+              className="p-3 rounded-2xl bg-sky-500/10 hover:bg-sky-500/18 border border-sky-500/30 text-left transition-all active:scale-97"
+            >
+              <div className="flex items-center gap-1 text-[11px] font-bold text-sky-600 dark:text-sky-400 whitespace-nowrap">
+                <Star className="w-3.5 h-3.5 fill-current shrink-0" />
+                <span>Đã lưu sao</span>
+              </div>
+              <div className="text-lg font-extrabold text-slate-900 dark:text-white mt-0.5 leading-tight">
+                {summary.starred} từ
+              </div>
+              <div className="text-[10px] font-extrabold text-sky-600 dark:text-sky-400 mt-1 whitespace-nowrap">
+                Ôn gộp ngay →
+              </div>
+            </button>
+          ) : (
+            <div className="p-3 rounded-2xl bg-sky-500/10 border border-sky-500/20">
+              <div className="flex items-center gap-1 text-[11px] font-bold text-sky-600 dark:text-sky-400 whitespace-nowrap">
+                <Star className="w-3.5 h-3.5 fill-current shrink-0" />
+                <span>Đã lưu sao</span>
+              </div>
+              <div className="text-lg font-extrabold text-slate-900 dark:text-white mt-0.5">
+                {summary.starred} từ
+              </div>
             </div>
-            <div className="text-lg font-extrabold text-slate-900 dark:text-white mt-0.5">
-              {summary.starred} từ
-            </div>
-          </div>
+          )}
 
           <div className="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20">
             <div className="flex items-center gap-1 text-[11px] font-bold text-indigo-600 dark:text-indigo-400">

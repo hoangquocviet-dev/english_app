@@ -167,6 +167,32 @@ function buildQuestions(
   return generated
 }
 
+function QuizAccentButton({ term }: { term: string }) {
+  const [voiceAccent, setVoiceAccent] = useState(() => audioService.getVoiceAccent())
+
+  useEffect(() => {
+    return audioService.subscribeAccent(() => {
+      setVoiceAccent(audioService.getVoiceAccent())
+    })
+  }, [])
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        const next = audioService.toggleVoiceAccent()
+        setVoiceAccent(next)
+        audioService.playClick()
+        void audioService.speak(term, 0.9)
+      }}
+      className="h-8 px-2 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+      title="Đổi giọng đọc Anh-Mỹ (US) / Anh-Anh (UK)"
+    >
+      {voiceAccent === 'en-US' ? '🇺🇸 US' : '🇬🇧 UK'}
+    </button>
+  )
+}
+
 export function QuizView({
   words,
   allDeckWords,
@@ -488,9 +514,10 @@ export function QuizView({
             </button>
             {(direction === 'en-vi' || isLocked) && (
               <>
+                <QuizAccentButton term={currentQ.targetWord.term} />
                 <button
                   onClick={() => void audioService.speak(currentQ.targetWord.term, 0.6)}
-                  className="h-8 px-2.5 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+                  className="h-8 px-2 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
                   title="Nghe chậm (0.6x)"
                 >
                   0.6x

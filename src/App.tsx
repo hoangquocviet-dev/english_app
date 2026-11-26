@@ -683,6 +683,17 @@ export function App() {
                   setActiveTab('practice')
                   handleStartMode(mode, 'global-learning')
                 }}
+                onStartGlobalStarredReview={(mode) => {
+                  setIsStatsModalOpen(false)
+                  setActiveTab('practice')
+                  const starredPool = storageService.getWords().filter((w) => Boolean(w.starred))
+                  handleStartCustomSession(starredPool, mode, '⭐ Đã lưu sao Toàn kho', true)
+                }}
+                onStartGlobalDueReview={(mode) => {
+                  setIsStatsModalOpen(false)
+                  setActiveTab('practice')
+                  handleStartMode(mode, 'global-due')
+                }}
               />
             </Suspense>
           )}

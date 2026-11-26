@@ -1042,9 +1042,14 @@ export function LibraryView({
                       {word.definition}
                     </p>
                     {word.example && (
-                      <p className="text-[11px] text-slate-400 italic mt-1 line-clamp-2">
+                      <button
+                        type="button"
+                        onClick={() => void audioService.speak(word.example!, 0.92)}
+                        title="Chạm để nghe đọc câu ví dụ"
+                        className="text-[11px] text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 italic mt-1 line-clamp-2 text-left transition-colors"
+                      >
                         "{word.example}"
-                      </p>
+                      </button>
                     )}
                   </div>
 

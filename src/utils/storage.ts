@@ -461,7 +461,7 @@ class SafeStorageService {
       return source.filter((w) => sessionIdSet.has(w.id) && w.status === 'learning')
     }
 
-    if (filterMode === 'global-learning') {
+    if (filterMode === 'global-learning' || filterMode === 'global-starred') {
       return this.getWords().filter((w) => sessionIdSet.has(w.id) && w.status === 'learning')
     }
 

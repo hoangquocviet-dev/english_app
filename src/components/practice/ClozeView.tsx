@@ -63,23 +63,37 @@ function buildClozeQuestions(
 ): ClozeQuestion[] {
   const poolSource =
     fullDeckWords.length >= 6
-      ? fullDeckWords
-      : [...fullDeckWords, ...storageService.getWords().slice(0, 50)]
+      ? [...fullDeckWords, ...sourceWords]
+      : [...fullDeckWords, ...sourceWords, ...storageService.getWords().slice(0, 50)]
+
+  interface ClozeCandidate {
+    id: string
+    term: string
+    termKey: string
+    defKey: string
+    pos: string
+  }
 
   const seenTerms = new Set<string>()
-  const uniquePool: ClozeOption[] = []
+  const uniquePool: ClozeCandidate[] = []
   for (const w of poolSource) {
     const termKey = w.term.trim().toLowerCase()
     if (!seenTerms.has(termKey)) {
       seenTerms.add(termKey)
-      uniquePool.push({ id: w.id, term: w.term })
+      uniquePool.push({
+        id: w.id,
+        term: w.term,
+        termKey,
+        defKey: w.definition.trim().toLowerCase(),
+        pos: (w.partOfSpeech || '').trim().toLowerCase(),
+      })
     }
   }
 
-  const poolLen = uniquePool.length
-
   const questions: ClozeQuestion[] = sourceWords.map((targetWord) => {
     const targetKey = targetWord.term.trim().toLowerCase()
+    const targetDefKey = targetWord.definition.trim().toLowerCase()
+    const targetPos = (targetWord.partOfSpeech || '').trim().toLowerCase()
     const sentence =
       targetWord.example?.trim() ||
       `${targetWord.term} plays a key role: ${targetWord.definition}.`
@@ -90,26 +104,26 @@ function buildClozeQuestions(
       targetWord.definition
     )
 
+    const eligible = uniquePool.filter(
+      (c) => c.termKey !== targetKey && c.defKey !== targetDefKey
+    )
+    const samePos = targetPos ? eligible.filter((c) => c.pos === targetPos) : []
+    const primary = samePos.length >= 3 ? samePos : eligible
+    const sortedByLen = [...primary].sort(
+      (a, b) =>
+        Math.abs(a.term.length - targetWord.term.length) -
+        Math.abs(b.term.length - targetWord.term.length)
+    )
+    const topSlice = shuffleArray(sortedByLen.slice(0, Math.min(8, sortedByLen.length)))
+
     const pickedDistractors: ClozeOption[] = []
     const pickedKeys = new Set<string>([targetKey])
 
-    for (let attempts = 0; attempts < 30 && pickedDistractors.length < 3 && poolLen > 1; attempts++) {
-      const cand = uniquePool[Math.floor(Math.random() * poolLen)]
-      const candKey = cand.term.trim().toLowerCase()
-      if (!pickedKeys.has(candKey)) {
-        pickedKeys.add(candKey)
-        pickedDistractors.push(cand)
-      }
-    }
-
-    if (pickedDistractors.length < 3) {
-      for (const cand of uniquePool) {
-        if (pickedDistractors.length >= 3) break
-        const candKey = cand.term.trim().toLowerCase()
-        if (!pickedKeys.has(candKey)) {
-          pickedKeys.add(candKey)
-          pickedDistractors.push(cand)
-        }
+    for (const cand of [...topSlice, ...eligible]) {
+      if (pickedDistractors.length >= 3) break
+      if (!pickedKeys.has(cand.termKey)) {
+        pickedKeys.add(cand.termKey)
+        pickedDistractors.push({ id: cand.id, term: cand.term })
       }
     }
 
