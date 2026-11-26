@@ -134,6 +134,7 @@ export function FlashcardView({
   const [history, setHistory] = useState<HistoryEntry[]>([])
   const [isCompleted, setIsCompleted] = useState(false)
   const [isAutoPlaying, setIsAutoPlaying] = useState(false)
+  const [voiceAccent, setVoiceAccent] = useState(() => audioService.getVoiceAccent())
   const [starredIds, setStarredIds] = useState<Set<string>>(
     () => new Set(words.filter((w) => w.starred).map((w) => w.id))
   )
@@ -168,7 +169,20 @@ export function FlashcardView({
   }, [])
 
   useEffect(() => {
+    const unsubAccent = audioService.subscribeAccent(() => {
+      setVoiceAccent(audioService.getVoiceAccent())
+    })
+    const onVisChange = () => {
+      if (typeof document !== 'undefined' && document.hidden) {
+        setIsAutoPlaying(false)
+        stopMic()
+        audioService.stopSpeech()
+      }
+    }
+    document.addEventListener('visibilitychange', onVisChange)
     return () => {
+      unsubAccent()
+      document.removeEventListener('visibilitychange', onVisChange)
       stopMic()
       audioService.stopSpeech()
     }
@@ -770,11 +784,28 @@ export function FlashcardView({
               <h2 className="text-3xl font-extrabold text-slate-900 dark:text-slate-50 tracking-tight break-words">
                 {currentWord.term}
               </h2>
-              {currentWord.ipa && (
-                <p className="text-sm font-sans font-medium tracking-wide text-slate-400 dark:text-slate-500">
-                  {currentWord.ipa}
-                </p>
-              )}
+              <div className="flex items-center justify-center gap-2 flex-wrap">
+                {currentWord.ipa && (
+                  <p className="text-sm font-sans font-medium tracking-wide text-slate-400 dark:text-slate-500">
+                    {currentWord.ipa}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setIsAutoPlaying(false)
+                    const next = audioService.toggleVoiceAccent()
+                    setVoiceAccent(next)
+                    audioService.playClick()
+                    void audioService.speak(currentWord.term, 0.9)
+                  }}
+                  title="Đổi giọng đọc Anh-Mỹ (US) / Anh-Anh (UK)"
+                  className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700/70 hover:bg-indigo-500/15 text-[11px] font-bold text-slate-600 dark:text-slate-300 transition-colors"
+                >
+                  {voiceAccent === 'en-US' ? '🇺🇸 US' : '🇬🇧 UK'}
+                </button>
+              </div>
 
               {speechFeedback && (
                 <div
@@ -814,6 +845,21 @@ export function FlashcardView({
                 Giải nghĩa
               </span>
               <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setIsAutoPlaying(false)
+                    const next = audioService.toggleVoiceAccent()
+                    setVoiceAccent(next)
+                    audioService.playClick()
+                    void audioService.speak(currentWord.term, 0.9)
+                  }}
+                  className="h-8 px-2 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+                  title="Đổi giọng đọc Anh-Mỹ (US) / Anh-Anh (UK)"
+                >
+                  {voiceAccent === 'en-US' ? '🇺🇸 US' : '🇬🇧 UK'}
+                </button>
                 <button
                   onClick={(e) => handleSpeak(e, 0.6)}
                   className="h-8 px-2.5 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"

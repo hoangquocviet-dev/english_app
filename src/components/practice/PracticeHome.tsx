@@ -16,7 +16,7 @@ import {
   Star,
   Trophy,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Deck, StudyMode, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
 import { type DailyProgress, storageService } from '../../utils/storage'
@@ -68,6 +68,12 @@ export function PracticeHome({
   const [filterMode, setFilterMode] = useState<
     'all' | 'learning' | 'global-learning' | 'due' | 'global-due' | 'starred'
   >('all')
+
+  useEffect(() => {
+    return audioService.subscribeAccent(() => {
+      setVoiceAccent(audioService.getVoiceAccent())
+    })
+  }, [])
 
   const masteredCount = words.filter((w) => w.status === 'mastered').length
   const learningCount = words.filter((w) => w.status === 'learning').length

@@ -13,6 +13,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { StudyFilterMode, StudyMode, StudySessionStats, WordItem } from '../../types'
 import { formatArcadeMeaning } from '../../utils/arcadeText'
 import { audioService } from '../../utils/audio'
+import { splitClozeSentence } from '../../utils/cloze'
 import { GLOBAL_SRS_DECK_ID, storageService } from '../../utils/storage'
 import { StudySummary } from './StudySummary'
 
@@ -56,50 +57,18 @@ function shuffleArray<T>(array: T[]): T[] {
   return arr
 }
 
-function escapeRegExp(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-}
-
 function trySplitExample(
   sentence: string | undefined,
   term: string
 ): { sentenceBefore: string; sentenceAfter: string; matchedTerm: string } | null {
   if (!sentence || !sentence.trim()) return null
-  const clean = sentence.trim()
-  const exactRe = new RegExp(`(^|[^a-zA-Z0-9_-])(${escapeRegExp(term)})([^a-zA-Z0-9_-]|$)`, 'i')
-  const m = exactRe.exec(clean)
-  if (m && typeof m.index === 'number') {
-    const start = m.index + m[1].length
-    const matched = m[2]
-    return {
-      sentenceBefore: clean.slice(0, start),
-      sentenceAfter: clean.slice(start + matched.length),
-      matchedTerm: matched,
-    }
+  const res = splitClozeSentence(sentence.trim(), term)
+  if (res.isFallback) return null
+  return {
+    sentenceBefore: res.sentenceBefore,
+    sentenceAfter: res.sentenceAfter,
+    matchedTerm: res.matchedTerm,
   }
-  const tokens = term.trim().split(/\s+/).filter(Boolean)
-  if (tokens.length > 0) {
-    const firstStem = escapeRegExp(tokens[0].toLowerCase().replace(/(?:e|y)$/, ''))
-    const patternBody =
-      tokens.length === 1
-        ? `${firstStem}[a-zA-Z]{0,6}`
-        : [
-            `${firstStem}[a-zA-Z]{0,5}`,
-            ...tokens.slice(1).map((t) => escapeRegExp(t)),
-          ].join('(?:\\s+[a-zA-Z]+){0,4}?\\s+')
-    const flexRe = new RegExp(`(^|[^a-zA-Z0-9_-])(${patternBody})(?=[^a-zA-Z0-9_-]|$)`, 'i')
-    const fm = flexRe.exec(clean)
-    if (fm && typeof fm.index === 'number') {
-      const start = fm.index + fm[1].length
-      const matched = fm[2]
-      return {
-        sentenceBefore: clean.slice(0, start),
-        sentenceAfter: clean.slice(start + matched.length),
-        matchedTerm: matched,
-      }
-    }
-  }
-  return null
 }
 
 const STAGE_ROTATION: SkillStage[] = ['en-vi', 'listen', 'vi-en', 'cloze']
@@ -208,6 +177,32 @@ function buildSmartMixQueue(sourceWords: WordItem[], fullDeckWords: WordItem[]):
     const stage = STAGE_ROTATION[idx % STAGE_ROTATION.length]
     return buildSingleQuestion(w, stage, uniqueCandidates, 0)
   })
+}
+
+function VoiceAccentButton({ onToggle }: { onToggle?: () => void }) {
+  const [voiceAccent, setVoiceAccent] = useState(() => audioService.getVoiceAccent())
+
+  useEffect(() => {
+    return audioService.subscribeAccent(() => {
+      setVoiceAccent(audioService.getVoiceAccent())
+    })
+  }, [])
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        const next = audioService.toggleVoiceAccent()
+        setVoiceAccent(next)
+        audioService.playClick()
+        onToggle?.()
+      }}
+      title="Đổi giọng đọc Anh-Mỹ (US) / Anh-Anh (UK)"
+      className="py-1.5 px-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-indigo-400 text-[11px] font-bold text-slate-700 dark:text-slate-200 whitespace-nowrap active:scale-95 transition-all"
+    >
+      {voiceAccent === 'en-US' ? '🇺🇸 US' : '🇬🇧 UK'}
+    </button>
+  )
 }
 
 export function SmartMixView({
@@ -475,8 +470,8 @@ export function SmartMixView({
           <ArrowLeft className="w-5 h-5" />
         </button>
 
-        <div className="flex flex-col items-center min-w-0">
-          <div className="flex items-center gap-1 text-[10.5px] font-extrabold text-indigo-600 dark:text-indigo-400 max-w-[185px]">
+        <div className="flex flex-col items-center min-w-0 flex-1">
+          <div className="flex items-center gap-1 text-[10.5px] font-extrabold text-indigo-600 dark:text-indigo-400 max-w-full">
             <Zap className="w-3 h-3 shrink-0 fill-current" />
             <span className="truncate">
               {filterMode !== 'all' ? deckName : 'Luyện Tổng Hợp Thông Minh'}
@@ -487,29 +482,38 @@ export function SmartMixView({
           </span>
         </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            audioService.playClick()
-            const next = storageService.toggleWordStar(currentQ.targetWord.id)
-            setStarredIds((prev) => {
-              const copy = new Set(prev)
-              if (next) copy.add(currentQ.targetWord.id)
-              else copy.delete(currentQ.targetWord.id)
-              return copy
-            })
-          }}
-          title="Đánh dấu sao từ này (Phím S)"
-          className={`p-2 rounded-xl border transition-colors shrink-0 ${
-            starredIds.has(currentQ.targetWord.id)
-              ? 'bg-amber-500/15 border-amber-500/30 text-amber-500'
-              : 'border-slate-200 dark:border-slate-700 text-slate-400 hover:text-amber-500'
-          }`}
-        >
-          <Star
-            className={`w-4 h-4 ${starredIds.has(currentQ.targetWord.id) ? 'fill-amber-400' : ''}`}
+        <div className="flex items-center gap-1 shrink-0">
+          <VoiceAccentButton
+            onToggle={() => {
+              if (currentQ.stage === 'en-vi' || currentQ.stage === 'listen' || isLocked) {
+                void audioService.speak(currentQ.targetWord.term, 0.9)
+              }
+            }}
           />
-        </button>
+          <button
+            type="button"
+            onClick={() => {
+              audioService.playClick()
+              const next = storageService.toggleWordStar(currentQ.targetWord.id)
+              setStarredIds((prev) => {
+                const copy = new Set(prev)
+                if (next) copy.add(currentQ.targetWord.id)
+                else copy.delete(currentQ.targetWord.id)
+                return copy
+              })
+            }}
+            title="Đánh dấu sao từ này (Phím S)"
+            className={`p-2 rounded-xl border transition-colors shrink-0 ${
+              starredIds.has(currentQ.targetWord.id)
+                ? 'bg-amber-500/15 border-amber-500/30 text-amber-500'
+                : 'border-slate-200 dark:border-slate-700 text-slate-400 hover:text-amber-500'
+            }`}
+          >
+            <Star
+              className={`w-4 h-4 ${starredIds.has(currentQ.targetWord.id) ? 'fill-amber-400' : ''}`}
+            />
+          </button>
+        </div>
       </div>
 
       {/* Progress Bar */}

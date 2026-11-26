@@ -189,8 +189,12 @@ export function ListeningView({
 
   useEffect(() => {
     mountedRef.current = true
+    const unsubAccent = audioService.subscribeAccent(() => {
+      setVoiceAccent(audioService.getVoiceAccent())
+    })
     return () => {
       mountedRef.current = false
+      unsubAccent()
       clearTransitionTimer()
       audioService.stopSpeech()
     }

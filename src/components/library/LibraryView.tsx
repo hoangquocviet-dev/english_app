@@ -920,9 +920,10 @@ export function LibraryView({
                 <span>Luyện nhanh {filteredWords.length.toLocaleString()} thẻ đang lọc:</span>
               </div>
 
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 {(
                   [
+                    { mode: 'smart-mix', label: '⚡ Tổng hợp' },
                     { mode: 'flashcard', label: 'Flashcard' },
                     { mode: 'quiz', label: 'Quiz' },
                     { mode: 'cloze', label: 'Cloze' },
@@ -942,7 +943,11 @@ export function LibraryView({
                         audioService.playClick()
                         onStartFilteredStudy(filteredWords, item.mode, customLabel, searchAllDecks)
                       }}
-                      className="py-1 px-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold flex items-center gap-1 whitespace-nowrap active:scale-95 transition-all"
+                      className={`py-1 px-2.5 rounded-xl text-[11px] font-bold flex items-center gap-1 whitespace-nowrap active:scale-95 transition-all ${
+                        item.mode === 'smart-mix'
+                          ? 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-2xs'
+                          : 'bg-indigo-600/90 hover:bg-indigo-500 text-white'
+                      }`}
                     >
                       {item.mode === 'flashcard' && <Layers className="w-3 h-3" />}
                       <span>{item.label}</span>

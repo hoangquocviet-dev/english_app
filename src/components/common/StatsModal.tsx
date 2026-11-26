@@ -354,23 +354,37 @@ export function StatsModal({
         {/* Top Weak / Leech Words Spotlight (Visible when learner has unmastered mistakes) */}
         {summary.topWeakWords.length > 0 && (
           <div className="p-3.5 rounded-2xl bg-rose-500/8 dark:bg-rose-500/10 border border-rose-500/25 space-y-2.5">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
               <span className="text-xs font-bold text-rose-700 dark:text-rose-300 flex items-center gap-1.5">
                 <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
                 <span>Từ hay nhầm cần củng cố ({summary.uniqueWeakCount})</span>
               </span>
               {onStartGlobalWeakReview && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    audioService.playClick()
-                    onStartGlobalWeakReview('flashcard')
-                  }}
-                  className="py-1 px-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-bold flex items-center gap-1 whitespace-nowrap shrink-0 active:scale-95 transition-transform"
-                >
-                  <Target className="w-3 h-3" />
-                  <span>Ôn gộp ngay</span>
-                </button>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      audioService.playClick()
+                      onStartGlobalWeakReview('smart-mix')
+                    }}
+                    className="py-1 px-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-bold flex items-center gap-1 whitespace-nowrap active:scale-95 transition-transform"
+                    title="Luyện 4 kỹ năng cho nhóm từ hay nhầm"
+                  >
+                    <Target className="w-3 h-3" />
+                    <span>⚡ Tổng hợp</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      audioService.playClick()
+                      onStartGlobalWeakReview('flashcard')
+                    }}
+                    className="py-1 px-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-rose-50 dark:hover:bg-slate-800 text-rose-600 dark:text-rose-300 border border-rose-500/25 text-[11px] font-bold whitespace-nowrap active:scale-95 transition-transform"
+                    title="Lật thẻ nhanh nhóm từ hay nhầm"
+                  >
+                    Flashcard
+                  </button>
+                </div>
               )}
             </div>
 
