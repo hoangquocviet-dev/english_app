@@ -19,6 +19,8 @@ import type { WordItem } from '../../types'
 import { formatArcadeMeaning } from '../../utils/arcadeText'
 import { audioService } from '../../utils/audio'
 import { storageService } from '../../utils/storage'
+import { useChildModalBack } from '../../utils/useChildModalBack'
+import { useWakeLock } from '../../utils/useWakeLock'
 
 interface WordBombGameProps {
   words: WordItem[]
@@ -585,6 +587,13 @@ export function WordBombGame({ words, deckName, onStudyMissedWords, onBack }: Wo
   if (curGroup.length > 0) wordGroups.push(curGroup)
   const maxWordLen = Math.max(1, ...wordGroups.map((g) => g.length))
 
+  useWakeLock(!isGameOver && !isPaused)
+  useChildModalBack(!isGameOver && !isPaused, () => {
+    if (!lockedRef.current) {
+      setIsPaused(true)
+    }
+  })
+
   return (
     <div
       className="w-full max-w-md mx-auto my-auto px-3.5 py-2 flex flex-col select-none relative"
@@ -592,14 +601,14 @@ export function WordBombGame({ words, deckName, onStudyMissedWords, onBack }: Wo
     >
       {/* Top HUD */}
       <div className="flex items-center justify-between mb-2 gap-1">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <button
             type="button"
             onClick={() => {
               audioService.stopSpeech()
               onBack()
             }}
-            className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
+            className="w-9 h-9 -ml-1.5 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 active:scale-95"
             title="Thoát trò chơi"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -613,7 +622,7 @@ export function WordBombGame({ words, deckName, onStudyMissedWords, onBack }: Wo
                 audioService.playClick()
                 setIsPaused((p) => !p)
               }}
-              className="p-2 rounded-lg text-slate-500 hover:text-amber-500"
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-500 hover:text-amber-500 active:scale-95"
               title={isPaused ? 'Tiếp tục (Esc)' : 'Tạm dừng (Esc)'}
             >
               {isPaused ? <Play className="w-4 h-4 fill-current" /> : <Pause className="w-4 h-4" />}

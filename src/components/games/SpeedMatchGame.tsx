@@ -18,6 +18,8 @@ import type { WordItem } from '../../types'
 import { formatArcadeMeaning } from '../../utils/arcadeText'
 import { audioService } from '../../utils/audio'
 import { storageService } from '../../utils/storage'
+import { useChildModalBack } from '../../utils/useChildModalBack'
+import { useWakeLock } from '../../utils/useWakeLock'
 
 interface SpeedMatchGameProps {
   words: WordItem[]
@@ -537,8 +539,19 @@ export function SpeedMatchGame({
     [commitBoard, pullNextWords, scheduleTimeout, syncTimerBarDom, updateSelectedLeft, updateSelectedRight]
   )
 
+  const suppressClickUntilRef = useRef(0)
+  const dragConnectRef = useRef<{ originSide: 'left' | 'right'; originIdx: number } | null>(null)
+  const dragHoverRef = useRef<{ side: 'left' | 'right'; idx: number } | null>(null)
+  const [dragHover, setDragHover] = useState<{ side: 'left' | 'right'; idx: number } | null>(null)
+
+  useWakeLock(!isFinished && !isPaused)
+  useChildModalBack(!isFinished && !isPaused, () => {
+    setIsPaused(true)
+  })
+
   const handleSelectLeft = useCallback(
     (idx: number) => {
+      if (Date.now() < suppressClickUntilRef.current) return
       if (isFinished || isPaused) return
       const slot = boardRef.current.left[idx]
       if (!slot || slot.status !== 'idle') return
@@ -559,6 +572,7 @@ export function SpeedMatchGame({
 
   const handleSelectRight = useCallback(
     (idx: number) => {
+      if (Date.now() < suppressClickUntilRef.current) return
       if (isFinished || isPaused) return
       const slot = boardRef.current.right[idx]
       if (!slot || slot.status !== 'idle') return
@@ -576,6 +590,63 @@ export function SpeedMatchGame({
     },
     [checkPair, isFinished, isPaused, updateSelectedRight]
   )
+
+  const handleBoardTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (isFinished || isPaused || e.touches.length === 0) return
+    const el = (e.target as HTMLElement | null)?.closest('[data-match-side]')
+    if (!el) return
+    const side = el.getAttribute('data-match-side') as 'left' | 'right' | null
+    const idx = Number(el.getAttribute('data-match-idx'))
+    if ((side !== 'left' && side !== 'right') || Number.isNaN(idx)) return
+    dragConnectRef.current = { originSide: side, originIdx: idx }
+    dragHoverRef.current = null
+  }
+
+  const handleBoardTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    const origin = dragConnectRef.current
+    if (!origin || isFinished || isPaused || e.touches.length === 0) return
+    const touch = e.touches[0]
+    const hit = document
+      .elementFromPoint(touch.clientX, touch.clientY)
+      ?.closest('[data-match-side]')
+    if (!hit) {
+      if (dragHoverRef.current) {
+        dragHoverRef.current = null
+        setDragHover(null)
+      }
+      return
+    }
+    const hitSide = hit.getAttribute('data-match-side') as 'left' | 'right' | null
+    const hitIdx = Number(hit.getAttribute('data-match-idx'))
+    if ((hitSide === 'left' || hitSide === 'right') && hitSide !== origin.originSide && !Number.isNaN(hitIdx)) {
+      if (origin.originSide === 'left' && selectedLeftRef.current !== origin.originIdx) {
+        updateSelectedLeft(origin.originIdx)
+      } else if (origin.originSide === 'right' && selectedRightRef.current !== origin.originIdx) {
+        updateSelectedRight(origin.originIdx)
+      }
+      if (dragHoverRef.current?.side !== hitSide || dragHoverRef.current?.idx !== hitIdx) {
+        dragHoverRef.current = { side: hitSide, idx: hitIdx }
+        setDragHover({ side: hitSide, idx: hitIdx })
+      }
+    } else if (dragHoverRef.current) {
+      dragHoverRef.current = null
+      setDragHover(null)
+    }
+  }
+
+  const handleBoardTouchEnd = () => {
+    const origin = dragConnectRef.current
+    const hover = dragHoverRef.current
+    dragConnectRef.current = null
+    dragHoverRef.current = null
+    if (hover) setDragHover(null)
+    if (!origin || !hover || hover.side === origin.originSide || isFinished || isPaused) return
+
+    suppressClickUntilRef.current = Date.now() + 400
+    const lIdx = origin.originSide === 'left' ? origin.originIdx : hover.idx
+    const rIdx = origin.originSide === 'right' ? origin.originIdx : hover.idx
+    checkPair(lIdx, rIdx)
+  }
 
   // Keyboard shortcuts (1-5 for English left, Q/W/E/R/T for Vietnamese right, H for Hint, P/Esc for Pause)
   useEffect(() => {
@@ -623,11 +694,11 @@ export function SpeedMatchGame({
     >
       {/* Top HUD */}
       <div className="flex items-center justify-between mb-1.5 gap-1">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <button
             type="button"
             onClick={onBack}
-            className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
+            className="w-9 h-9 -ml-1.5 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 active:scale-95"
             title="Thoát trò chơi"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -640,7 +711,7 @@ export function SpeedMatchGame({
                 audioService.playClick()
                 setIsPaused((p) => !p)
               }}
-              className="p-2 rounded-lg text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400"
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 active:scale-95"
               title={isPaused ? 'Tiếp tục (P)' : 'Tạm dừng (P)'}
             >
               {isPaused ? <Play className="w-4 h-4 fill-current" /> : <Pause className="w-4 h-4" />}
@@ -728,8 +799,14 @@ export function SpeedMatchGame({
             </div>
           </div>
 
-          {/* Crisp Locked-Height 5x2 Arcade Tile Matrix */}
-          <div className="grid grid-cols-2 gap-2.5">
+          {/* Crisp Locked-Height 5x2 Arcade Tile Matrix (Supports 2-Tap OR 1-Stroke Thumb Swipe Across Columns!) */}
+          <div
+            className="grid grid-cols-2 gap-2.5 touch-none"
+            onTouchStart={handleBoardTouchStart}
+            onTouchMove={handleBoardTouchMove}
+            onTouchEnd={handleBoardTouchEnd}
+            onTouchCancel={handleBoardTouchEnd}
+          >
             {/* Left Column: English Terms */}
             <div className="grid grid-rows-5 gap-2">
               {board.left.map((slot, idx) => {
@@ -745,7 +822,8 @@ export function SpeedMatchGame({
                   )
                 }
 
-                const isSelected = selectedLeft === idx
+                const isSelected =
+                  selectedLeft === idx || (dragHover?.side === 'left' && dragHover.idx === idx)
                 const isHinted = hintWordId === slot.wordId
                 let cardStyle =
                   'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-950 text-slate-900 dark:text-slate-100 hover:border-indigo-400 dark:hover:border-indigo-500'
@@ -768,6 +846,8 @@ export function SpeedMatchGame({
                   <button
                     key={`l-${idx}-${slot.spawnSeq}`}
                     type="button"
+                    data-match-side={slot.status === 'idle' ? 'left' : undefined}
+                    data-match-idx={slot.status === 'idle' ? idx : undefined}
                     onClick={() => handleSelectLeft(idx)}
                     className={`relative h-[62px] sm:h-[68px] px-2.5 py-1.5 rounded-2xl border-2 border-b-4 font-extrabold text-xs sm:text-sm flex items-center justify-center text-center transition-all duration-150 active:translate-y-0.5 break-words leading-tight animate-popIn ${cardStyle}`}
                   >
@@ -800,7 +880,8 @@ export function SpeedMatchGame({
                   )
                 }
 
-                const isSelected = selectedRight === idx
+                const isSelected =
+                  selectedRight === idx || (dragHover?.side === 'right' && dragHover.idx === idx)
                 const isHinted = hintWordId === slot.wordId
                 let cardStyle =
                   'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-950 text-slate-700 dark:text-slate-200 hover:border-emerald-400 dark:hover:border-emerald-500'
@@ -823,6 +904,8 @@ export function SpeedMatchGame({
                   <button
                     key={`r-${idx}-${slot.spawnSeq}`}
                     type="button"
+                    data-match-side={slot.status === 'idle' ? 'right' : undefined}
+                    data-match-idx={slot.status === 'idle' ? idx : undefined}
                     onClick={() => handleSelectRight(idx)}
                     className={`relative h-[62px] sm:h-[68px] px-2.5 py-1.5 rounded-2xl border-2 border-b-4 font-semibold text-[11.5px] sm:text-xs flex items-center justify-center text-center transition-all duration-150 active:translate-y-0.5 leading-snug break-words animate-popIn ${cardStyle}`}
                   >
@@ -837,7 +920,7 @@ export function SpeedMatchGame({
           </div>
 
           <div className="mt-2.5 text-center text-[11px] font-medium text-slate-400 dark:text-slate-500 truncate">
-            Bộ từ: {deckName} • Chuỗi 5 Combo tặng thêm +3 giây!
+            Chạm hoặc vuốt nối cặp từ • {deckName}
           </div>
 
           {/* Pause Overlay */}

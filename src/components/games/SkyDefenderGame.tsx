@@ -19,6 +19,8 @@ import type { WordItem } from '../../types'
 import { formatArcadeMeaning } from '../../utils/arcadeText'
 import { audioService } from '../../utils/audio'
 import { storageService } from '../../utils/storage'
+import { useChildModalBack } from '../../utils/useChildModalBack'
+import { useWakeLock } from '../../utils/useWakeLock'
 
 interface SkyDefenderGameProps {
   words: WordItem[]
@@ -1199,6 +1201,16 @@ export function SkyDefenderGame({
     }
   }, [spawnWave, startNewGame, triggerGameOver, lockAndFireLane])
 
+  useWakeLock(!isGameOver && !isPaused)
+  useChildModalBack(!isGameOver && !isPaused, () => {
+    const st = engineRef.current
+    if (!st.running || st.paused) return
+    st.paused = true
+    st.keys.left = false
+    st.keys.right = false
+    setIsPaused(true)
+  })
+
   const handleCanvasTapOrDrag = (clientX: number, fireImmediately: boolean) => {
     const st = engineRef.current
     if (!st.running || st.paused) return
@@ -1232,14 +1244,14 @@ export function SkyDefenderGame({
     >
       {/* Top HUD */}
       <div className="flex items-center justify-between mb-1.5 gap-1">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <button
             type="button"
             onClick={() => {
               audioService.stopSpeech()
               onBack()
             }}
-            className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+            className="w-9 h-9 -ml-1.5 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors active:scale-95"
             title="Thoát trò chơi"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -1249,7 +1261,7 @@ export function SkyDefenderGame({
             <button
               type="button"
               onClick={togglePause}
-              className="p-2 rounded-lg text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors active:scale-95"
               title={isPaused ? 'Tiếp tục (P)' : 'Tạm dừng (P)'}
             >
               {isPaused ? <Play className="w-4 h-4 fill-current" /> : <Pause className="w-4 h-4" />}

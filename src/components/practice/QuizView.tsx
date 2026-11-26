@@ -186,7 +186,7 @@ function QuizAccentButton({ term }: { term: string }) {
         audioService.playClick()
         void audioService.speak(term, 0.9)
       }}
-      className="h-8 px-2 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+      className="h-9 px-2.5 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center whitespace-nowrap hover:scale-105 active:scale-95 transition-transform"
       title="Đổi giọng đọc Anh-Mỹ (US) / Anh-Anh (UK)"
     >
       {voiceAccent === 'en-US' ? '🇺🇸 US' : '🇬🇧 UK'}
@@ -484,7 +484,7 @@ export function QuizView({
         <button
           onClick={onBack}
           title="Quay lại (Esc)"
-          className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors shrink-0"
+          className="w-9 h-9 -ml-1.5 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors shrink-0 active:scale-95"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
@@ -518,13 +518,13 @@ export function QuizView({
       </div>
 
       {/* Target Prompt Card */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 text-center border border-slate-200 dark:border-slate-800 shadow-sm mb-5 relative">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-            {direction === 'en-vi' ? 'Chọn nghĩa tiếng Việt đúng' : 'Chọn từ tiếng Anh đúng'}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-5 text-center border border-slate-200 dark:border-slate-800 shadow-sm mb-5 relative">
+        <div className="flex items-center justify-between gap-1.5 mb-2">
+          <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider whitespace-nowrap truncate">
+            {direction === 'en-vi' ? 'Chọn nghĩa đúng' : 'Chọn từ đúng'}
           </span>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 shrink-0">
             {direction === 'vi-en' && !isLocked && currentQ.targetWord.partOfSpeech && (
               <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 uppercase">
                 {currentQ.targetWord.partOfSpeech}
@@ -578,7 +578,12 @@ export function QuizView({
         </div>
 
         {direction === 'en-vi' ? (
-          <>
+          <button
+            type="button"
+            onClick={() => void audioService.speak(currentQ.targetWord.term, 0.9)}
+            className="w-full text-center active:opacity-75 transition-opacity"
+            title="Chạm vào từ để nghe phát âm"
+          >
             <h2 className="text-3xl font-extrabold text-slate-900 dark:text-slate-50 tracking-tight break-words mt-1">
               {currentQ.targetWord.term}
             </h2>
@@ -587,17 +592,21 @@ export function QuizView({
                 {currentQ.targetWord.ipa}
               </p>
             )}
-          </>
+          </button>
         ) : (
           <>
             <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-slate-50 leading-snug break-words mt-1">
               {currentQ.targetWord.definition}
             </h2>
             {isLocked && (
-              <p className="text-sm font-sans font-semibold text-indigo-600 dark:text-indigo-400 mt-1.5 animate-fadeIn">
+              <button
+                type="button"
+                onClick={() => void audioService.speak(currentQ.targetWord.term, 0.9)}
+                className="text-sm font-sans font-semibold text-indigo-600 dark:text-indigo-400 mt-1.5 animate-fadeIn active:opacity-75"
+              >
                 {currentQ.targetWord.term}
                 {currentQ.targetWord.ipa ? ` ${currentQ.targetWord.ipa}` : ''}
-              </p>
+              </button>
             )}
           </>
         )}

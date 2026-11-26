@@ -199,7 +199,7 @@ function VoiceAccentButton({ onToggle }: { onToggle?: () => void }) {
         onToggle?.()
       }}
       title="Đổi giọng đọc Anh-Mỹ (US) / Anh-Anh (UK)"
-      className="py-1.5 px-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-indigo-400 text-[11px] font-bold text-slate-700 dark:text-slate-200 whitespace-nowrap active:scale-95 transition-all"
+      className="min-h-9 px-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-indigo-400 text-[11px] font-bold text-slate-700 dark:text-slate-200 whitespace-nowrap flex items-center justify-center active:scale-95 transition-all"
     >
       {voiceAccent === 'en-US' ? '🇺🇸 US' : '🇬🇧 UK'}
     </button>
@@ -509,7 +509,7 @@ export function SmartMixView({
           type="button"
           onClick={onBack}
           title="Quay lại (Esc)"
-          className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors shrink-0"
+          className="w-9 h-9 -ml-1.5 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors shrink-0 active:scale-95"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
@@ -547,7 +547,7 @@ export function SmartMixView({
               })
             }}
             title="Đánh dấu sao từ này (Phím S)"
-            className={`p-2 rounded-xl border transition-colors shrink-0 ${
+            className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-colors shrink-0 active:scale-95 ${
               starredIds.has(currentQ.targetWord.id)
                 ? 'bg-amber-500/15 border-amber-500/30 text-amber-500'
                 : 'border-slate-200 dark:border-slate-700 text-slate-400 hover:text-amber-500'
@@ -587,13 +587,18 @@ export function SmartMixView({
         {currentQ.stage === 'en-vi' && (
           <div className="py-2 space-y-1.5">
             <div className="flex items-center justify-center gap-2">
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white break-words">
-                {currentQ.targetWord.term}
-              </h2>
               <button
                 type="button"
                 onClick={() => handleReplayAudio(0.9)}
-                className="p-2 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20 shrink-0"
+                className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white break-words active:opacity-75 transition-opacity"
+                title="Chạm vào từ để nghe phát âm"
+              >
+                {currentQ.targetWord.term}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleReplayAudio(0.9)}
+                className="w-9 h-9 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20 flex items-center justify-center shrink-0 active:scale-95 transition-transform"
                 title="Nghe phát âm (Space)"
               >
                 <Volume2 className="w-4 h-4" />
@@ -663,7 +668,10 @@ export function SmartMixView({
         {/* Stage 4: CLOZE Sentence */}
         {currentQ.stage === 'cloze' && (
           <div className="py-1 text-left space-y-2.5">
-            <div className="text-base font-medium text-slate-800 dark:text-slate-100 leading-relaxed">
+            <div
+              onClick={() => handleReplayAudio(0.9)}
+              className="text-base font-medium text-slate-800 dark:text-slate-100 leading-relaxed cursor-pointer active:opacity-80"
+            >
               <span>{currentQ.sentenceBefore}</span>
               {isLocked ? (
                 <span
@@ -691,9 +699,9 @@ export function SmartMixView({
               <button
                 type="button"
                 onClick={() => handleReplayAudio(0.9)}
-                className="py-1 px-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-1 shrink-0"
+                className="min-h-9 px-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1 shrink-0 active:scale-95 transition-transform"
               >
-                <FileText className="w-3 h-3 text-indigo-500" />
+                <FileText className="w-3.5 h-3.5 text-indigo-500" />
                 <span>{isLocked ? 'Nghe câu' : 'Ngữ cảnh'}</span>
               </button>
             </div>

@@ -511,7 +511,7 @@ export function ClozeView({
         <button
           type="button"
           onClick={onBack}
-          className="p-2 -ml-2 rounded-xl text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
+          className="w-9 h-9 -ml-1.5 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors active:scale-95"
           title="Quay lại (Esc)"
         >
           <ArrowLeft className="w-5 h-5" />

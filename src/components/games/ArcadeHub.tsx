@@ -250,7 +250,7 @@ export function ArcadeHub({
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                Nối nhanh Từ Anh — Nghĩa Việt với phím tắt & Radar gợi ý. Tích 5 Combo nhận thêm +3 giây!
+                Chạm hoặc vuốt nối Từ Anh — Nghĩa Việt cùng Radar gợi ý. Tích 5 Combo nhận thêm +3 giây!
               </p>
             </div>
           </div>
@@ -307,7 +307,7 @@ export function ArcadeHub({
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                Gõ phím hoặc chạm chữ cái cắt dây tháo ngòi nổ trước khi hết giờ. Rèn nhớ chính tả cực nhạy!
+                Chạm chữ cái cắt dây tháo ngòi nổ trước khi hết giờ. Rèn nhớ chính tả cực nhạy!
               </p>
             </div>
           </div>

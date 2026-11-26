@@ -18,6 +18,8 @@ import type { WordItem } from '../../types'
 import { formatArcadeMeaning } from '../../utils/arcadeText'
 import { audioService } from '../../utils/audio'
 import { storageService } from '../../utils/storage'
+import { useChildModalBack } from '../../utils/useChildModalBack'
+import { useWakeLock } from '../../utils/useWakeLock'
 
 interface BlitzGameProps {
   words: WordItem[]
@@ -508,6 +510,13 @@ export function BlitzGame({ words, deckName, onStudyMissedWords, onBack }: Blitz
     }
   }
 
+  useWakeLock(!isGameOver && !isPaused)
+  useChildModalBack(!isGameOver && !isPaused, () => {
+    if (!lockedRef.current) {
+      setIsPaused(true)
+    }
+  })
+
   const isFever = streak >= 5
   const multBadge = streak >= 10 ? 'OVERDRIVE x3' : streak >= 5 ? 'FEVER x2' : `Chuỗi ${streak}`
   const rightStampOpacity = Math.min(1, Math.max(0, (dragX - 20) / 50))
@@ -520,11 +529,11 @@ export function BlitzGame({ words, deckName, onStudyMissedWords, onBack }: Blitz
     >
       {/* Top HUD */}
       <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <button
             type="button"
             onClick={onBack}
-            className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
+            className="w-9 h-9 -ml-1.5 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 active:scale-95"
             title="Thoát trò chơi"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -538,7 +547,7 @@ export function BlitzGame({ words, deckName, onStudyMissedWords, onBack }: Blitz
                 audioService.playClick()
                 setIsPaused((p) => !p)
               }}
-              className="p-2 rounded-lg text-slate-500 hover:text-rose-600 dark:hover:text-rose-400"
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 active:scale-95"
               title={isPaused ? 'Tiếp tục (P)' : 'Tạm dừng (P)'}
             >
               {isPaused ? <Play className="w-4 h-4 fill-current" /> : <Pause className="w-4 h-4" />}

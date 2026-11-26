@@ -14,6 +14,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { StudyFilterMode, StudyMode, StudySessionStats, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
 import { GLOBAL_SRS_DECK_ID, storageService } from '../../utils/storage'
+import { useWakeLock } from '../../utils/useWakeLock'
 import { StudySummary } from './StudySummary'
 
 interface FlashcardViewProps {
@@ -196,34 +197,7 @@ export function FlashcardView({
   }, [currentIndex, currentWord, isCompleted, isAutoPlaying])
 
   // Keep smartphone screen awake during Hands-Free Auto-Play (Screen Wake Lock API)
-  useEffect(() => {
-    if (!isAutoPlaying || isCompleted || typeof navigator === 'undefined') return
-    const nav = navigator as Navigator & {
-      wakeLock?: { request: (type: 'screen') => Promise<{ release: () => Promise<void> }> }
-    }
-    if (!nav.wakeLock?.request) return
-
-    let active = true
-    let sentinel: { release: () => Promise<void> } | null = null
-
-    void nav.wakeLock
-      .request('screen')
-      .then((lock) => {
-        if (!active) {
-          void lock.release().catch(() => {})
-          return
-        }
-        sentinel = lock
-      })
-      .catch(() => {})
-
-    return () => {
-      active = false
-      if (sentinel) {
-        void sentinel.release().catch(() => {})
-      }
-    }
-  }, [isAutoPlaying, isCompleted])
+  useWakeLock(isAutoPlaying && !isCompleted)
 
   // Hands-Free Auto-Play Loop: Speak term -> Flip -> Speak example -> Next card
   useEffect(() => {

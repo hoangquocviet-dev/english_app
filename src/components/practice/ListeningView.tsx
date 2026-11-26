@@ -484,7 +484,7 @@ export function ListeningView({
         <button
           onClick={onBack}
           title="Quay lại (Esc)"
-          className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+          className="w-9 h-9 -ml-1.5 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors active:scale-95"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
