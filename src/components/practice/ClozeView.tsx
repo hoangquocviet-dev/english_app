@@ -202,6 +202,8 @@ export function ClozeView({
     fn()
   }, [clearTransitionTimer])
 
+  const swipeStartRef = useRef<{ x: number; y: number } | null>(null)
+
   useEffect(() => {
     mountedRef.current = true
     const unsubAccent = audioService.subscribeAccent(() => {
@@ -329,7 +331,12 @@ export function ClozeView({
 
   const handleTypingSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (isLocked || !currentQ) return
+    if (isLocked) {
+      flushPendingAdvance()
+      inputRef.current?.focus()
+      return
+    }
+    if (!currentQ) return
     const attempt = normalizeClozeAttempt(typedInput)
     if (!attempt) return
 
@@ -483,7 +490,22 @@ export function ClozeView({
       : typingOutcome === 'correct'
 
   return (
-    <div className="w-full max-w-md sm:max-w-lg mx-auto my-auto flex flex-col px-3.5 py-2.5 animate-fadeIn">
+    <div
+      className="w-full max-w-md sm:max-w-lg mx-auto my-auto flex flex-col px-3.5 py-2.5 animate-fadeIn select-none"
+      onTouchStart={(e) => {
+        if (!isLocked) return
+        swipeStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
+      }}
+      onTouchEnd={(e) => {
+        if (!isLocked || !swipeStartRef.current || e.changedTouches.length === 0) return
+        const dx = e.changedTouches[0].clientX - swipeStartRef.current.x
+        const dy = e.changedTouches[0].clientY - swipeStartRef.current.y
+        swipeStartRef.current = null
+        if (dx < -48 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+          flushPendingAdvance()
+        }
+      }}
+    >
       {/* Top Header */}
       <div className="flex items-center justify-between gap-2 mb-2.5">
         <button
@@ -520,7 +542,7 @@ export function ClozeView({
                 return copy
               })
             }}
-            className={`p-2 rounded-xl border transition-colors ${
+            className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-colors active:scale-95 ${
               starredIds.has(currentQ.targetWord.id)
                 ? 'bg-amber-500/15 border-amber-500/30 text-amber-500'
                 : 'border-slate-200 dark:border-slate-700 text-slate-400 hover:text-amber-500'
@@ -535,7 +557,7 @@ export function ClozeView({
           <button
             type="button"
             onClick={() => setShowHint((prev) => !prev)}
-            className={`p-2 rounded-xl text-xs font-bold border transition-colors ${
+            className={`w-9 h-9 rounded-xl text-xs font-bold border flex items-center justify-center transition-colors active:scale-95 ${
               showHint
                 ? 'bg-amber-500/15 border-amber-500/30 text-amber-600 dark:text-amber-400'
                 : 'border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-600'
@@ -562,7 +584,7 @@ export function ClozeView({
             type="button"
             disabled={isLocked}
             onClick={() => handleSwitchClozeStyle('choice')}
-            className={`py-1.5 px-2.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all whitespace-nowrap ${
+            className={`min-h-9 px-3 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all whitespace-nowrap ${
               clozeStyle === 'choice'
                 ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-2xs'
                 : 'text-slate-500 dark:text-slate-400'
@@ -575,7 +597,7 @@ export function ClozeView({
             type="button"
             disabled={isLocked}
             onClick={() => handleSwitchClozeStyle('typing')}
-            className={`py-1.5 px-2.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all whitespace-nowrap ${
+            className={`min-h-9 px-3 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all whitespace-nowrap ${
               clozeStyle === 'typing'
                 ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-2xs'
                 : 'text-slate-500 dark:text-slate-400'
@@ -593,7 +615,7 @@ export function ClozeView({
             setVoiceAccent(next)
             audioService.playClick()
           }}
-          className="py-1.5 px-2.5 rounded-xl text-xs font-bold border bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700/80 text-slate-700 dark:text-slate-200 hover:border-indigo-400 whitespace-nowrap active:scale-95 transition-all"
+          className="min-h-9 px-2.5 rounded-xl text-xs font-bold border bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700/80 text-slate-700 dark:text-slate-200 hover:border-indigo-400 flex items-center whitespace-nowrap active:scale-95 transition-all"
           title="Đổi giọng đọc Anh-Mỹ (US) / Anh-Anh (UK)"
         >
           {voiceAccent === 'en-US' ? '🇺🇸 US' : '🇬🇧 UK'}
@@ -664,9 +686,12 @@ export function ClozeView({
           </span>
           <button
             type="button"
+            onMouseDown={(e) => {
+              if (clozeStyle === 'typing') e.preventDefault()
+            }}
             onClick={() => void handlePlaySentenceAudio()}
             disabled={isPlayingAudio}
-            className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 transition-colors flex items-center gap-1 text-xs font-semibold"
+            className="min-h-8.5 py-1.5 px-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 transition-colors flex items-center gap-1 text-xs font-semibold active:scale-95 shrink-0"
             title={isAnswered ? 'Nghe đọc cả câu hoàn chỉnh' : 'Nghe ngữ cảnh câu (đã ẩn từ trống)'}
           >
             <Volume2
@@ -703,7 +728,7 @@ export function ClozeView({
 
               return (
                 <button
-                  key={`${currentQ.targetWord.id}-${opt.id}-${idx}`}
+                  key={`${currentIndex}-${opt.id}-${idx}`}
                   type="button"
                   disabled={isLocked}
                   onClick={() => handleSelect(idx)}
@@ -728,10 +753,10 @@ export function ClozeView({
                     idx !== currentQ.correctOptionIndex && (
                       <X className="w-4 h-4 text-rose-500 shrink-0" />
                     )}
-            </button>
-          )
-        })}
-      </div>
+                </button>
+              )
+            })}
+          </div>
 
           <div className="h-9 mt-2.5 flex items-center justify-center">
             {isAnswered ? (
@@ -750,7 +775,7 @@ export function ClozeView({
           </div>
         </>
       ) : (
-        /* Active Cloze Typing Form */
+        /* Active Cloze Typing Form (Soft-Keyboard Persistent on Mobile!) */
         <form
           onSubmit={handleTypingSubmit}
           className="bg-white dark:bg-slate-800 rounded-2xl p-3.5 sm:p-4 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3"
@@ -763,11 +788,12 @@ export function ClozeView({
               <button
                 type="button"
                 disabled={isLocked}
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => {
                   audioService.playClick()
                   setShowHint((prev) => !prev)
                 }}
-                className="py-1.5 px-2.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[11px] font-bold flex items-center gap-1 transition-colors"
+                className="min-h-8.5 py-1.5 px-2.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[11px] font-bold flex items-center gap-1 transition-colors active:scale-95"
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>{showHint ? 'Ẩn chữ cái' : 'Gợi ý chữ'}</span>
@@ -776,8 +802,9 @@ export function ClozeView({
               <button
                 type="button"
                 disabled={isLocked}
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={handleRevealTypingAnswer}
-                className="py-1.5 px-2.5 rounded-lg bg-slate-100 dark:bg-slate-700/70 hover:bg-slate-200 text-slate-500 dark:text-slate-300 text-[11px] font-semibold flex items-center gap-1 transition-colors"
+                className="min-h-8.5 py-1.5 px-2.5 rounded-lg bg-slate-100 dark:bg-slate-700/70 hover:bg-slate-200 text-slate-500 dark:text-slate-300 text-[11px] font-semibold flex items-center gap-1 transition-colors active:scale-95"
                 title="Xem đáp án và ôn lại câu này ở cuối lượt"
               >
                 <HelpCircle className="w-3.5 h-3.5" />
@@ -786,25 +813,43 @@ export function ClozeView({
             </div>
           </div>
 
-          <input
-            ref={inputRef}
-            type="text"
-            disabled={isLocked}
-            enterKeyHint="done"
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck={false}
-            value={typedInput}
-            onChange={(e) => setTypedInput(e.target.value)}
-            placeholder="Nhập từ hoặc cụm từ tiếng Anh..."
-            className={`w-full py-3 px-3.5 rounded-xl border text-base font-bold text-center transition-colors focus:outline-none focus:ring-2 ${
-              typingOutcome === 'correct'
-                ? 'bg-emerald-500/15 border-emerald-500 text-emerald-700 dark:text-emerald-300 focus:ring-emerald-500'
-                : typingOutcome === 'wrong'
-                ? 'bg-rose-500/15 border-rose-500 text-rose-600 dark:text-rose-300 animate-shake focus:ring-rose-500'
-                : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-indigo-500'
-            }`}
-          />
+          <div className="relative">
+            <input
+              ref={inputRef}
+              type="text"
+              readOnly={isLocked}
+              enterKeyHint={isLocked ? 'next' : 'done'}
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              value={typedInput}
+              onChange={(e) => {
+                if (!isLocked) setTypedInput(e.target.value)
+              }}
+              placeholder="Nhập từ tiếng Anh..."
+              className={`w-full py-3 px-9 rounded-xl border text-base font-bold text-center transition-colors focus:outline-none focus:ring-2 ${
+                typingOutcome === 'correct'
+                  ? 'bg-emerald-500/15 border-emerald-500 text-emerald-700 dark:text-emerald-300 focus:ring-emerald-500'
+                  : typingOutcome === 'wrong'
+                  ? 'bg-rose-500/15 border-rose-500 text-rose-600 dark:text-rose-300 animate-shake focus:ring-rose-500'
+                  : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-indigo-500'
+              }`}
+            />
+            {!isLocked && typedInput && (
+              <button
+                type="button"
+                aria-label="Xóa chữ vừa gõ"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  setTypedInput('')
+                  inputRef.current?.focus()
+                }}
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 active:scale-95"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
 
           {typingOutcome !== 'none' && (
             <div
@@ -834,7 +879,11 @@ export function ClozeView({
           {isLocked ? (
             <button
               type="button"
-              onClick={flushPendingAdvance}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                flushPendingAdvance()
+                inputRef.current?.focus()
+              }}
               className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-xs active:scale-98 transition-all"
             >
               <span>Chạm để sang câu tiếp →</span>
@@ -843,6 +892,7 @@ export function ClozeView({
             <button
               type="submit"
               disabled={!typedInput.trim()}
+              onMouseDown={(e) => e.preventDefault()}
               className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-xs active:scale-98 transition-all"
             >
               <Check className="w-4 h-4" />

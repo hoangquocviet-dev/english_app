@@ -706,7 +706,7 @@ export function WordBombGame({ words, deckName, onStudyMissedWords, onBack }: Wo
                   disabled={cutters <= 0 || status !== 'ticking'}
                   onClick={handleUseWireCutter}
                   title="Kìm cắt dây: Mở giúp 2 chữ cái (Phím Tab)"
-                  className={`px-2.5 py-1 rounded-xl text-[11px] font-extrabold flex items-center gap-1 whitespace-nowrap transition-all active:scale-95 ${
+                  className={`h-9 px-3 rounded-xl text-[11px] font-extrabold flex items-center gap-1 whitespace-nowrap transition-all active:scale-95 ${
                     cutters > 0
                       ? 'bg-amber-500/20 hover:bg-amber-500/35 text-amber-300 border border-amber-400/40'
                       : 'bg-slate-800 text-slate-500 opacity-50'

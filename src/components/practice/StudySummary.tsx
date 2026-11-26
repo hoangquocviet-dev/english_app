@@ -188,7 +188,7 @@ export function StudySummary({
                 audioService.playClick()
                 setShowRemainingList((prev) => !prev)
               }}
-              className="w-full py-1.5 px-2 rounded-lg text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center justify-center gap-1.5 transition-colors"
+              className="w-full min-h-9 py-2 px-2.5 rounded-xl text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center justify-center gap-1.5 transition-colors active:scale-98"
             >
               <span>
                 {showRemainingList
@@ -205,14 +205,19 @@ export function StudySummary({
             </button>
 
             {showRemainingList && (
-              <div className="mt-2.5 max-h-48 overflow-y-auto space-y-1.5 pr-1 text-left animate-fadeIn">
+              <div className="mt-2.5 max-h-52 overflow-y-auto space-y-1.5 pr-1 text-left animate-fadeIn">
                 {reviewableList.map((w) => (
                   <div
                     key={w.id}
-                    className="p-2 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-700/60 flex items-center justify-between gap-2"
+                    className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-700/60 flex items-center justify-between gap-2"
                   >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => void audioService.speak(w.term)}
+                      className="min-w-0 flex-1 text-left active:opacity-75 transition-opacity"
+                      title="Chạm để nghe phát âm"
+                    >
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
                           {w.term}
                         </span>
@@ -220,11 +225,11 @@ export function StudySummary({
                           <span className="text-[10px] text-slate-400 font-mono">{w.ipa}</span>
                         )}
                       </div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
                         {w.definition}
                       </div>
-                    </div>
-                    <div className="flex items-center gap-0.5 shrink-0">
+                    </button>
+                    <div className="flex items-center gap-1 shrink-0">
                       <button
                         type="button"
                         onClick={() => {
@@ -237,24 +242,24 @@ export function StudySummary({
                             return copy
                           })
                         }}
-                        className={`p-1 rounded-lg transition-colors ${
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors active:scale-95 ${
                           starredIds.has(w.id)
-                            ? 'text-amber-500'
-                            : 'text-slate-300 dark:text-slate-600 hover:text-amber-500'
+                            ? 'bg-amber-500/12 text-amber-500'
+                            : 'bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-amber-500'
                         }`}
                         title="Đánh dấu sao từ cần ôn"
                       >
                         <Star
-                          className={`w-3.5 h-3.5 ${starredIds.has(w.id) ? 'fill-amber-400' : ''}`}
+                          className={`w-4 h-4 ${starredIds.has(w.id) ? 'fill-amber-400' : ''}`}
                         />
                       </button>
                       <button
                         type="button"
                         onClick={() => void audioService.speak(w.term)}
-                        className="p-1 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400"
+                        className="w-9 h-9 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 active:scale-95 transition-colors"
                         title="Nghe phát âm"
                       >
-                        <Volume2 className="w-3.5 h-3.5" />
+                        <Volume2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
@@ -281,7 +286,7 @@ export function StudySummary({
           </button>
         )}
 
-        {/* 1-Tap Cross-Mode Drill Switcher (Drill remaining weak cards OR reinforce completed batch in another mode!) */}
+        {/* 1-Tap Cross-Mode Drill Switcher (40px thumb-friendly buttons!) */}
         {onSwitchMode &&
           (remainingWords.length > 0 || (sessionWords && sessionWords.length > 0)) && (
             <div className="p-3 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-800 space-y-2 text-left">
@@ -307,7 +312,7 @@ export function StudySummary({
                         audioService.playClick()
                         onSwitchMode(item.mode, targetPool)
                       }}
-                      className="py-1.5 px-2 rounded-xl bg-indigo-500/10 hover:bg-indigo-600 hover:text-white text-indigo-600 dark:text-indigo-400 dark:hover:text-white border border-indigo-500/20 text-[11px] font-bold text-center whitespace-nowrap transition-colors active:scale-95"
+                      className="min-h-10 py-2 px-2.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-600 hover:text-white text-indigo-600 dark:text-indigo-400 dark:hover:text-white border border-indigo-500/20 text-xs font-bold flex items-center justify-center whitespace-nowrap transition-colors active:scale-95"
                     >
                       {item.label}
                     </button>
@@ -335,7 +340,7 @@ export function StudySummary({
               audioService.playClick()
               setShowResetConfirm(true)
             }}
-            className="w-full py-2.5 px-4 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 text-amber-600 dark:text-amber-400 font-semibold text-xs flex items-center justify-center gap-1.5 transition-transform active:scale-95"
+            className="w-full min-h-11 py-2.5 px-4 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 text-amber-600 dark:text-amber-400 font-semibold text-xs flex items-center justify-center gap-1.5 transition-transform active:scale-95"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Reset bộ từ để hiện lại toàn bộ thẻ</span>
@@ -343,22 +348,24 @@ export function StudySummary({
         )}
       </div>
 
-      {/* Safety Confirmation Modal for Reset Deck */}
+      {/* Safety Confirmation Modal for Reset Deck (Mobile Bottom-Sheet) */}
       {showResetConfirm && (
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn"
+          data-no-pull="true"
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fadeIn"
           onClick={() => setShowResetConfirm(false)}
         >
           <div
-            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 max-w-xs w-full space-y-4 shadow-2xl text-left"
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-t-3xl sm:rounded-3xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] sm:max-w-xs w-full space-y-4 shadow-2xl text-left"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between gap-2">
+            <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto -mt-1 mb-1 sm:hidden" />
+            <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-amber-500">
-                <div className="w-8 h-8 rounded-xl bg-amber-500/15 flex items-center justify-center shrink-0">
-                  <AlertTriangle className="w-4 h-4" />
+                <div className="w-9 h-9 rounded-xl bg-amber-500/15 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-4.5 h-4.5" />
                 </div>
                 <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">
                   Reset tiến độ bộ từ?
@@ -367,9 +374,10 @@ export function StudySummary({
               <button
                 type="button"
                 onClick={() => setShowResetConfirm(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                aria-label="Đóng xác nhận đặt lại"
+                className="w-9 h-9 -mr-1.5 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
-                <X className="w-4 h-4" />
+                <X className="w-4.5 h-4.5" />
               </button>
             </div>
 
@@ -377,18 +385,18 @@ export function StudySummary({
               Bạn có chắc chắn muốn đặt lại bộ từ <strong>"{stats.deckName}"</strong> không? Toàn bộ các thẻ đã thuộc sẽ được chuyển về trạng thái cần ôn để bạn bắt đầu lại từ đầu.
             </p>
 
-            <div className="flex gap-2 pt-1">
+            <div className="flex gap-2.5 pt-1">
               <button
                 type="button"
                 onClick={() => setShowResetConfirm(false)}
-                className="flex-1 py-2.5 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs transition-colors"
+                className="flex-1 min-h-11 py-2.5 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs transition-transform active:scale-98"
               >
                 Hủy bỏ
               </button>
               <button
                 type="button"
                 onClick={handleConfirmReset}
-                className="flex-1 py-2.5 px-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs transition-colors shadow-xs"
+                className="flex-1 min-h-11 py-2.5 px-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs transition-transform active:scale-98 shadow-xs"
               >
                 Xác nhận đặt lại
               </button>

@@ -616,7 +616,7 @@ export function LibraryView({
           <span>Danh sách bộ từ ({decks.length} bộ)</span>
           <button
             onClick={() => setIsCreatingDeck((prev) => !prev)}
-            className="text-indigo-600 dark:text-indigo-400 font-bold flex items-center gap-1 hover:underline normal-case"
+            className="min-h-8 px-2 -mr-1 text-indigo-600 dark:text-indigo-400 font-bold flex items-center gap-1 hover:underline normal-case active:scale-95 transition-transform"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Tạo bộ mới</span>
@@ -627,19 +627,20 @@ export function LibraryView({
         {isCreatingDeck && (
           <form
             onSubmit={handleCreateDeck}
-            className="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-indigo-500/30 flex gap-2 animate-fadeIn"
+            className="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-indigo-500/30 flex items-center gap-2 animate-fadeIn"
           >
             <input
               type="text"
               autoFocus
+              enterKeyHint="done"
               value={newDeckName}
               onChange={(e) => setNewDeckName(e.target.value)}
               placeholder="Nhập tên bộ từ mới..."
-              className="flex-1 py-1.5 px-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none"
+              className="flex-1 min-w-0 py-2 px-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
             <button
               type="submit"
-              className="py-1.5 px-3 rounded-xl bg-indigo-600 text-white font-medium text-xs shrink-0"
+              className="min-h-10 py-2 px-3.5 rounded-xl bg-indigo-600 text-white font-semibold text-xs shrink-0 active:scale-95 transition-transform"
             >
               Lưu
             </button>
@@ -649,28 +650,30 @@ export function LibraryView({
         {renamingDeckId && (
           <form
             onSubmit={handleRenameDeckSubmit}
-            className="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-sky-500/30 flex gap-2 animate-fadeIn"
+            className="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-sky-500/30 flex items-center gap-2 animate-fadeIn"
           >
             <input
               type="text"
               autoFocus
+              enterKeyHint="done"
               value={renameDeckDraft}
               onChange={(e) => setRenameDeckDraft(e.target.value)}
               placeholder="Nhập tên mới cho bộ từ..."
-              className="flex-1 py-1.5 px-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none"
+              className="flex-1 min-w-0 py-2 px-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
             />
             <button
               type="submit"
-              className="py-1.5 px-3 rounded-xl bg-sky-600 text-white font-semibold text-xs shrink-0"
+              className="min-h-10 py-2 px-3 rounded-xl bg-sky-600 text-white font-semibold text-xs shrink-0 active:scale-95 transition-transform"
             >
               Đổi tên
             </button>
             <button
               type="button"
               onClick={() => setRenamingDeckId(null)}
-              className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600"
+              aria-label="Hủy đổi tên bộ từ"
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 shrink-0"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-4 h-4" />
             </button>
           </form>
         )}
@@ -704,7 +707,7 @@ export function LibraryView({
                     : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 hover:border-slate-300'
                 }`}
               >
-                <div className="flex items-start justify-between gap-1 mb-2">
+                <div className="flex items-start justify-between gap-1.5 mb-2">
                   <span
                     className={`text-xs font-bold leading-snug line-clamp-2 ${
                       isSelected && !searchAllDecks
@@ -715,7 +718,7 @@ export function LibraryView({
                     {deck.name}
                   </span>
                   {!deck.isBuiltIn && (
-                    <div className="flex items-center gap-0.5 shrink-0">
+                    <div className="flex items-center gap-1 -mt-1 -mr-1 shrink-0">
                       <button
                         type="button"
                         onClick={(e) => {
@@ -725,14 +728,14 @@ export function LibraryView({
                           setRenamingDeckId(deck.id)
                           setRenameDeckDraft(deck.name)
                         }}
-                        className={`p-1 rounded-md transition-colors ${
-                          isSelected
-                            ? 'text-indigo-200 hover:text-white'
-                            : 'text-slate-400 hover:text-sky-500'
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors active:scale-92 ${
+                          isSelected && !searchAllDecks
+                            ? 'bg-white/15 text-indigo-100 hover:text-white'
+                            : 'bg-slate-100 dark:bg-slate-900/60 text-slate-400 hover:text-sky-500'
                         }`}
                         title="Đổi tên bộ từ"
                       >
-                        <Pencil className="w-3 h-3" />
+                        <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button
                         type="button"
@@ -740,10 +743,10 @@ export function LibraryView({
                           e.stopPropagation()
                           handleDeleteDeck(deck)
                         }}
-                        className={`p-1 rounded-md transition-colors ${
-                          isSelected
-                            ? 'text-indigo-200 hover:text-white'
-                            : 'text-slate-400 hover:text-rose-500'
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors active:scale-92 ${
+                          isSelected && !searchAllDecks
+                            ? 'bg-white/15 text-indigo-100 hover:text-white'
+                            : 'bg-slate-100 dark:bg-slate-900/60 text-slate-400 hover:text-rose-500'
                         }`}
                         title="Xóa bộ từ"
                       >
@@ -833,13 +836,15 @@ export function LibraryView({
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             {searchQuery && (
               <button
+                type="button"
+                aria-label="Xóa từ khóa tìm kiếm"
                 onClick={() => {
                   setSearchQuery('')
                   setVisibleLimit(PAGE_SIZE)
                 }}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 active:scale-95"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-4 h-4" />
               </button>
             )}
           </div>
@@ -851,7 +856,7 @@ export function LibraryView({
               setSearchAllDecks((prev) => !prev)
               setVisibleLimit(PAGE_SIZE)
             }}
-            className={`px-3 rounded-xl border text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-colors ${
+            className={`min-h-11 px-3 rounded-xl border text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-all active:scale-95 ${
               searchAllDecks
                 ? 'bg-indigo-600 text-white border-indigo-600'
                 : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800'
@@ -863,7 +868,7 @@ export function LibraryView({
           </button>
         </div>
 
-        {/* Filter Pills + Reset Progress */}
+        {/* Filter Pills + Reset Progress (36px thumb-safe targets) */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none min-w-0 flex-1">
             <button
@@ -871,7 +876,7 @@ export function LibraryView({
                 setStatusFilter('all')
                 setVisibleLimit(PAGE_SIZE)
               }}
-              className={`py-1.5 px-2.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all ${
+              className={`min-h-9 py-1.5 px-3 rounded-xl text-xs font-semibold flex items-center whitespace-nowrap shrink-0 transition-all active:scale-95 ${
                 statusFilter === 'all'
                   ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
@@ -886,7 +891,7 @@ export function LibraryView({
                   setVisibleLimit(PAGE_SIZE)
                 }}
                 title="Chỉ lọc riêng các từ bạn từng trả lời sai hoặc đánh dấu Chưa nhớ"
-                className={`py-1.5 px-2.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all ${
+                className={`min-h-9 py-1.5 px-3 rounded-xl text-xs font-semibold flex items-center whitespace-nowrap shrink-0 transition-all active:scale-95 ${
                   statusFilter === 'learning'
                     ? 'bg-rose-600 text-white'
                     : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
@@ -900,7 +905,7 @@ export function LibraryView({
                 setStatusFilter('mastered')
                 setVisibleLimit(PAGE_SIZE)
               }}
-              className={`py-1.5 px-2.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all ${
+              className={`min-h-9 py-1.5 px-3 rounded-xl text-xs font-semibold flex items-center whitespace-nowrap shrink-0 transition-all active:scale-95 ${
                 statusFilter === 'mastered'
                   ? 'bg-emerald-600 text-white'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
@@ -913,7 +918,7 @@ export function LibraryView({
                 setStatusFilter('review')
                 setVisibleLimit(PAGE_SIZE)
               }}
-              className={`py-1.5 px-2.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all ${
+              className={`min-h-9 py-1.5 px-3 rounded-xl text-xs font-semibold flex items-center whitespace-nowrap shrink-0 transition-all active:scale-95 ${
                 statusFilter === 'review'
                   ? 'bg-amber-600 text-white'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
@@ -927,7 +932,7 @@ export function LibraryView({
                   setStatusFilter((prev) => (prev === 'due' ? 'all' : 'due'))
                   setVisibleLimit(PAGE_SIZE)
                 }}
-                className={`py-1.5 px-2.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all ${
+                className={`min-h-9 py-1.5 px-3 rounded-xl text-xs font-semibold flex items-center whitespace-nowrap shrink-0 transition-all active:scale-95 ${
                   statusFilter === 'due'
                     ? 'bg-indigo-600 text-white'
                     : 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
@@ -942,7 +947,7 @@ export function LibraryView({
                   setStatusFilter((prev) => (prev === 'starred' ? 'all' : 'starred'))
                   setVisibleLimit(PAGE_SIZE)
                 }}
-                className={`py-1.5 px-2.5 rounded-xl text-xs font-semibold flex items-center gap-1 whitespace-nowrap shrink-0 transition-all ${
+                className={`min-h-9 py-1.5 px-3 rounded-xl text-xs font-semibold flex items-center gap-1 whitespace-nowrap shrink-0 transition-all active:scale-95 ${
                   statusFilter === 'starred'
                     ? 'bg-amber-500 text-white'
                     : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
@@ -958,7 +963,7 @@ export function LibraryView({
             <button
               onClick={handleResetProgress}
               title="Đặt lại tiến độ học của bộ từ này"
-              className="py-1.5 px-2.5 rounded-xl text-[11px] font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 bg-slate-100 dark:bg-slate-800 flex items-center gap-1 whitespace-nowrap shrink-0 transition-colors"
+              className="min-h-9 py-1.5 px-2.5 rounded-xl text-[11px] font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 bg-slate-100 dark:bg-slate-800 flex items-center gap-1 whitespace-nowrap shrink-0 transition-all active:scale-95"
             >
               <RotateCcw className="w-3 h-3" />
               <span>Đặt lại</span>
@@ -999,7 +1004,7 @@ export function LibraryView({
                         audioService.playClick()
                         onStartFilteredStudy(filteredWords, item.mode, customLabel, searchAllDecks)
                       }}
-                      className={`py-1 px-2.5 rounded-xl text-[11px] font-bold flex items-center gap-1 whitespace-nowrap active:scale-95 transition-all ${
+                      className={`min-h-8.5 py-1.5 px-3 rounded-xl text-[11px] font-bold flex items-center gap-1 whitespace-nowrap active:scale-95 transition-all ${
                         item.mode === 'smart-mix'
                           ? 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-2xs'
                           : 'bg-indigo-600/90 hover:bg-indigo-500 text-white'
@@ -1029,7 +1034,7 @@ export function LibraryView({
                   setSearchAllDecks(true)
                   setVisibleLimit(PAGE_SIZE)
                 }}
-                className="py-2 px-3 rounded-xl bg-indigo-600 text-white font-medium text-xs inline-flex items-center gap-1.5 shadow-xs"
+                className="min-h-10 py-2 px-3.5 rounded-xl bg-indigo-600 text-white font-medium text-xs inline-flex items-center gap-1.5 shadow-xs active:scale-95"
               >
                 <Globe className="w-3.5 h-3.5" />
                 <span>Tìm "{searchQuery.trim()}" trên toàn kho ({allWords.length.toLocaleString()} từ)</span>
@@ -1037,7 +1042,7 @@ export function LibraryView({
             ) : (
               <button
                 onClick={onGoToAddWord}
-                className="py-2 px-3 rounded-xl bg-indigo-600 text-white font-medium text-xs inline-flex items-center gap-1 shadow-xs"
+                className="min-h-10 py-2 px-3.5 rounded-xl bg-indigo-600 text-white font-medium text-xs inline-flex items-center gap-1 shadow-xs active:scale-95"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Thêm từ mới</span>
@@ -1074,7 +1079,7 @@ export function LibraryView({
                         type="button"
                         onClick={() => handleToggleWordStatus(word)}
                         title="Chạm để đổi trạng thái Đã thuộc / Cần ôn"
-                        className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full active:scale-95 transition-all ${
+                        className={`text-[10px] font-bold px-2.5 py-1 rounded-full active:scale-95 transition-all ${
                           isMastered
                             ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
                             : word.status === 'learning'

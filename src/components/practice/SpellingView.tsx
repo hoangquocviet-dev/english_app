@@ -91,7 +91,7 @@ function SpellingAccentButton({ term }: { term: string }) {
         audioService.playClick()
         void audioService.speak(term, 0.9)
       }}
-      className="h-8 px-2 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+      className="h-9 px-2.5 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
       title="Đổi giọng đọc Anh-Mỹ (US) / Anh-Anh (UK)"
     >
       {voiceAccent === 'en-US' ? '🇺🇸 US' : '🇬🇧 UK'}
@@ -131,6 +131,7 @@ export function SpellingView({
   const hadMistakeRef = useRef(false)
   const transitionTimerRef = useRef<number | null>(null)
   const pendingAdvanceRef = useRef<(() => void) | null>(null)
+  const swipeStartRef = useRef<{ x: number; y: number } | null>(null)
 
   const commitQueue = useCallback((next: QueuedSpelling[]) => {
     queueRef.current = next
@@ -550,51 +551,73 @@ export function SpellingView({
       : 'w-10 h-12 text-lg'
 
   return (
-    <div className="w-full flex flex-col my-auto max-w-md sm:max-w-lg mx-auto px-3.5 py-2 select-none">
+    <div
+      className="w-full flex flex-col my-auto max-w-md sm:max-w-lg mx-auto px-3.5 py-2 select-none"
+      onTouchStart={(e) => {
+        if (!isLocked) return
+        swipeStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
+      }}
+      onTouchEnd={(e) => {
+        if (!isLocked || !swipeStartRef.current || e.changedTouches.length === 0) return
+        const dx = e.changedTouches[0].clientX - swipeStartRef.current.x
+        const dy = e.changedTouches[0].clientY - swipeStartRef.current.y
+        swipeStartRef.current = null
+        if (dx < -48 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+          flushPendingAdvance()
+        }
+      }}
+    >
       {/* Top Bar */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between gap-1 mb-3">
         <button
           onClick={onBack}
           title="Quay lại"
-          className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+          className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors shrink-0"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="flex flex-col items-center min-w-0">
           {filterMode !== 'all' && (
-            <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 truncate max-w-[170px] leading-tight mb-0.5">
+            <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 truncate max-w-[160px] leading-tight mb-0.5">
               {deckName}
             </span>
           )}
           <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
             Từ {currentIndex + 1} / {queue.length}
           </span>
-          <div className="w-28 bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full mt-1 overflow-hidden">
+          <div className="w-24 sm:w-28 bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full mt-1 overflow-hidden">
             <div
               className="bg-indigo-600 dark:bg-indigo-400 h-full transition-all duration-300"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
         </div>
-        <div className="flex items-center gap-0.5 -mr-2">
+        <div className="flex items-center gap-1 -mr-1.5 shrink-0">
           <button
+            type="button"
+            disabled={isLocked}
             onClick={handleHintOneLetter}
             title="Gợi ý 1 chữ cái (Tab)"
-            className="p-2 rounded-lg text-amber-500 hover:bg-amber-500/10 transition-colors"
+            className="h-9 px-2.5 rounded-xl bg-amber-500/12 hover:bg-amber-500/20 disabled:opacity-40 text-amber-600 dark:text-amber-400 text-[11px] font-bold flex items-center gap-1 transition-all active:scale-95"
           >
-            <Lightbulb className="w-4 h-4" />
+            <Lightbulb className="w-3.5 h-3.5 shrink-0" />
+            <span>Gợi ý</span>
           </button>
           <button
+            type="button"
+            disabled={isLocked}
             onClick={handleClearAll}
             title="Xếp lại từ đầu"
-            className="p-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 transition-all active:scale-95"
           >
             <RotateCcw className="w-4 h-4" />
           </button>
           <button
+            type="button"
+            disabled={isLocked}
             onClick={handleReveal}
             title="Xem toàn bộ đáp án"
-            className="p-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 transition-all active:scale-95"
           >
             <HelpCircle className="w-4 h-4" />
           </button>
@@ -607,7 +630,7 @@ export function SpellingView({
           <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">
             Ghép chữ cái
           </span>
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               type="button"
               onClick={() => {
@@ -620,7 +643,7 @@ export function SpellingView({
                   return copy
                 })
               }}
-              className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+              className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors active:scale-95 ${
                 starredIds.has(currentWord.id)
                   ? 'bg-amber-500/15 text-amber-500'
                   : 'bg-slate-100 dark:bg-slate-700/70 text-slate-400 hover:text-amber-500'
@@ -633,15 +656,15 @@ export function SpellingView({
             </button>
             <SpellingAccentButton term={currentWord.term} />
             <button
-              onClick={() => audioService.speak(currentWord.term, 0.6)}
-              className="h-8 px-2 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+              onClick={() => void audioService.speak(currentWord.term, 0.6)}
+              className="h-9 px-2.5 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
               title="Nghe chậm (0.6x)"
             >
               0.6x
             </button>
             <button
-              onClick={() => audioService.speak(currentWord.term, 0.9)}
-              className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+              onClick={() => void audioService.speak(currentWord.term, 0.9)}
+              className="w-9 h-9 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
               title="Phát âm chuẩn (Space / Enter)"
             >
               <Volume2 className="w-4 h-4" />
@@ -733,7 +756,7 @@ export function SpellingView({
         <button
           type="button"
           onClick={flushPendingAdvance}
-          className="w-full mt-2 py-2 px-3 rounded-xl bg-emerald-500/12 border border-emerald-500/30 flex items-center justify-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs sm:text-sm active:scale-98 transition-transform"
+          className="w-full mt-2 py-2.5 px-3 rounded-xl bg-emerald-500/12 border border-emerald-500/30 flex items-center justify-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs sm:text-sm active:scale-98 transition-transform"
         >
           <Check className="w-4 h-4 shrink-0" />
           <span>Chính xác! Chạm sang từ tiếp →</span>
@@ -759,12 +782,12 @@ export function SpellingView({
 
       {isWrong && (
         <div className="text-center text-rose-500 font-medium text-xs py-2">
-          Chưa đúng, chạm chữ để gỡ ra hoặc bấm bóng đèn để gợi ý 1 chữ.
+          Chưa đúng, chạm chữ để gỡ ra hoặc bấm Gợi ý để mở 1 chữ.
         </div>
       )}
 
-      {/* Scrambled Letter Tiles Pool */}
-      <div className="pt-4 pb-2">
+      {/* Scrambled Letter Tiles Pool (Reserved 2-row min-height + top alignment prevents vertical bounce!) */}
+      <div className="pt-4 pb-2 min-h-[128px] flex items-start justify-center">
         <div className="flex flex-wrap items-center justify-center gap-2">
           {poolTiles.map((tile) => (
             <button
