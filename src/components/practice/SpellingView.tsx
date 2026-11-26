@@ -117,6 +117,7 @@ export function SpellingView({
     () => initialTiles.placed
   )
   const [isSuccess, setIsSuccess] = useState(false)
+  const [isRevealed, setIsRevealed] = useState(false)
   const [isWrong, setIsWrong] = useState(false)
   const [stats, setStats] = useState({ mastered: 0, review: 0 })
   const [isCompleted, setIsCompleted] = useState(false)
@@ -129,6 +130,7 @@ export function SpellingView({
   const placedRef = useRef<Array<SpellingTile | null>>(placedTiles)
   const hadMistakeRef = useRef(false)
   const transitionTimerRef = useRef<number | null>(null)
+  const pendingAdvanceRef = useRef<(() => void) | null>(null)
 
   const commitQueue = useCallback((next: QueuedSpelling[]) => {
     queueRef.current = next
@@ -150,7 +152,15 @@ export function SpellingView({
       window.clearTimeout(transitionTimerRef.current)
       transitionTimerRef.current = null
     }
+    pendingAdvanceRef.current = null
   }, [])
+
+  const flushPendingAdvance = useCallback(() => {
+    const fn = pendingAdvanceRef.current
+    if (!fn) return
+    clearTransitionTimer()
+    fn()
+  }, [clearTransitionTimer])
 
   useEffect(() => {
     return () => {
@@ -161,6 +171,7 @@ export function SpellingView({
 
   const currentItem = queue[currentIndex]
   const currentWord = currentItem?.word
+  const isLocked = isSuccess || isRevealed
 
   const advanceToIndex = useCallback(
     (nextIdx: number) => {
@@ -174,6 +185,7 @@ export function SpellingView({
         setCurrentIndex(nextIdx)
         commitTiles(pool, placed)
         setIsSuccess(false)
+        setIsRevealed(false)
         setIsWrong(false)
       }
     },
@@ -194,6 +206,7 @@ export function SpellingView({
           } catch {}
         }
         setIsSuccess(true)
+        setIsRevealed(false)
         setIsWrong(false)
         audioService.playSuccessChime()
         if (!hadMistakeRef.current && currentItem.repetitionCount === 0) {
@@ -205,10 +218,13 @@ export function SpellingView({
         void audioService.speakAuto(currentWord.term)
 
         clearTransitionTimer()
-        transitionTimerRef.current = window.setTimeout(() => {
+        const doAdvance = () => {
           transitionTimerRef.current = null
+          pendingAdvanceRef.current = null
           advanceToIndex(currentIndex + 1)
-        }, 1200)
+        }
+        pendingAdvanceRef.current = doAdvance
+        transitionTimerRef.current = window.setTimeout(doAdvance, 1200)
       } else {
         if (typeof navigator !== 'undefined' && navigator.vibrate) {
           try {
@@ -238,7 +254,7 @@ export function SpellingView({
 
   const handleSelectPoolTile = useCallback(
     (tile: SpellingTile) => {
-      if (isSuccess) return
+      if (isLocked) return
       const prevPlaced = placedRef.current
       const firstEmptyIndex = prevPlaced.findIndex((slot) => slot === null)
       if (firstEmptyIndex === -1) return
@@ -256,12 +272,12 @@ export function SpellingView({
         evaluateAnswer(nextPlaced as SpellingTile[])
       }
     },
-    [isSuccess, commitTiles, evaluateAnswer]
+    [isLocked, commitTiles, evaluateAnswer]
   )
 
   const handleRemovePlacedTile = useCallback(
     (index: number) => {
-      if (isSuccess) return
+      if (isLocked) return
       const tile = placedRef.current[index]
       if (!tile || tile.tileId.startsWith('prefilled-')) return
 
@@ -273,12 +289,12 @@ export function SpellingView({
       const nextPool = [...poolRef.current, tile]
       commitTiles(nextPool, nextPlaced)
     },
-    [isSuccess, commitTiles]
+    [isLocked, commitTiles]
   )
 
   // Give 1-letter smart hint
-  const handleHintOneLetter = () => {
-    if (!currentWord || isSuccess) return
+  const handleHintOneLetter = useCallback(() => {
+    if (!currentWord || isLocked) return
     audioService.playClick()
     setIsWrong(false)
 
@@ -328,7 +344,7 @@ export function SpellingView({
     if (nextPlaced.every((slot) => slot !== null)) {
       evaluateAnswer(nextPlaced as SpellingTile[])
     }
-  }
+  }, [currentWord, isLocked, commitTiles, evaluateAnswer])
 
   // Physical keyboard listener
   useEffect(() => {
@@ -341,13 +357,25 @@ export function SpellingView({
         return
       }
 
-      if (e.key === 'Enter') {
+      if (isLocked && (e.key === 'Enter' || e.key === 'ArrowRight') && !e.repeat) {
+        e.preventDefault()
+        flushPendingAdvance()
+        return
+      }
+
+      if (e.code === 'Space' || e.key === ' ' || e.key === 'Enter') {
         e.preventDefault()
         void audioService.speak(currentWord.term, 0.9)
         return
       }
 
-      if (isSuccess) return
+      if (isLocked) return
+
+      if (e.key === 'Tab') {
+        e.preventDefault()
+        handleHintOneLetter()
+        return
+      }
 
       if (e.key === 'Backspace') {
         e.preventDefault()
@@ -370,10 +398,19 @@ export function SpellingView({
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isCompleted, isSuccess, currentWord, handleRemovePlacedTile, handleSelectPoolTile, onBack])
+  }, [
+    isCompleted,
+    isLocked,
+    currentWord,
+    flushPendingAdvance,
+    handleHintOneLetter,
+    handleRemovePlacedTile,
+    handleSelectPoolTile,
+    onBack,
+  ])
 
   const handleClearAll = () => {
-    if (!currentWord || isSuccess) return
+    if (!currentWord || isLocked) return
     audioService.playClick()
     setIsWrong(false)
     const { pool, placed } = createTilesForWord(currentWord.term)
@@ -381,7 +418,7 @@ export function SpellingView({
   }
 
   const handleReveal = () => {
-    if (!currentWord || !currentItem || isSuccess) return
+    if (!currentWord || !currentItem || isLocked) return
     audioService.playClick()
 
     const completedTiles: SpellingTile[] = currentWord.term.split('').map((char, index) => ({
@@ -392,7 +429,8 @@ export function SpellingView({
 
     commitTiles([], completedTiles)
     setIsWrong(false)
-    setIsSuccess(true)
+    setIsSuccess(false)
+    setIsRevealed(true)
 
     if (!hadMistakeRef.current) {
       hadMistakeRef.current = true
@@ -412,10 +450,13 @@ export function SpellingView({
     void audioService.speakAuto(currentWord.term)
 
     clearTransitionTimer()
-    transitionTimerRef.current = window.setTimeout(() => {
+    const doAdvance = () => {
       transitionTimerRef.current = null
+      pendingAdvanceRef.current = null
       advanceToIndex(currentIndex + 1)
-    }, 1500)
+    }
+    pendingAdvanceRef.current = doAdvance
+    transitionTimerRef.current = window.setTimeout(doAdvance, 1900)
   }
 
   const startSessionWithWords = (targetWords: WordItem[]) => {
@@ -430,6 +471,7 @@ export function SpellingView({
     setCurrentIndex(0)
     setStats({ mastered: 0, review: 0 })
     setIsSuccess(false)
+    setIsRevealed(false)
     setIsWrong(false)
     setIsCompleted(false)
   }
@@ -537,7 +579,7 @@ export function SpellingView({
         <div className="flex items-center gap-0.5 -mr-2">
           <button
             onClick={handleHintOneLetter}
-            title="Gợi ý 1 chữ cái"
+            title="Gợi ý 1 chữ cái (Tab)"
             className="p-2 rounded-lg text-amber-500 hover:bg-amber-500/10 transition-colors"
           >
             <Lightbulb className="w-4 h-4" />
@@ -600,7 +642,7 @@ export function SpellingView({
             <button
               onClick={() => audioService.speak(currentWord.term, 0.9)}
               className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
-              title="Phát âm chuẩn"
+              title="Phát âm chuẩn (Space / Enter)"
             >
               <Volume2 className="w-4 h-4" />
             </button>
@@ -623,6 +665,8 @@ export function SpellingView({
         className={`min-h-16 flex flex-wrap items-center justify-center gap-x-3 gap-y-2.5 p-3 rounded-2xl border transition-all my-auto ${
           isSuccess
             ? 'bg-emerald-500/10 border-emerald-500 shadow-sm'
+            : isRevealed
+            ? 'bg-amber-500/12 border-amber-500 shadow-sm'
             : isWrong
             ? 'bg-rose-500/10 border-rose-500 animate-shake'
             : 'bg-slate-100/70 dark:bg-slate-800/50 border-slate-200 dark:border-slate-800'
@@ -662,11 +706,13 @@ export function SpellingView({
               return (
                 <button
                   key={index}
-                  disabled={isPrefilled || isSuccess}
+                  disabled={isPrefilled || isLocked}
                   onClick={() => handleRemovePlacedTile(index)}
                   className={`${sizeClasses} rounded-xl font-bold flex items-center justify-center shadow-xs transition-transform active:scale-90 ${
                     isSuccess
                       ? 'bg-emerald-600 text-white'
+                      : isRevealed
+                      ? 'bg-amber-500 text-slate-950'
                       : isWrong
                       ? 'bg-rose-600 text-white'
                       : isPrefilled
@@ -690,9 +736,22 @@ export function SpellingView({
         </div>
       )}
 
+      {isRevealed && (
+        <div className="mt-2.5 p-2.5 px-3 rounded-xl bg-amber-500/12 border border-amber-500/30 text-center space-y-1 animate-fadeIn">
+          <div className="text-xs font-bold text-amber-700 dark:text-amber-300">
+            Đáp án chuẩn: <span className="underline">{currentWord.term}</span> • Đã xếp ôn lại ở cuối lượt
+          </div>
+          {currentWord.example && (
+            <p className="text-[11px] italic text-slate-600 dark:text-slate-300 leading-snug">
+              "{currentWord.example}"
+            </p>
+          )}
+        </div>
+      )}
+
       {isWrong && (
         <div className="text-center text-rose-500 font-medium text-xs py-2">
-          Chưa đúng, chạm chữ để gỡ ra hoặc bấm biểu tượng bóng đèn để gợi ý 1 chữ.
+          Chưa đúng, chạm chữ để gỡ ra hoặc bấm biểu tượng bóng đèn (Tab) để gợi ý 1 chữ.
         </div>
       )}
 
@@ -702,7 +761,7 @@ export function SpellingView({
           {poolTiles.map((tile) => (
             <button
               key={tile.tileId}
-              disabled={isSuccess}
+              disabled={isLocked}
               onClick={() => handleSelectPoolTile(tile)}
               className="w-11 h-12 rounded-xl bg-white dark:bg-slate-800 border-b-3 border border-slate-300 dark:border-slate-700 font-bold text-lg text-slate-900 dark:text-slate-100 shadow-sm hover:border-indigo-500 active:translate-y-0.5 active:border-b transition-all flex items-center justify-center"
             >

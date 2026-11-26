@@ -222,13 +222,22 @@ export function QuizView({
     () => new Set(words.filter((w) => w.starred).map((w) => w.id))
   )
   const transitionTimerRef = useRef<number | null>(null)
+  const pendingAdvanceRef = useRef<(() => void) | null>(null)
 
   const clearTransitionTimer = useCallback(() => {
     if (transitionTimerRef.current !== null) {
       window.clearTimeout(transitionTimerRef.current)
       transitionTimerRef.current = null
     }
+    pendingAdvanceRef.current = null
   }, [])
+
+  const flushPendingAdvance = useCallback(() => {
+    const fn = pendingAdvanceRef.current
+    if (!fn) return
+    clearTransitionTimer()
+    fn()
+  }, [clearTransitionTimer])
 
   useEffect(() => {
     return () => {
@@ -334,8 +343,9 @@ export function QuizView({
       const nextTotal = questions.length + (wasRequeued ? 1 : 0)
 
       clearTransitionTimer()
-      transitionTimerRef.current = window.setTimeout(() => {
+      const doAdvance = () => {
         transitionTimerRef.current = null
+        pendingAdvanceRef.current = null
         if (currentIndex + 1 >= nextTotal) {
           setIsCompleted(true)
         } else {
@@ -343,18 +353,25 @@ export function QuizView({
           setSelectedOption(null)
           setIsLocked(false)
         }
-      }, delay)
+      }
+      pendingAdvanceRef.current = doAdvance
+      transitionTimerRef.current = window.setTimeout(doAdvance, delay)
     },
     [isLocked, currentQ, direction, questions.length, currentIndex, clearTransitionTimer]
   )
 
-  // Desktop keyboard shortcuts: 1-4 answer, Space replay audio, S star, Escape exit
+  // Desktop keyboard shortcuts: 1-4 answer, Enter/ArrowRight fast-forward when locked, Space replay audio, S star, Escape exit
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isCompleted || !currentQ) return
       if (e.key === 'Escape') {
         e.preventDefault()
         onBack()
+        return
+      }
+      if (isLocked && (e.key === 'Enter' || e.key === 'ArrowRight') && !e.repeat) {
+        e.preventDefault()
+        flushPendingAdvance()
         return
       }
       if ((e.key === 's' || e.key === 'S') && !e.ctrlKey && !e.metaKey && !e.altKey) {
@@ -385,7 +402,7 @@ export function QuizView({
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isLocked, isCompleted, currentQ, direction, handleSelect, onBack])
+  }, [isLocked, isCompleted, currentQ, direction, flushPendingAdvance, handleSelect, onBack])
 
   const resetQuiz = (sourceWords: WordItem[]) => {
     clearTransitionTimer()

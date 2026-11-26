@@ -460,7 +460,10 @@ class AudioManager {
         this.clearActiveSpeechState()
         window.speechSynthesis.cancel()
 
-        const cleanText = text.replace(/[/\\()[\]]/g, '').trim()
+        const cleanText = text
+          .replace(/[/\\()[\]]+/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
         if (!cleanText) {
           resolve()
           return

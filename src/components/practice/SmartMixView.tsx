@@ -227,13 +227,22 @@ export function SmartMixView({
     () => new Set(words.filter((w) => w.starred).map((w) => w.id))
   )
   const transitionTimerRef = useRef<number | null>(null)
+  const pendingAdvanceRef = useRef<(() => void) | null>(null)
 
   const clearTransitionTimer = useCallback(() => {
     if (transitionTimerRef.current !== null) {
       window.clearTimeout(transitionTimerRef.current)
       transitionTimerRef.current = null
     }
+    pendingAdvanceRef.current = null
   }, [])
+
+  const flushPendingAdvance = useCallback(() => {
+    const fn = pendingAdvanceRef.current
+    if (!fn) return
+    clearTransitionTimer()
+    fn()
+  }, [clearTransitionTimer])
 
   useEffect(() => {
     return () => {
@@ -330,8 +339,9 @@ export function SmartMixView({
       const nextTotal = questions.length + (wasRequeued ? 1 : 0)
 
       clearTransitionTimer()
-      transitionTimerRef.current = window.setTimeout(() => {
+      const doAdvance = () => {
         transitionTimerRef.current = null
+        pendingAdvanceRef.current = null
         if (currentIndex + 1 >= nextTotal) {
           setIsCompleted(true)
         } else {
@@ -339,7 +349,9 @@ export function SmartMixView({
           setSelectedOption(null)
           setIsLocked(false)
         }
-      }, delay)
+      }
+      pendingAdvanceRef.current = doAdvance
+      transitionTimerRef.current = window.setTimeout(doAdvance, delay)
     },
     [allDeckWords, clearTransitionTimer, currentIndex, currentQ, isLocked, questions.length]
   )
@@ -350,6 +362,11 @@ export function SmartMixView({
       if (e.key === 'Escape') {
         e.preventDefault()
         onBack()
+        return
+      }
+      if (isLocked && (e.key === 'Enter' || e.key === 'ArrowRight') && !e.repeat) {
+        e.preventDefault()
+        flushPendingAdvance()
         return
       }
       if ((e.key === 's' || e.key === 'S') && !e.ctrlKey && !e.metaKey && !e.altKey) {
@@ -379,7 +396,7 @@ export function SmartMixView({
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [currentQ, handleReplayAudio, handleSelect, isCompleted, isLocked, onBack])
+  }, [currentQ, flushPendingAdvance, handleReplayAudio, handleSelect, isCompleted, isLocked, onBack])
 
   const resetMix = (nextWords: WordItem[]) => {
     clearTransitionTimer()

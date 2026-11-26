@@ -171,6 +171,7 @@ export function ListeningView({
   )
 
   const transitionTimerRef = useRef<number | null>(null)
+  const pendingAdvanceRef = useRef<(() => void) | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const mountedRef = useRef(true)
 
@@ -179,7 +180,15 @@ export function ListeningView({
       window.clearTimeout(transitionTimerRef.current)
       transitionTimerRef.current = null
     }
+    pendingAdvanceRef.current = null
   }, [])
+
+  const flushPendingAdvance = useCallback(() => {
+    const fn = pendingAdvanceRef.current
+    if (!fn) return
+    clearTransitionTimer()
+    fn()
+  }, [clearTransitionTimer])
 
   useEffect(() => {
     mountedRef.current = true
@@ -273,8 +282,9 @@ export function ListeningView({
       const nextTotal = questions.length + (wasRequeued ? 1 : 0)
 
       clearTransitionTimer()
-      transitionTimerRef.current = window.setTimeout(() => {
+      const doAdvance = () => {
         transitionTimerRef.current = null
+        pendingAdvanceRef.current = null
         if (!mountedRef.current) return
         if (currentIndex + 1 >= nextTotal) {
           setIsCompleted(true)
@@ -286,7 +296,9 @@ export function ListeningView({
           setShowDictationHint(false)
           setIsLocked(false)
         }
-      }, delay)
+      }
+      pendingAdvanceRef.current = doAdvance
+      transitionTimerRef.current = window.setTimeout(doAdvance, delay)
     },
     [clearTransitionTimer, currentIndex, currentQ, questions.length]
   )
@@ -343,6 +355,12 @@ export function ListeningView({
         return
       }
 
+      if (isLocked && (e.key === 'Enter' || e.key === 'ArrowRight') && !e.repeat) {
+        e.preventDefault()
+        flushPendingAdvance()
+        return
+      }
+
       const isTypingInBox =
         typeof document !== 'undefined' && document.activeElement === inputRef.current
 
@@ -376,7 +394,7 @@ export function ListeningView({
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [listeningStyle, isLocked, isCompleted, currentQ, playAudio, handleSelect, onBack])
+  }, [listeningStyle, isLocked, isCompleted, currentQ, flushPendingAdvance, playAudio, handleSelect, onBack])
 
   const resetListening = (sourceWords: WordItem[]) => {
     clearTransitionTimer()

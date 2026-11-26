@@ -183,6 +183,7 @@ export function ClozeView({
   )
 
   const transitionTimerRef = useRef<number | null>(null)
+  const pendingAdvanceRef = useRef<(() => void) | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const mountedRef = useRef(true)
 
@@ -191,7 +192,15 @@ export function ClozeView({
       window.clearTimeout(transitionTimerRef.current)
       transitionTimerRef.current = null
     }
+    pendingAdvanceRef.current = null
   }, [])
+
+  const flushPendingAdvance = useCallback(() => {
+    const fn = pendingAdvanceRef.current
+    if (!fn) return
+    clearTransitionTimer()
+    fn()
+  }, [clearTransitionTimer])
 
   useEffect(() => {
     mountedRef.current = true
@@ -284,20 +293,24 @@ export function ClozeView({
 
       const nextTotal = questions.length + (wasRequeued ? 1 : 0)
       clearTransitionTimer()
+      const doAdvance = () => {
+        transitionTimerRef.current = null
+        pendingAdvanceRef.current = null
+        if (!mountedRef.current) return
+        if (currentIndex + 1 < nextTotal) {
+          setCurrentIndex((prev) => prev + 1)
+          setSelectedOption(null)
+          setTypedInput('')
+          setTypingOutcome('none')
+          setIsLocked(false)
+          setShowHint(false)
+        } else {
+          setIsCompleted(true)
+        }
+      }
+      pendingAdvanceRef.current = doAdvance
       transitionTimerRef.current = window.setTimeout(
-        () => {
-          if (!mountedRef.current) return
-          if (currentIndex + 1 < nextTotal) {
-            setCurrentIndex((prev) => prev + 1)
-            setSelectedOption(null)
-            setTypedInput('')
-            setTypingOutcome('none')
-            setIsLocked(false)
-            setShowHint(false)
-          } else {
-            setIsCompleted(true)
-          }
-        },
+        doAdvance,
         delayOverrideMs ?? (isCorrect ? 1500 : 2100)
       )
     },
@@ -359,6 +372,12 @@ export function ClozeView({
         return
       }
 
+      if (isLocked && (e.key === 'Enter' || e.key === 'ArrowRight') && !e.repeat) {
+        e.preventDefault()
+        flushPendingAdvance()
+        return
+      }
+
       const isTypingBox =
         typeof document !== 'undefined' && document.activeElement === inputRef.current
       if (isTypingBox) return
@@ -398,7 +417,7 @@ export function ClozeView({
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [clozeStyle, currentQ, handlePlaySentenceAudio, handleSelect, isCompleted, onBack])
+  }, [clozeStyle, currentQ, flushPendingAdvance, handlePlaySentenceAudio, handleSelect, isCompleted, isLocked, onBack])
 
   const resetClozeSession = (nextWords: WordItem[]) => {
     clearTransitionTimer()
