@@ -516,6 +516,9 @@ export function WordBombGame({ words, deckName, onStudyMissedWords, onBack }: Wo
       } else if (e.key === 'Tab') {
         e.preventDefault()
         handleUseWireCutter()
+      } else if (e.code === 'Space') {
+        e.preventDefault()
+        void audioService.speak(bombRef.current.word.term, 0.9)
       } else if (e.key.length === 1 && /^[a-zA-Z]$/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) {
         e.preventDefault()
         attemptInputLetter(e.key)
@@ -673,7 +676,7 @@ export function WordBombGame({ words, deckName, onStudyMissedWords, onBack }: Wo
 
           {/* Cyber Time-Bomb Core Card */}
           <div
-            className={`rounded-3xl p-4 sm:p-5 border-2 shadow-xl transition-all text-center relative ${
+            className={`rounded-3xl p-3.5 sm:p-5 border-2 shadow-xl transition-all text-center relative ${
               status === 'defused'
                 ? 'bg-emerald-500/15 border-emerald-500'
                 : status === 'exploded'
@@ -716,7 +719,7 @@ export function WordBombGame({ words, deckName, onStudyMissedWords, onBack }: Wo
                 <button
                   type="button"
                   onClick={() => audioService.speak(bomb.word.term, 0.9)}
-                  title="Nghe gợi ý phát âm"
+                  title="Nghe gợi ý phát âm (Phím Space)"
                   className="p-1.5 rounded-xl bg-indigo-500/25 hover:bg-indigo-500/40 text-cyan-300 transition-colors"
                 >
                   <Volume2 className="w-4 h-4" />
@@ -731,10 +734,13 @@ export function WordBombGame({ words, deckName, onStudyMissedWords, onBack }: Wo
               <p className="text-xs font-mono text-cyan-300/80 mt-1">{bomb.word.ipa}</p>
             )}
 
-            {/* Bomb Wire Letter Slots Grouped by Word (Zero mid-word orphan wrapping!) */}
-            <div className="flex flex-wrap items-center justify-center gap-x-3.5 gap-y-2 mt-4 mb-1">
+            {/* Bomb Wire Letter Slots Grouped by Word (Responsive sizing + wrap guard prevents 360px overflow) */}
+            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 mt-4 mb-1">
               {wordGroups.map((group, gIdx) => (
-                <div key={gIdx} className="inline-flex items-center gap-1">
+                <div
+                  key={gIdx}
+                  className="inline-flex flex-wrap items-center justify-center gap-0.5 sm:gap-1 max-w-full"
+                >
                   {group.map((idx) => {
                     const slot = bomb.slots[idx]
                     if (!/[a-zA-Z]/.test(slot.targetChar)) {
@@ -747,8 +753,10 @@ export function WordBombGame({ words, deckName, onStudyMissedWords, onBack }: Wo
 
                     const isCurrentCursor = idx === nextActiveSlotIdx && status === 'ticking'
                     const slotSize =
-                      maxWordLen >= 11
-                        ? 'w-6 h-8 text-xs sm:w-7 sm:h-9 sm:text-sm'
+                      maxWordLen >= 13
+                        ? 'w-[19px] h-7.5 text-[11px] sm:w-7 sm:h-9 sm:text-sm'
+                        : maxWordLen >= 11
+                        ? 'w-5.5 h-8 text-xs sm:w-7 sm:h-9 sm:text-sm'
                         : maxWordLen >= 9
                         ? 'w-7 h-9 text-sm sm:w-8 sm:h-10 sm:text-base'
                         : 'w-8 h-10 sm:w-9 sm:h-11 text-base sm:text-lg'

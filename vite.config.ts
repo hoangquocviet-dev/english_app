@@ -45,6 +45,29 @@ export default defineConfig({
             purpose: 'maskable',
           },
         ],
+        shortcuts: [
+          {
+            name: 'Luyện Bài Mới Hôm Nay',
+            short_name: 'Bài mới',
+            description: 'Học ngay bộ từ Daily-English mới nhất',
+            url: '/?study=daily',
+            icons: [{ src: 'pwa-192.png', sizes: '192x192', type: 'image/png' }],
+          },
+          {
+            name: 'Đấu Trường Từ Vựng',
+            short_name: 'Đấu Trường',
+            description: 'Chơi 4 mini-game rèn phản xạ từ vựng',
+            url: '/?tab=games',
+            icons: [{ src: 'pwa-192.png', sizes: '192x192', type: 'image/png' }],
+          },
+          {
+            name: 'Thêm Từ Vựng Mới',
+            short_name: 'Thêm từ',
+            description: 'Tra phiên âm IPA & lưu nhanh từ mới',
+            url: '/?tab=add',
+            icons: [{ src: 'pwa-192.png', sizes: '192x192', type: 'image/png' }],
+          },
+        ],
       },
       workbox: {
         skipWaiting: true,

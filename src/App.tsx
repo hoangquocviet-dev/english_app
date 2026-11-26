@@ -184,6 +184,57 @@ export function App() {
         if (magicOutcome) {
           showNotice(magicOutcome)
         }
+
+        // Handle deep-links from Telegram Daily-English notifications & PWA Home-Screen Shortcuts (?study=daily or ?tab=...)
+        if (active && typeof window !== 'undefined') {
+          const params = new URLSearchParams(window.location.search)
+          const studyTarget = params.get('study')
+          const tabTarget = params.get('tab')
+          if (studyTarget || tabTarget) {
+            params.delete('study')
+            params.delete('tab')
+            const cleanQ = params.toString()
+            window.history.replaceState(
+              {},
+              '',
+              window.location.pathname + (cleanQ ? `?${cleanQ}` : '') + window.location.hash
+            )
+
+            if (studyTarget === 'daily') {
+              const allDecksNow = storageService.getDecks()
+              const dailyDeckId = allDecksNow.some((d) => d.id === 'commdeck-daily-auto')
+                ? 'commdeck-daily-auto'
+                : storageService.getActiveDeckId()
+              storageService.setActiveDeckId(dailyDeckId)
+              refreshData()
+              const unmasteredDaily = storageService
+                .getWords(dailyDeckId)
+                .filter((w) => w.status !== 'mastered')
+              if (unmasteredDaily.length > 0) {
+                const prefs = storageService.getStudyPreferences()
+                const batch =
+                  prefs.batchSize > 0
+                    ? unmasteredDaily.slice(0, prefs.batchSize)
+                    : unmasteredDaily.slice(0, 20)
+                setCustomSessionLabel('📅 Bài Mới Daily-English')
+                setSessionFilterMode('all')
+                setIsGlobalSrsSession(false)
+                setSessionWords(batch)
+                setActiveStudyMode('smart-mix')
+              } else {
+                setActiveTab('practice')
+              }
+            } else if (
+              tabTarget === 'practice' ||
+              tabTarget === 'games' ||
+              tabTarget === 'add' ||
+              tabTarget === 'library'
+            ) {
+              setActiveTab(tabTarget)
+              refreshData()
+            }
+          }
+        }
       })
     return () => {
       active = false
