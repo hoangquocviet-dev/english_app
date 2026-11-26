@@ -4,6 +4,8 @@ import {
   Cloud,
   Copy,
   DownloadCloud,
+  FileDown,
+  FileUp,
   KeyRound,
   Link2,
   QrCode,
@@ -13,9 +15,10 @@ import {
   X,
 } from 'lucide-react'
 import QRCode from 'qrcode'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { audioService } from '../../utils/audio'
 import { cloudSyncService, type SyncStateSnapshot } from '../../utils/cloudSync'
+import { storageService } from '../../utils/storage'
 
 interface CloudSyncModalProps {
   isOpen: boolean
@@ -42,6 +45,8 @@ export function CloudSyncModal({ isOpen, onClose, onDataRestored }: CloudSyncMod
   const [copiedLink, setCopiedLink] = useState(false)
   const [qrDataUrl, setQrDataUrl] = useState<string>('')
   const [syncNotice, setSyncNotice] = useState<string | null>(null)
+  const [offlineNotice, setOfflineNotice] = useState<{ ok: boolean; text: string } | null>(null)
+  const backupFileRef = useRef<HTMLInputElement | null>(null)
 
   // Restore tab state
   const [restoreInput, setRestoreInput] = useState('')
@@ -422,6 +427,90 @@ export function CloudSyncModal({ isOpen, onClose, onDataRestored }: CloudSyncMod
             </button>
           </form>
         )}
+
+        {/* Offline Full Profile Snapshot Backup / Restore (.json) */}
+        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
+          <div className="flex items-center justify-between text-[11px]">
+            <span className="font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              Sao lưu File Offline toàn phần (.json)
+            </span>
+          </div>
+
+          {offlineNotice && (
+            <div
+              className={`p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+                offlineNotice.ok
+                  ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                  : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+              }`}
+            >
+              {offlineNotice.ok ? (
+                <Check className="w-3.5 h-3.5 shrink-0" />
+              ) : (
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+              )}
+              <span>{offlineNotice.text}</span>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                audioService.playClick()
+                const json = storageService.exportFullProfileSnapshot()
+                const blob = new Blob([json], { type: 'application/json;charset=utf-8' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = `vocabflow-backup-${new Date().toISOString().slice(0, 10)}.json`
+                document.body.appendChild(a)
+                a.click()
+                document.body.removeChild(a)
+                URL.revokeObjectURL(url)
+                setOfflineNotice({
+                  ok: true,
+                  text: 'Đã tải xuống file sao lưu toàn bộ tiến độ & bộ từ riêng!',
+                })
+              }}
+              className="py-2 px-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs flex items-center justify-center gap-1.5 whitespace-nowrap transition-colors"
+            >
+              <FileDown className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+              <span>Tải bản sao lưu</span>
+            </button>
+
+            <input
+              ref={backupFileRef}
+              type="file"
+              accept=".json"
+              className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0]
+                e.target.value = ''
+                if (!file) return
+                try {
+                  const content = await file.text()
+                  const res = await storageService.importFullProfileSnapshot(content)
+                  setOfflineNotice({ ok: res.ok, text: res.message })
+                  if (res.ok) {
+                    audioService.playSuccessChime()
+                    onDataRestored()
+                  }
+                } catch {
+                  setOfflineNotice({ ok: false, text: 'Không thể đọc file sao lưu này.' })
+                }
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => backupFileRef.current?.click()}
+              className="py-2 px-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs flex items-center justify-center gap-1.5 whitespace-nowrap transition-colors"
+            >
+              <FileUp className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+              <span>Nạp bản sao lưu</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )

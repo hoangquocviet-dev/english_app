@@ -4,10 +4,11 @@ import { audioService } from '../../utils/audio'
 
 interface BottomNavProps {
   currentTab: ActiveTab
+  dueCount?: number
   onTabChange: (tab: ActiveTab) => void
 }
 
-export function BottomNav({ currentTab, onTabChange }: BottomNavProps) {
+export function BottomNav({ currentTab, dueCount = 0, onTabChange }: BottomNavProps) {
   const tabs = [
     {
       id: 'practice' as ActiveTab,
@@ -54,7 +55,14 @@ export function BottomNav({ currentTab, onTabChange }: BottomNavProps) {
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
-              <Icon className={`w-5 h-5 transition-transform ${isActive ? 'scale-110' : ''}`} />
+              <div className="relative">
+                <Icon className={`w-5 h-5 transition-transform ${isActive ? 'scale-110' : ''}`} />
+                {tab.id === 'practice' && dueCount > 0 && !isActive && (
+                  <span className="absolute -top-1.5 -right-2.5 min-w-4 h-4 px-1 rounded-full bg-indigo-600 text-white text-[9px] font-extrabold flex items-center justify-center shadow-2xs">
+                    {dueCount > 99 ? '99+' : dueCount}
+                  </span>
+                )}
+              </div>
               <span className="text-[11px] leading-none tracking-tight">{tab.label}</span>
               {isActive && (
                 <span className="absolute top-1 w-1.5 h-1.5 rounded-full bg-indigo-600 dark:bg-indigo-400" />

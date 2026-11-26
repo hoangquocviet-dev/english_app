@@ -66,6 +66,22 @@ export default defineConfig({
               },
             },
           },
+          {
+            urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/(leaderboard_entries|community_decks).*/i,
+            method: 'GET',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'supabase-public-feed-cache',
+              networkTimeoutSeconds: 4,
+              expiration: {
+                maxEntries: 30,
+                maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days offline fallback
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
         ],
       },
     }),

@@ -877,14 +877,17 @@ class SafeStorageService {
       this.decksCache = mergedDecks
       this.set(STORAGE_KEYS.DECKS, mergedDecks)
 
-      // 3. Merge custom words + community words
+      // 3. Merge custom words + community words (preserving newer local SRS/star progress!)
       const validCustomDeckIds = new Set(Array.from(customDeckMap.keys()))
       const cloudWords = Array.isArray(cloud.custom_words) ? cloud.custom_words : []
       const customWordMap = new Map<string, WordItem>()
 
       if (mode === 'merge') {
         for (const lw of this.getWords()) {
-          if ((lw.id.startsWith('w-') || lw.id.startsWith('commword-')) && validCustomDeckIds.has(lw.deckId)) {
+          if (
+            (lw.id.startsWith('w-') || lw.id.startsWith('commword-')) &&
+            validCustomDeckIds.has(lw.deckId)
+          ) {
             customWordMap.set(lw.id, lw)
           }
         }
@@ -896,8 +899,33 @@ class SafeStorageService {
         }
       }
       for (const cw of cloudWords) {
-        if (validCustomDeckIds.has(cw.deckId)) {
+        if (!validCustomDeckIds.has(cw.deckId)) continue
+        const existingLocal = mode === 'merge' ? customWordMap.get(cw.id) : undefined
+        if (!existingLocal) {
           customWordMap.set(cw.id, cw)
+        } else {
+          const cs = cw.status || 'new'
+          const ls = existingLocal.status || 'new'
+          const bestStatus = rankStatus(cs) >= rankStatus(ls) ? cs : ls
+          const bestReviews = Math.max(cw.reviewCount || 0, existingLocal.reviewCount || 0)
+          const cloudTime = cw.lastReviewed || 0
+          const localTime = existingLocal.lastReviewed || 0
+          const latestTime = Math.max(cloudTime, localTime) || undefined
+          const bestLevel = Math.max(cw.srsLevel || 0, existingLocal.srsLevel || 0) || undefined
+          const nextReview =
+            (cloudTime >= localTime
+              ? cw.nextReview || existingLocal.nextReview
+              : existingLocal.nextReview || cw.nextReview) || undefined
+          const newerBase = cloudTime >= localTime ? cw : existingLocal
+          customWordMap.set(cw.id, {
+            ...newerBase,
+            status: bestStatus,
+            reviewCount: bestReviews,
+            lastReviewed: latestTime,
+            srsLevel: bestLevel,
+            nextReview,
+            starred: Boolean(cw.starred || existingLocal.starred) || undefined,
+          })
         }
       }
 
@@ -924,14 +952,37 @@ class SafeStorageService {
             }
       this.set(STORAGE_KEYS.HIGH_SCORES, nextScores)
 
-      if (typeof cloud.streak === 'number') {
-        const nextStreak =
-          mode === 'replace' ? cloud.streak : Math.max(this.getStudyStreak(), cloud.streak)
-        this.set(STORAGE_KEYS.STREAK, nextStreak)
+      const parseDateKeyMs = (dk?: string): number => {
+        if (!dk) return 0
+        const parts = dk.split('-').map(Number)
+        if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return 0
+        return new Date(parts[0], parts[1] - 1, parts[2]).getTime()
       }
-      if (cloud.last_active_date) {
-        this.set(STORAGE_KEYS.LAST_ACTIVE_DATE, cloud.last_active_date)
+
+      if (mode === 'replace') {
+        if (typeof cloud.streak === 'number') {
+          this.set(STORAGE_KEYS.STREAK, cloud.streak)
+        }
+        if (cloud.last_active_date) {
+          this.set(STORAGE_KEYS.LAST_ACTIVE_DATE, cloud.last_active_date)
+        }
+      } else {
+        const localDate = this.getLastActiveDate()
+        const cloudDate = cloud.last_active_date || ''
+        const localMs = parseDateKeyMs(localDate)
+        const cloudMs = parseDateKeyMs(cloudDate)
+        const localLiveStreak = this.getStudyStreak()
+
+        if (cloudMs > localMs) {
+          this.set(STORAGE_KEYS.LAST_ACTIVE_DATE, cloudDate)
+          if (typeof cloud.streak === 'number') {
+            this.set(STORAGE_KEYS.STREAK, Math.max(localLiveStreak, cloud.streak))
+          }
+        } else if (cloudMs === localMs && localMs > 0 && typeof cloud.streak === 'number') {
+          this.set(STORAGE_KEYS.STREAK, Math.max(localLiveStreak, cloud.streak))
+        }
       }
+
       if (cloud.study_prefs && typeof cloud.study_prefs === 'object') {
         this.setStudyPreferences({
           ...this.getStudyPreferences(),
@@ -1034,6 +1085,90 @@ class SafeStorageService {
     const otherWords = allWords.filter((w) => w.deckId !== localDeckId)
     this.commitWordsCache([...syncedDeckWords, ...otherWords], true, false)
     return localDeckId
+  }
+
+  // FULL OFFLINE PROFILE SNAPSHOT EXPORT / IMPORT (.json)
+  public exportFullProfileSnapshot(): string {
+    const allWords = this.getWords()
+    const builtInProgress: Record<string, BuiltInWordProgress> = {}
+    const customWords: WordItem[] = []
+
+    for (const w of allWords) {
+      if (w.id.startsWith('w-') || w.id.startsWith('commword-')) {
+        customWords.push(w)
+      } else if (w.status !== 'new' || w.reviewCount > 0 || w.starred) {
+        builtInProgress[w.id] = {
+          s: w.status,
+          r: w.reviewCount,
+          ...(w.lastReviewed ? { t: w.lastReviewed } : {}),
+          ...(typeof w.srsLevel === 'number' ? { l: w.srsLevel } : {}),
+          ...(typeof w.nextReview === 'number' ? { n: w.nextReview } : {}),
+          ...(w.starred ? { b: true } : {}),
+        }
+      }
+    }
+
+    const customDecks = this.getDecks().filter((d) => !d.isBuiltIn)
+    const snapshot = {
+      app: 'VocabFlow',
+      version: CURRENT_SEED_VERSION,
+      exportedAt: new Date().toISOString(),
+      built_in_progress: builtInProgress,
+      deleted_builtins: this.getDeletedBuiltIns(),
+      custom_decks: customDecks,
+      custom_words: customWords,
+      study_prefs: this.getStudyPreferences(),
+      daily_progress: this.getDailyProgress(),
+      streak: this.getStudyStreak(),
+      last_active_date: this.getLastActiveDate(),
+      high_scores: this.getHighScores(),
+    }
+
+    return JSON.stringify(snapshot, null, 2)
+  }
+
+  public async importFullProfileSnapshot(
+    rawJson: string
+  ): Promise<{ ok: boolean; message: string }> {
+    try {
+      const parsed = JSON.parse(rawJson) as Record<string, unknown>
+      if (
+        !parsed ||
+        typeof parsed !== 'object' ||
+        (!('built_in_progress' in parsed) && !('custom_words' in parsed))
+      ) {
+        return {
+          ok: false,
+          message: 'File không đúng định dạng bản sao lưu toàn phần của VocabFlow.',
+        }
+      }
+
+      await this.applyCloudData(
+        {
+          built_in_progress: parsed.built_in_progress as Record<string, BuiltInWordProgress>,
+          deleted_builtins: parsed.deleted_builtins as string[],
+          custom_decks: parsed.custom_decks as Deck[],
+          custom_words: parsed.custom_words as WordItem[],
+          study_prefs: parsed.study_prefs as Partial<StudyPreferences>,
+          daily_progress: parsed.daily_progress as Partial<DailyProgress>,
+          streak: typeof parsed.streak === 'number' ? parsed.streak : undefined,
+          last_active_date:
+            typeof parsed.last_active_date === 'string' ? parsed.last_active_date : undefined,
+          high_scores: parsed.high_scores as Partial<GameHighScores>,
+        },
+        'merge'
+      )
+      this.emitMutation()
+      return {
+        ok: true,
+        message: 'Đã gộp bản sao lưu toàn phần vào máy thành công!',
+      }
+    } catch {
+      return {
+        ok: false,
+        message: 'Không đọc được nội dung JSON. Vui lòng chọn đúng file sao lưu .json.',
+      }
+    }
   }
 
   // RESET TO FACTORY DEFAULTS

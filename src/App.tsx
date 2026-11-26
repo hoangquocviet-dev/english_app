@@ -73,6 +73,9 @@ const LibraryView = lazyWithRetry(() =>
 const CloudSyncModal = lazyWithRetry(() =>
   import('./components/common/CloudSyncModal').then((m) => ({ default: m.CloudSyncModal }))
 )
+const StatsModal = lazyWithRetry(() =>
+  import('./components/common/StatsModal').then((m) => ({ default: m.StatsModal }))
+)
 
 function shuffleWords(list: WordItem[]): WordItem[] {
   const arr = [...list]
@@ -83,6 +86,19 @@ function shuffleWords(list: WordItem[]): WordItem[] {
     arr[j] = temp
   }
   return arr
+}
+
+function dedupeCrossDeckTerms(list: WordItem[]): WordItem[] {
+  const seen = new Set<string>()
+  const out: WordItem[] = []
+  for (const w of list) {
+    const key = w.term.trim().toLowerCase()
+    if (!seen.has(key)) {
+      seen.add(key)
+      out.push(w)
+    }
+  }
+  return out
 }
 
 function ViewLoader() {
@@ -103,6 +119,7 @@ export function App() {
   const [isGlobalSrsSession, setIsGlobalSrsSession] = useState(false)
   const [customSessionLabel, setCustomSessionLabel] = useState<string | null>(null)
   const [isCloudModalOpen, setIsCloudModalOpen] = useState(false)
+  const [isStatsModalOpen, setIsStatsModalOpen] = useState(false)
   const [syncToast, setSyncToast] = useState<{ ok: boolean; message: string } | null>(null)
 
   const [decks, setDecks] = useState<Deck[]>(() => storageService.getDecks())
@@ -213,9 +230,11 @@ export function App() {
     let targetList: WordItem[]
 
     if (filterMode === 'global-due') {
-      targetList = storageService
-        .getWords()
-        .filter((w) => w.status === 'mastered' && (!w.nextReview || w.nextReview <= now))
+      targetList = dedupeCrossDeckTerms(
+        storageService
+          .getWords()
+          .filter((w) => w.status === 'mastered' && (!w.nextReview || w.nextReview <= now))
+      )
     } else {
       const freshWords = storageService.getWords(activeDeckId)
       if (filterMode === 'starred') {
@@ -254,7 +273,7 @@ export function App() {
     isCrossDeck: boolean
   ) => {
     if (customList.length === 0) return
-    let targetList = [...customList]
+    let targetList = isCrossDeck ? dedupeCrossDeckTerms(customList) : [...customList]
     if (studyPrefs.shuffle) {
       targetList = shuffleWords(targetList)
     }
@@ -290,6 +309,29 @@ export function App() {
     (isGlobalSrsSession ? 'Ôn tập SRS Toàn kho' : activeDeck?.name || 'Kho từ vựng')
   const studyPoolWords = isGlobalSrsSession ? allWords : words
   const isFullScreenSession = Boolean(activeStudyMode || activeGame)
+  const globalDueCount = storageService.getDueReviewWords().length
+
+  useEffect(() => {
+    if (isFullScreenSession || isCloudModalOpen || isStatsModalOpen) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!e.altKey || e.ctrlKey || e.metaKey) return
+      const tabMap: Record<string, ActiveTab> = {
+        '1': 'practice',
+        '2': 'games',
+        '3': 'add',
+        '4': 'library',
+      }
+      const nextTab = tabMap[e.key]
+      if (nextTab) {
+        e.preventDefault()
+        audioService.playClick()
+        setActiveTab(nextTab)
+        refreshData()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [isFullScreenSession, isCloudModalOpen, isStatsModalOpen, refreshData])
 
   const starredAllWords = allWords.filter((w) => Boolean(w.starred))
   const learningAllWords = allWords.filter((w) => w.status === 'learning')
@@ -342,6 +384,7 @@ export function App() {
               setActiveTab('library')
             }}
             onOpenCloudSync={() => setIsCloudModalOpen(true)}
+            onOpenStats={() => setIsStatsModalOpen(true)}
           />
 
           {/* Magic QR Link Restore Toast */}
@@ -549,10 +592,30 @@ export function App() {
             </Suspense>
           )}
 
+          {/* Learning Statistics & Achievement Badges Modal */}
+          {isStatsModalOpen && (
+            <Suspense fallback={null}>
+              <StatsModal
+                isOpen={isStatsModalOpen}
+                onClose={() => setIsStatsModalOpen(false)}
+                decks={decks}
+                allWords={allWords}
+                streak={streak}
+                highScores={highScores}
+                onJumpToDeck={(targetDeckId) => {
+                  handleSelectDeck(targetDeckId)
+                  setActiveTab('practice')
+                  refreshData()
+                }}
+              />
+            </Suspense>
+          )}
+
           {/* Bottom Navigation */}
           {!isFullScreenSession && (
             <BottomNav
               currentTab={activeTab}
+              dueCount={globalDueCount}
               onTabChange={(tab) => {
                 setActiveTab(tab)
                 refreshData()

@@ -11,6 +11,7 @@ interface NavbarProps {
   onGoHome?: () => void
   onOpenDeckSelector?: () => void
   onOpenCloudSync?: () => void
+  onOpenStats?: () => void
 }
 
 export function Navbar({
@@ -19,6 +20,7 @@ export function Navbar({
   onGoHome,
   onOpenDeckSelector,
   onOpenCloudSync,
+  onOpenStats,
 }: NavbarProps) {
   const [soundEnabled, setSoundEnabled] = useState(() => audioService.getSoundEnabled())
   const [isDark, setIsDark] = useState(() =>
@@ -102,14 +104,20 @@ export function Navbar({
 
         {/* Right Actions: Streak, Cloud ID, Sound, Reload, Theme */}
         <div className="flex items-center gap-1 shrink-0">
-          {/* Streak indicator */}
-          <div
-            title={`Chuỗi học liên tiếp: ${streak} ngày`}
-            className="flex items-center gap-0.5 px-1.5 py-1 rounded-full bg-amber-500/10 dark:bg-amber-400/10 text-amber-600 dark:text-amber-400 text-xs font-semibold"
+          {/* Streak & Stats Modal Button */}
+          <button
+            type="button"
+            onClick={() => {
+              audioService.playClick()
+              onOpenStats?.()
+            }}
+            aria-label="Mở bảng thống kê và huy hiệu học tập"
+            title={`Chuỗi học liên tiếp: ${streak} ngày — Chạm để xem Thống kê & Huy hiệu`}
+            className="flex items-center gap-0.5 px-2 py-1 rounded-full bg-amber-500/10 hover:bg-amber-500/20 dark:bg-amber-400/10 text-amber-600 dark:text-amber-400 text-xs font-bold transition-colors active:scale-95"
           >
             <Flame className="w-3.5 h-3.5 fill-amber-500 stroke-amber-500" />
             <span>{streak}d</span>
-          </div>
+          </button>
 
           {/* Cloud Sync / Recovery ID Button */}
           {onOpenCloudSync && (
