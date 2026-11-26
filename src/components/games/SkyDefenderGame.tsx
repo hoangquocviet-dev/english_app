@@ -1533,7 +1533,7 @@ export function SkyDefenderGame({
                 type="button"
                 disabled={isPaused || !opt}
                 onClick={() => lockAndFireLane(laneIdx)}
-                className={`py-2 px-2 rounded-2xl border-b-4 font-bold transition-all active:border-b-0 active:translate-y-0.5 flex flex-col items-center justify-center min-h-[50px] ${
+                className={`py-2 px-2 rounded-2xl border-b-4 font-bold transition-all active:border-b-0 active:translate-y-0.5 active:scale-97 flex flex-col items-center justify-center min-h-14 ${
                   !opt
                     ? 'bg-slate-200/50 dark:bg-slate-800/40 border-slate-300 dark:border-slate-800 text-slate-400 opacity-50'
                     : isSelected

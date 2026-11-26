@@ -237,6 +237,8 @@ export function SmartMixView({
     pendingAdvanceRef.current = null
   }, [])
 
+  const swipeStartRef = useRef<{ x: number; y: number } | null>(null)
+
   const flushPendingAdvance = useCallback(() => {
     const fn = pendingAdvanceRef.current
     if (!fn) return
@@ -485,7 +487,22 @@ export function SmartMixView({
   const meta = stageMeta[currentQ.stage]
 
   return (
-    <div className="w-full flex flex-col my-auto max-w-md sm:max-w-lg mx-auto px-3.5 py-2 select-none">
+    <div
+      className="w-full flex flex-col my-auto max-w-md sm:max-w-lg mx-auto px-3.5 py-2 select-none"
+      onTouchStart={(e) => {
+        if (!isLocked) return
+        swipeStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
+      }}
+      onTouchEnd={(e) => {
+        if (!isLocked || !swipeStartRef.current || e.changedTouches.length === 0) return
+        const dx = e.changedTouches[0].clientX - swipeStartRef.current.x
+        const dy = e.changedTouches[0].clientY - swipeStartRef.current.y
+        swipeStartRef.current = null
+        if (dx < -48 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+          flushPendingAdvance()
+        }
+      }}
+    >
       {/* Top Bar */}
       <div className="flex items-center justify-between gap-2 mb-3">
         <button

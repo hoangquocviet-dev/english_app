@@ -223,6 +223,7 @@ export function QuizView({
   )
   const transitionTimerRef = useRef<number | null>(null)
   const pendingAdvanceRef = useRef<(() => void) | null>(null)
+  const swipeStartRef = useRef<{ x: number; y: number } | null>(null)
 
   const clearTransitionTimer = useCallback(() => {
     if (transitionTimerRef.current !== null) {
@@ -462,7 +463,22 @@ export function QuizView({
   const progressPercent = Math.round(((currentIndex + 1) / questions.length) * 100)
 
   return (
-    <div className="w-full flex flex-col my-auto max-w-md sm:max-w-lg mx-auto px-3.5 py-2 select-none">
+    <div
+      className="w-full flex flex-col my-auto max-w-md sm:max-w-lg mx-auto px-3.5 py-2 select-none"
+      onTouchStart={(e) => {
+        if (!isLocked) return
+        swipeStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
+      }}
+      onTouchEnd={(e) => {
+        if (!isLocked || !swipeStartRef.current || e.changedTouches.length === 0) return
+        const dx = e.changedTouches[0].clientX - swipeStartRef.current.x
+        const dy = e.changedTouches[0].clientY - swipeStartRef.current.y
+        swipeStartRef.current = null
+        if (dx < -48 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+          flushPendingAdvance()
+        }
+      }}
+    >
       {/* Top Bar */}
       <div className="flex items-center justify-between gap-2 mb-4">
         <button
@@ -494,7 +510,7 @@ export function QuizView({
           type="button"
           onClick={handleToggleDirection}
           title="Đổi chiều câu hỏi: Anh → Việt hoặc Việt → Anh"
-          className="py-1.5 px-2.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/25 text-indigo-600 dark:text-indigo-400 text-[11px] font-bold flex items-center gap-1 whitespace-nowrap shrink-0 active:scale-95 transition-all"
+          className="min-h-9 px-2.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/25 text-indigo-600 dark:text-indigo-400 text-[11px] font-bold flex items-center gap-1 whitespace-nowrap shrink-0 active:scale-95 transition-all"
         >
           <ArrowLeftRight className="w-3 h-3 shrink-0" />
           <span>{direction === 'en-vi' ? 'Anh → Việt' : 'Việt → Anh'}</span>
@@ -527,7 +543,7 @@ export function QuizView({
                 })
               }}
               title="Đánh dấu sao từ quan trọng"
-              className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+              className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors active:scale-95 ${
                 starredIds.has(currentQ.targetWord.id)
                   ? 'bg-amber-500/15 text-amber-500'
                   : 'bg-slate-100 dark:bg-slate-700/70 text-slate-400 hover:text-amber-500'
@@ -544,14 +560,14 @@ export function QuizView({
                 <QuizAccentButton term={currentQ.targetWord.term} />
                 <button
                   onClick={() => void audioService.speak(currentQ.targetWord.term, 0.6)}
-                  className="h-8 px-2 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+                  className="h-9 px-2.5 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
                   title="Nghe chậm (0.6x)"
                 >
                   0.6x
                 </button>
                 <button
                   onClick={() => void audioService.speak(currentQ.targetWord.term, 0.9)}
-                  className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+                  className="w-9 h-9 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
                   title="Phát âm chuẩn (Space)"
                 >
                   <Volume2 className="w-4 h-4" />
@@ -616,7 +632,7 @@ export function QuizView({
 
           return (
             <button
-              key={idx}
+              key={`${currentIndex}-${idx}`}
               disabled={isLocked}
               onClick={() => handleSelect(idx)}
               className={`w-full py-3.5 px-4 rounded-2xl border text-left text-sm font-medium transition-all flex items-center justify-between shadow-xs active:scale-98 ${buttonStyle}`}

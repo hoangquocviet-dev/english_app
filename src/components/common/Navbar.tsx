@@ -94,7 +94,7 @@ export function Navbar({
             {activeDeck && (
               <button
                 onClick={onOpenDeckSelector}
-                className="text-xs text-indigo-600 dark:text-indigo-400 font-medium truncate text-left mt-0.5 hover:underline focus:outline-none max-w-[108px] sm:max-w-[168px]"
+                className="text-xs text-indigo-600 dark:text-indigo-400 font-medium truncate text-left mt-0.5 hover:underline focus:outline-none max-w-[84px] sm:max-w-[168px]"
               >
                 {activeDeck.name}
               </button>
@@ -102,8 +102,8 @@ export function Navbar({
           </div>
         </div>
 
-        {/* Right Actions: Streak, Cloud ID, Sound, Reload, Theme */}
-        <div className="flex items-center gap-1 shrink-0">
+        {/* Right Actions: Streak, Cloud ID, Sound, Reload, Theme (36px thumb-safe targets) */}
+        <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
           {/* Streak & Stats Modal Button */}
           <button
             type="button"
@@ -113,9 +113,9 @@ export function Navbar({
             }}
             aria-label="Mở bảng thống kê và huy hiệu học tập"
             title={`Chuỗi học liên tiếp: ${streak} ngày — Chạm để xem Thống kê & Huy hiệu`}
-            className="flex items-center gap-0.5 px-2 py-1 rounded-full bg-amber-500/10 hover:bg-amber-500/20 dark:bg-amber-400/10 text-amber-600 dark:text-amber-400 text-xs font-bold transition-colors active:scale-95"
+            className="h-9 flex items-center gap-0.5 px-2.5 rounded-full bg-amber-500/10 hover:bg-amber-500/20 dark:bg-amber-400/10 text-amber-600 dark:text-amber-400 text-xs font-bold transition-colors active:scale-95"
           >
-            <Flame className="w-3.5 h-3.5 fill-amber-500 stroke-amber-500" />
+            <Flame className="w-3.5 h-3.5 fill-amber-500 stroke-amber-500 shrink-0" />
             <span>{streak}d</span>
           </button>
 
@@ -129,7 +129,7 @@ export function Navbar({
               }}
               aria-label="Mã ID & Đồng bộ Cloud"
               title={`Mã ID: ${syncState.syncCode} (Chạm để sao lưu hoặc chuyển máy)`}
-              className="relative h-8 px-2 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-[11px] font-extrabold flex items-center gap-1 transition-colors active:scale-95"
+              className="relative h-9 px-2.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-[11px] font-extrabold flex items-center gap-1 transition-colors active:scale-95"
             >
               <Cloud
                 className={`w-3.5 h-3.5 ${syncState.status === 'syncing' ? 'animate-pulse' : ''}`}
@@ -149,7 +149,7 @@ export function Navbar({
             onClick={toggleSound}
             aria-label="Bật/Tắt âm thanh"
             title={soundEnabled ? 'Đang bật âm thanh (Chạm để tắt)' : 'Đang tắt âm thanh (Chạm để bật)'}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors active:scale-95"
           >
             {soundEnabled ? (
               <Volume2 className="w-4 h-4" />
@@ -163,7 +163,7 @@ export function Navbar({
             onClick={handleReload}
             aria-label="Tải lại trang"
             title="Tải lại trang"
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors active:scale-95"
           >
             <RotateCw className={`w-4 h-4 ${isReloading ? 'animate-spin text-indigo-600' : ''}`} />
           </button>
@@ -173,7 +173,7 @@ export function Navbar({
             onClick={toggleTheme}
             aria-label="Đổi giao diện sáng/tối"
             title="Đổi giao diện Sáng / Tối"
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors active:scale-95"
           >
             {isDark ? (
               <Sun className="w-4 h-4 text-amber-400" />

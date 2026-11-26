@@ -540,7 +540,7 @@ export function PracticeHome({
             </div>
           )}
 
-          {/* Clean Header: Section Label + Accent & Shuffle Toggles */}
+          {/* Clean Header: Section Label + Accent & Shuffle Toggles (36px touch targets) */}
           <div className="flex items-center justify-between gap-2 px-0.5">
             <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
               Chế độ học ({activePoolCount} thẻ)
@@ -554,7 +554,7 @@ export function PracticeHome({
                   setVoiceAccent(next)
                   audioService.playClick()
                 }}
-                className="py-1 px-2 rounded-xl text-xs font-bold border bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-indigo-400 transition-all active:scale-95 whitespace-nowrap"
+                className="min-h-9 px-2.5 rounded-xl text-xs font-bold border bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-indigo-400 transition-all active:scale-95 whitespace-nowrap flex items-center"
                 title={
                   voiceAccent === 'en-US'
                     ? 'Giọng đọc: Anh-Mỹ (en-US) — Chạm để đổi sang Anh-Anh (en-GB)'
@@ -570,7 +570,7 @@ export function PracticeHome({
                   audioService.playClick()
                   onToggleShuffle()
                 }}
-                className={`py-1 px-2.5 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all active:scale-95 ${
+                className={`min-h-9 px-3 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all active:scale-95 ${
                   shuffleEnabled
                     ? 'bg-indigo-500/15 border-indigo-500/40 text-indigo-600 dark:text-indigo-400'
                     : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400'
@@ -593,7 +593,7 @@ export function PracticeHome({
                     audioService.playClick()
                     setFilterMode('all')
                   }}
-                  className={`py-1.5 px-3 rounded-xl text-xs font-semibold border whitespace-nowrap transition-all active:scale-95 ${
+                  className={`min-h-9 px-3 rounded-xl text-xs font-semibold border flex items-center whitespace-nowrap transition-all active:scale-95 ${
                     effectiveFilterMode === 'all'
                       ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-transparent shadow-2xs'
                       : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300'
@@ -611,7 +611,7 @@ export function PracticeHome({
                     setFilterMode((prev) => (prev === 'starred' ? 'all' : 'starred'))
                   }}
                   title="Luyện tập riêng các từ bạn đã đánh dấu sao quan trọng"
-                  className={`py-1.5 px-3 rounded-xl text-xs font-semibold border flex items-center gap-1.5 whitespace-nowrap transition-all active:scale-95 ${
+                  className={`min-h-9 px-3 rounded-xl text-xs font-semibold border flex items-center gap-1.5 whitespace-nowrap transition-all active:scale-95 ${
                     effectiveFilterMode === 'starred'
                       ? 'bg-amber-500 text-white border-amber-500 shadow-2xs'
                       : 'bg-white dark:bg-slate-800 border-amber-500/35 text-amber-600 dark:text-amber-400'
@@ -630,7 +630,7 @@ export function PracticeHome({
                     setFilterMode((prev) => (prev === 'due' ? 'all' : 'due'))
                   }}
                   title="Ôn tập ngắt quãng (SRS): các thẻ đã thuộc đến chu kỳ cần nhắc lại"
-                  className={`py-1.5 px-3 rounded-xl text-xs font-semibold border flex items-center gap-1.5 whitespace-nowrap transition-all active:scale-95 ${
+                  className={`min-h-9 px-3 rounded-xl text-xs font-semibold border flex items-center gap-1.5 whitespace-nowrap transition-all active:scale-95 ${
                     effectiveFilterMode === 'due'
                       ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
                       : 'bg-white dark:bg-slate-800 border-indigo-500/35 text-indigo-600 dark:text-indigo-400'
@@ -649,7 +649,7 @@ export function PracticeHome({
                     setFilterMode((prev) => (prev === 'global-due' ? 'all' : 'global-due'))
                   }}
                   title="Ôn gộp toàn bộ thẻ SRS đến hạn trên tất cả các bộ từ"
-                  className={`py-1.5 px-3 rounded-xl text-xs font-semibold border flex items-center gap-1.5 whitespace-nowrap transition-all active:scale-95 ${
+                  className={`min-h-9 px-3 rounded-xl text-xs font-semibold border flex items-center gap-1.5 whitespace-nowrap transition-all active:scale-95 ${
                     effectiveFilterMode === 'global-due'
                       ? 'bg-violet-600 text-white border-violet-600 shadow-2xs'
                       : 'bg-white dark:bg-slate-800 border-violet-500/35 text-violet-600 dark:text-violet-400'
@@ -668,7 +668,7 @@ export function PracticeHome({
                     setFilterMode((prev) => (prev === 'learning' ? 'all' : 'learning'))
                   }}
                   title="Chỉ lọc riêng những từ bạn từng trả lời sai hoặc đánh dấu Chưa nhớ"
-                  className={`py-1.5 px-3 rounded-xl text-xs font-semibold border flex items-center gap-1.5 whitespace-nowrap transition-all active:scale-95 ${
+                  className={`min-h-9 px-3 rounded-xl text-xs font-semibold border flex items-center gap-1.5 whitespace-nowrap transition-all active:scale-95 ${
                     effectiveFilterMode === 'learning'
                       ? 'bg-amber-500 text-white border-amber-500 shadow-2xs'
                       : 'bg-white dark:bg-slate-800 border-amber-500/35 text-amber-600 dark:text-amber-400'
@@ -687,7 +687,7 @@ export function PracticeHome({
                     setFilterMode((prev) => (prev === 'global-learning' ? 'all' : 'global-learning'))
                   }}
                   title="Ôn gộp toàn bộ từ khó đang học trên tất cả các bộ từ, ưu tiên từ sai nhiều nhất"
-                  className={`py-1.5 px-3 rounded-xl text-xs font-semibold border flex items-center gap-1.5 whitespace-nowrap transition-all active:scale-95 ${
+                  className={`min-h-9 px-3 rounded-xl text-xs font-semibold border flex items-center gap-1.5 whitespace-nowrap transition-all active:scale-95 ${
                     effectiveFilterMode === 'global-learning'
                       ? 'bg-rose-600 text-white border-rose-600 shadow-2xs'
                       : 'bg-white dark:bg-slate-800 border-rose-500/35 text-rose-600 dark:text-rose-400'
@@ -719,7 +719,7 @@ export function PracticeHome({
                       audioService.playClick()
                       onChangeBatchSize(opt.value)
                     }}
-                    className={`px-2.5 py-1 rounded-lg whitespace-nowrap transition-colors ${
+                    className={`min-h-8 px-2.5 rounded-lg whitespace-nowrap flex items-center transition-colors ${
                       batchSize === opt.value
                         ? 'bg-indigo-600 text-white shadow-2xs'
                         : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
@@ -881,19 +881,20 @@ export function PracticeHome({
         </p>
       </div>
 
-      {/* Reset Confirmation Modal */}
+      {/* Reset Confirmation Modal (Mobile Bottom-Sheet) */}
       {showResetConfirm && (
         <div
           role="dialog"
           aria-modal="true"
           data-no-pull="true"
           onClick={() => setShowResetConfirm(false)}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-xs bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-5 space-y-4 text-center"
+            className="w-full sm:max-w-xs bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] space-y-4 text-center"
           >
+            <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto -mt-1 mb-1 sm:hidden" />
             <div className="w-12 h-12 rounded-2xl bg-amber-500/15 text-amber-500 flex items-center justify-center mx-auto">
               <RotateCcw className="w-6 h-6" />
             </div>
@@ -907,14 +908,14 @@ export function PracticeHome({
               <button
                 type="button"
                 onClick={() => setShowResetConfirm(false)}
-                className="py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs"
+                className="min-h-11 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs active:scale-98 transition-transform"
               >
                 Hủy
               </button>
               <button
                 type="button"
                 onClick={handleConfirmReset}
-                className="py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs"
+                className="min-h-11 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs active:scale-98 transition-transform"
               >
                 Đồng ý Reset
               </button>

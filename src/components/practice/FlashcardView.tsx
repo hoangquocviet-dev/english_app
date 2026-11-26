@@ -477,27 +477,37 @@ export function FlashcardView({
     }
   }
 
-  // Touch & Mouse Drag Handlers
+  // Touch & Mouse Drag Handlers (dragOffsetRef prevents sub-16ms fast flick drops before React re-renders)
+  const dragOffsetRef = useRef({ x: 0, y: 0 })
+
   const startDrag = (clientX: number, clientY: number, isTouch: boolean) => {
-    if (isTouch && clientX < 24) return
+    if (
+      isTouch &&
+      (clientX < 24 || (typeof window !== 'undefined' && clientX > window.innerWidth - 24))
+    ) {
+      return
+    }
     touchStartRef.current = { x: clientX, y: clientY }
+    dragOffsetRef.current = { x: 0, y: 0 }
     setIsDragging(true)
   }
 
   const moveDrag = (clientX: number, clientY: number) => {
     if (!touchStartRef.current) return
-    setDragOffset({
+    const next = {
       x: clientX - touchStartRef.current.x,
       y: clientY - touchStartRef.current.y,
-    })
+    }
+    dragOffsetRef.current = next
+    setDragOffset(next)
   }
 
   const endDrag = () => {
     if (!touchStartRef.current) return
-    const { x, y } = dragOffset
+    const { x, y } = dragOffsetRef.current
     const absX = Math.abs(x)
     const absY = Math.abs(y)
-    const threshold = 70
+    const threshold = 56
 
     if (absX > 12 || absY > 12) {
       ignoreClickUntilRef.current = performance.now() + 360
@@ -512,6 +522,7 @@ export function FlashcardView({
       handleAction('review')
     }
 
+    dragOffsetRef.current = { x: 0, y: 0 }
     setDragOffset({ x: 0, y: 0 })
     setIsDragging(false)
     touchStartRef.current = null
@@ -622,7 +633,7 @@ export function FlashcardView({
                 ? 'Tạm dừng tự chạy (Phím A)'
                 : 'Tự chạy rảnh tay: Tự đọc & lật thẻ liên tục (Phím A)'
             }
-            className={`py-1 px-2 rounded-xl text-[11px] font-bold flex items-center gap-1 transition-colors ${
+            className={`h-9 px-2.5 rounded-xl text-[11px] font-bold flex items-center gap-1 transition-colors active:scale-95 ${
               isAutoPlaying
                 ? 'bg-indigo-600 text-white shadow-xs'
                 : 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20'
@@ -645,7 +656,7 @@ export function FlashcardView({
             type="button"
             onClick={(e) => handleToggleStar(e)}
             title={isCurrentStarred ? 'Bỏ đánh dấu sao (Phím S)' : 'Đánh dấu sao từ quan trọng (Phím S)'}
-            className={`p-2 rounded-lg transition-colors ${
+            className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors active:scale-95 ${
               isCurrentStarred
                 ? 'text-amber-500'
                 : 'text-slate-400 hover:text-amber-500'
@@ -658,7 +669,7 @@ export function FlashcardView({
             onClick={handleUndo}
             disabled={history.length === 0}
             title="Hoàn tác thẻ trước (Ctrl+Z)"
-            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 disabled:opacity-30 transition-colors"
+            className="w-8.5 h-9 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 disabled:opacity-30 transition-colors active:scale-95"
           >
             <Undo2 className="w-4 h-4" />
           </button>
@@ -669,7 +680,7 @@ export function FlashcardView({
               handleFlip()
             }}
             title="Lật thẻ (Space)"
-            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+            className="w-8.5 h-9 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors active:scale-95"
           >
             <RotateCw className="w-4.5 h-4.5" />
           </button>
@@ -679,7 +690,10 @@ export function FlashcardView({
       {/* 3D Flashcard Container */}
       <div
         className="flex-1 flex items-center justify-center perspective-1000 my-auto py-3 relative"
-        onTouchStart={(e) => startDrag(e.touches[0].clientX, e.touches[0].clientY, true)}
+        onTouchStart={(e) => {
+          if ((e.target as HTMLElement | null)?.closest('button')) return
+          startDrag(e.touches[0].clientX, e.touches[0].clientY, true)
+        }}
         onTouchMove={(e) => moveDrag(e.touches[0].clientX, e.touches[0].clientY)}
         onTouchEnd={endDrag}
         onMouseDown={(e) => {

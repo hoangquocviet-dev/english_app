@@ -498,7 +498,7 @@ export function App() {
             className={`w-full flex-1 flex flex-col ${
               isFullScreenSession
                 ? 'pb-[max(0.625rem,env(safe-area-inset-bottom,0px))]'
-                : 'pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))]'
+                : 'pb-[calc(4.75rem+env(safe-area-inset-bottom,0px))]'
             }`}
           >
             <Suspense fallback={<ViewLoader />}>

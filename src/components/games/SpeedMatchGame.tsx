@@ -685,7 +685,7 @@ export function SpeedMatchGame({
             disabled={hintsLeft <= 0 || isPaused}
             onClick={triggerHint}
             title="Radar Gợi ý 1 cặp đúng (Phím H)"
-            className={`px-2.5 py-1 rounded-xl text-xs font-extrabold flex items-center gap-1 transition-all active:scale-95 ${
+            className={`h-9 px-3 rounded-xl text-xs font-extrabold flex items-center gap-1 transition-all active:scale-95 ${
               hintsLeft > 0
                 ? 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-amber-400 border border-amber-500/30'
                 : 'bg-slate-200/50 dark:bg-slate-800/50 text-slate-400 opacity-50'

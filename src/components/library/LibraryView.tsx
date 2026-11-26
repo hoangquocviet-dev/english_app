@@ -1171,20 +1171,21 @@ export function LibraryView({
         )}
       </div>
 
-      {/* Edit Word Modal */}
+      {/* Edit Word Modal (Mobile Bottom-Sheet & Keyboard-Safe Scroll) */}
       {editingWord && (
         <div
           role="dialog"
           aria-modal="true"
           data-no-pull="true"
           onClick={() => setEditingWord(null)}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn"
         >
           <form
             onClick={(e) => e.stopPropagation()}
             onSubmit={handleSaveEdit}
-            className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-5 space-y-3.5"
+            className="w-full sm:max-w-sm max-h-[90dvh] overflow-y-auto bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] space-y-3.5"
           >
+            <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto -mt-1 mb-1 sm:hidden" />
             <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
               <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
                 Chỉnh sửa thẻ từ vựng
@@ -1192,7 +1193,8 @@ export function LibraryView({
               <button
                 type="button"
                 onClick={() => setEditingWord(null)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600"
+                aria-label="Đóng chỉnh sửa"
+                className="w-9 h-9 -mr-1.5 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1205,12 +1207,13 @@ export function LibraryView({
               <input
                 type="text"
                 required
+                enterKeyHint="next"
                 value={editTerm}
                 onChange={(e) => {
                   setEditTerm(e.target.value)
                   if (editError) setEditError('')
                 }}
-                className="w-full py-2 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full py-2.5 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
               {editDuplicateWord && (
                 <p className="mt-1.5 text-[11px] font-semibold text-amber-600 dark:text-amber-400">
@@ -1226,9 +1229,10 @@ export function LibraryView({
                 </label>
                 <input
                   type="text"
+                  enterKeyHint="next"
                   value={editIpa}
                   onChange={(e) => setEditIpa(e.target.value)}
-                  className="w-full py-2 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-sans text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full py-2.5 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-sans text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
               <div>
@@ -1236,7 +1240,7 @@ export function LibraryView({
                 <select
                   value={editPos}
                   onChange={(e) => setEditPos(e.target.value)}
-                  className="w-full py-2 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-900 dark:text-slate-100 focus:outline-none"
+                  className="w-full py-2.5 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-900 dark:text-slate-100 focus:outline-none"
                 >
                   <option value="verb">verb</option>
                   <option value="noun">noun</option>
@@ -1254,9 +1258,10 @@ export function LibraryView({
               <input
                 type="text"
                 required
+                enterKeyHint="done"
                 value={editDef}
                 onChange={(e) => setEditDef(e.target.value)}
-                className="w-full py-2 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full py-2.5 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
 
@@ -1280,14 +1285,14 @@ export function LibraryView({
               <button
                 type="button"
                 onClick={() => setEditingWord(null)}
-                className="py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold text-xs"
+                className="min-h-11 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold text-xs active:scale-98 transition-transform"
               >
                 Hủy
               </button>
               <button
                 type="submit"
                 disabled={Boolean(editDuplicateWord)}
-                className="py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold text-xs flex items-center justify-center gap-1.5"
+                className="min-h-11 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold text-xs flex items-center justify-center gap-1.5 active:scale-98 transition-all"
               >
                 <Check className="w-4 h-4" />
                 <span>Lưu thay đổi</span>
@@ -1297,19 +1302,20 @@ export function LibraryView({
         </div>
       )}
 
-      {/* Custom Confirmation Modal */}
+      {/* Custom Confirmation Modal (Mobile Bottom-Sheet) */}
       {confirmAction && (
         <div
           role="dialog"
           aria-modal="true"
           data-no-pull="true"
           onClick={() => setConfirmAction(null)}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-xs bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-5 space-y-4 text-center"
+            className="w-full sm:max-w-xs bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] space-y-4 text-center"
           >
+            <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto -mt-1 mb-1 sm:hidden" />
             <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
               {confirmAction.title}
             </h3>
@@ -1319,13 +1325,13 @@ export function LibraryView({
             <div className="grid grid-cols-2 gap-2.5 pt-1">
               <button
                 onClick={() => setConfirmAction(null)}
-                className="py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs"
+                className="min-h-11 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs active:scale-98 transition-transform"
               >
                 Hủy bỏ
               </button>
               <button
                 onClick={confirmAction.onConfirm}
-                className={`py-2.5 rounded-xl text-white font-semibold text-xs ${
+                className={`min-h-11 py-2.5 rounded-xl text-white font-semibold text-xs active:scale-98 transition-all ${
                   confirmAction.isDanger
                     ? 'bg-rose-600 hover:bg-rose-500'
                     : 'bg-indigo-600 hover:bg-indigo-500'

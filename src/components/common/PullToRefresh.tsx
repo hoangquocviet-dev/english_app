@@ -21,9 +21,12 @@ export function PullToRefresh({ children }: PullToRefreshProps) {
   const MAX_PULL = 110
 
   useEffect(() => {
+    const getPageScrollTop = () =>
+      window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0
+
     const handleTouchStart = (e: TouchEvent) => {
       // Only initiate pull when user is scrolled to the very top
-      if (window.scrollY > 5 || isRefreshing) {
+      if (getPageScrollTop() > 5 || isRefreshing) {
         canPullRef.current = false
         return
       }
@@ -57,7 +60,7 @@ export function PullToRefresh({ children }: PullToRefreshProps) {
     const handleTouchMove = (e: TouchEvent) => {
       if (!canPullRef.current || isRefreshing) return
 
-      if (window.scrollY > 0) {
+      if (getPageScrollTop() > 0) {
         canPullRef.current = false
         setIsDragging(false)
         setPullDistance(0)

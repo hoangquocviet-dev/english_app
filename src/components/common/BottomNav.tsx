@@ -36,12 +36,20 @@ export function BottomNav({ currentTab, dueCount = 0, onTabChange }: BottomNavPr
     if (tab !== currentTab) {
       audioService.playClick()
       onTabChange(tab)
+    } else if (typeof window !== 'undefined') {
+      const top =
+        window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0
+      if (top > 0) {
+        audioService.playClick()
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+        document.body.scrollTo?.({ top: 0, behavior: 'smooth' })
+      }
     }
   }
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200 dark:border-slate-800 pb-[env(safe-area-inset-bottom,0px)]">
-      <div className="w-full max-w-md sm:max-w-xl mx-auto grid grid-cols-4 h-14">
+      <div className="w-full max-w-md sm:max-w-xl mx-auto grid grid-cols-4 h-15">
         {tabs.map((tab) => {
           const Icon = tab.icon
           const isActive = currentTab === tab.id
@@ -49,7 +57,7 @@ export function BottomNav({ currentTab, dueCount = 0, onTabChange }: BottomNavPr
             <button
               key={tab.id}
               onClick={() => handleSelect(tab.id)}
-              className={`flex flex-col items-center justify-center gap-1 transition-colors relative focus:outline-none ${
+              className={`flex flex-col items-center justify-center gap-1 transition-all active:scale-95 relative focus:outline-none ${
                 isActive
                   ? 'text-indigo-600 dark:text-indigo-400 font-semibold'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'

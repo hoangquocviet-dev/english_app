@@ -477,24 +477,31 @@ export function BlitzGame({ words, deckName, onStudyMissedWords, onBack }: Blitz
     applyBarVisual(100)
   }
 
+  const dragXRef = useRef(0)
+
   const onPointerDown = (clientX: number, clientY: number) => {
     if (lockedRef.current || isPaused || isGameOver) return
     swipeStartRef.current = { x: clientX, y: clientY }
+    dragXRef.current = 0
     setIsDragging(true)
   }
 
   const onPointerMove = (clientX: number) => {
     if (!swipeStartRef.current || lockedRef.current) return
-    setDragX(clientX - swipeStartRef.current.x)
+    const nextX = clientX - swipeStartRef.current.x
+    dragXRef.current = nextX
+    setDragX(nextX)
   }
 
   const onPointerEnd = () => {
     if (!swipeStartRef.current) return
+    const dx = dragXRef.current
     swipeStartRef.current = null
+    dragXRef.current = 0
     setIsDragging(false)
-    if (dragX <= -65) {
+    if (dx <= -52) {
       handleAnswer(false)
-    } else if (dragX >= 65) {
+    } else if (dx >= 52) {
       handleAnswer(true)
     } else {
       setDragX(0)
@@ -599,10 +606,16 @@ export function BlitzGame({ words, deckName, onStudyMissedWords, onBack }: Blitz
 
           {/* Balanced Cyber Reflex Card (Swipeable Left/Right + Compact Proportions on Desktop!) */}
           <div
-            onTouchStart={(e) => onPointerDown(e.touches[0].clientX, e.touches[0].clientY)}
+            onTouchStart={(e) => {
+              if ((e.target as HTMLElement | null)?.closest('button')) return
+              onPointerDown(e.touches[0].clientX, e.touches[0].clientY)
+            }}
             onTouchMove={(e) => onPointerMove(e.touches[0].clientX)}
             onTouchEnd={onPointerEnd}
-            onMouseDown={(e) => onPointerDown(e.clientX, e.clientY)}
+            onMouseDown={(e) => {
+              if ((e.target as HTMLElement | null)?.closest('button')) return
+              onPointerDown(e.clientX, e.clientY)
+            }}
             onMouseMove={(e) => {
               if (e.buttons === 1) onPointerMove(e.clientX)
             }}

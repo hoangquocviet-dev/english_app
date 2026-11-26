@@ -636,7 +636,7 @@ export function ListeningView({
 
             return (
               <button
-                key={option.id + '-' + idx}
+                key={`${currentIndex}-${option.id}-${idx}`}
                 disabled={isLocked}
                 onClick={() => handleSelect(idx)}
                 className={`w-full py-3 px-3.5 rounded-2xl border text-left transition-all flex items-center justify-between shadow-xs active:scale-98 ${buttonStyle}`}
