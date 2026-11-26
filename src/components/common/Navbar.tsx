@@ -71,7 +71,7 @@ export function Navbar({
   }
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur border-b border-slate-200 dark:border-slate-800 transition-colors">
+    <header className="sticky top-0 z-40 w-full pt-[env(safe-area-inset-top,0px)] bg-white/95 dark:bg-slate-900/95 backdrop-blur border-b border-slate-200 dark:border-slate-800 transition-colors">
       <div className="w-full max-w-md sm:max-w-xl mx-auto px-3.5 h-14 flex items-center justify-between">
         {/* Brand & Active Deck */}
         <div className="flex items-center gap-2 overflow-hidden mr-1.5 min-w-0">

@@ -733,6 +733,23 @@ export function SmartMixView({
           )
         })}
       </div>
+
+      {/* Zero-Shift Touch Fast-Forward Slot */}
+      <div className="h-9 mt-2.5 flex items-center justify-center">
+        {isLocked ? (
+          <button
+            type="button"
+            onClick={flushPendingAdvance}
+            className="w-full h-9 rounded-xl bg-indigo-600/12 hover:bg-indigo-600/20 text-indigo-600 dark:text-indigo-300 border border-indigo-500/25 text-xs font-extrabold flex items-center justify-center gap-1.5 active:scale-98 transition-all animate-fadeIn"
+          >
+            <span>Chạm để sang câu tiếp →</span>
+          </button>
+        ) : (
+          <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+            Chạm đáp án để trả lời • Chạm loa hoặc câu để nghe phát âm
+          </span>
+        )}
+      </div>
     </div>
   )
 }

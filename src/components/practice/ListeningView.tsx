@@ -670,12 +670,29 @@ export function ListeningView({
               </button>
             )
           })}
+
+          {/* Zero-Shift Touch Fast-Forward Slot */}
+          <div className="h-9 pt-1 flex items-center justify-center">
+            {isLocked ? (
+              <button
+                type="button"
+                onClick={flushPendingAdvance}
+                className="w-full h-9 rounded-xl bg-violet-600/12 hover:bg-violet-600/20 text-violet-600 dark:text-violet-300 border border-violet-500/25 text-xs font-extrabold flex items-center justify-center gap-1.5 active:scale-98 transition-all animate-fadeIn"
+              >
+                <span>Chạm để sang câu tiếp →</span>
+              </button>
+            ) : (
+              <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+                Chạm tai nghe để nghe lại • Dùng Chậm 0.6x để nghe rõ âm cuối
+              </span>
+            )}
+          </div>
         </div>
       ) : (
         /* Active Dictation (Type What You Hear) Panel */
         <form
           onSubmit={handleDictationSubmit}
-          className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3"
+          className="bg-white dark:bg-slate-800 rounded-2xl p-3.5 sm:p-4 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3"
         >
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
@@ -689,9 +706,9 @@ export function ListeningView({
                   audioService.playClick()
                   setShowDictationHint((prev) => !prev)
                 }}
-                className="py-1 px-2.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[11px] font-bold flex items-center gap-1 transition-colors"
+                className="py-1.5 px-2.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[11px] font-bold flex items-center gap-1 transition-colors"
               >
-                <Lightbulb className="w-3 h-3" />
+                <Lightbulb className="w-3.5 h-3.5" />
                 <span>{showDictationHint ? 'Ẩn gợi ý' : 'Gợi ý'}</span>
               </button>
 
@@ -699,10 +716,10 @@ export function ListeningView({
                 type="button"
                 disabled={isLocked}
                 onClick={handleRevealDictationAnswer}
-                className="py-1 px-2 rounded-lg bg-slate-100 dark:bg-slate-700/70 hover:bg-slate-200 text-slate-500 dark:text-slate-300 text-[11px] font-semibold flex items-center gap-1 transition-colors"
+                className="py-1.5 px-2.5 rounded-lg bg-slate-100 dark:bg-slate-700/70 hover:bg-slate-200 text-slate-500 dark:text-slate-300 text-[11px] font-semibold flex items-center gap-1 transition-colors"
                 title="Xem đáp án và ôn lại từ này ở cuối lượt"
               >
-                <HelpCircle className="w-3 h-3" />
+                <HelpCircle className="w-3.5 h-3.5" />
                 <span>Đáp án</span>
               </button>
             </div>
@@ -723,6 +740,7 @@ export function ListeningView({
             ref={inputRef}
             type="text"
             disabled={isLocked}
+            enterKeyHint="done"
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}
@@ -762,14 +780,24 @@ export function ListeningView({
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={isLocked || !typedInput.trim()}
-            className="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-xs active:scale-98 transition-all"
-          >
-            <Check className="w-4 h-4" />
-            <span>Kiểm tra chính tả (Enter)</span>
-          </button>
+          {isLocked ? (
+            <button
+              type="button"
+              onClick={flushPendingAdvance}
+              className="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-xs active:scale-98 transition-all"
+            >
+              <span>Chạm để sang câu tiếp →</span>
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={!typedInput.trim()}
+              className="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-xs active:scale-98 transition-all"
+            >
+              <Check className="w-4 h-4" />
+              <span>Kiểm tra chính tả</span>
+            </button>
+          )}
         </form>
       )}
     </div>

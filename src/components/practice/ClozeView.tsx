@@ -728,22 +728,32 @@ export function ClozeView({
                     idx !== currentQ.correctOptionIndex && (
                       <X className="w-4 h-4 text-rose-500 shrink-0" />
                     )}
-                </button>
-              )
-            })}
-          </div>
+            </button>
+          )
+        })}
+      </div>
 
-          <div className="mt-3 text-center">
-            <span className="text-[11px] text-slate-400 font-medium">
-              Mẹo: Chạm hoặc nhấn phím 1, 2, 3, 4 để chọn đáp án
-            </span>
+          <div className="h-9 mt-2.5 flex items-center justify-center">
+            {isAnswered ? (
+              <button
+                type="button"
+                onClick={flushPendingAdvance}
+                className="w-full h-9 rounded-xl bg-indigo-600/12 hover:bg-indigo-600/20 text-indigo-600 dark:text-indigo-300 border border-indigo-500/25 text-xs font-extrabold flex items-center justify-center gap-1.5 active:scale-98 transition-all animate-fadeIn"
+              >
+                <span>Chạm để sang câu tiếp →</span>
+              </button>
+            ) : (
+              <span className="text-[11px] text-slate-400 font-medium">
+                Chạm đáp án để chọn • Chạm loa để nghe ngữ cảnh câu
+              </span>
+            )}
           </div>
         </>
       ) : (
         /* Active Cloze Typing Form */
         <form
           onSubmit={handleTypingSubmit}
-          className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3"
+          className="bg-white dark:bg-slate-800 rounded-2xl p-3.5 sm:p-4 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3"
         >
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
@@ -757,9 +767,9 @@ export function ClozeView({
                   audioService.playClick()
                   setShowHint((prev) => !prev)
                 }}
-                className="py-1 px-2.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[11px] font-bold flex items-center gap-1 transition-colors"
+                className="py-1.5 px-2.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[11px] font-bold flex items-center gap-1 transition-colors"
               >
-                <Sparkles className="w-3 h-3" />
+                <Sparkles className="w-3.5 h-3.5" />
                 <span>{showHint ? 'Ẩn chữ cái' : 'Gợi ý chữ'}</span>
               </button>
 
@@ -767,10 +777,10 @@ export function ClozeView({
                 type="button"
                 disabled={isLocked}
                 onClick={handleRevealTypingAnswer}
-                className="py-1 px-2 rounded-lg bg-slate-100 dark:bg-slate-700/70 hover:bg-slate-200 text-slate-500 dark:text-slate-300 text-[11px] font-semibold flex items-center gap-1 transition-colors"
+                className="py-1.5 px-2.5 rounded-lg bg-slate-100 dark:bg-slate-700/70 hover:bg-slate-200 text-slate-500 dark:text-slate-300 text-[11px] font-semibold flex items-center gap-1 transition-colors"
                 title="Xem đáp án và ôn lại câu này ở cuối lượt"
               >
-                <HelpCircle className="w-3 h-3" />
+                <HelpCircle className="w-3.5 h-3.5" />
                 <span>Đáp án</span>
               </button>
             </div>
@@ -780,6 +790,7 @@ export function ClozeView({
             ref={inputRef}
             type="text"
             disabled={isLocked}
+            enterKeyHint="done"
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}
@@ -820,14 +831,24 @@ export function ClozeView({
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={isLocked || !typedInput.trim()}
-            className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-xs active:scale-98 transition-all"
-          >
-            <Check className="w-4 h-4" />
-            <span>Kiểm tra đáp án (Enter)</span>
-          </button>
+          {isLocked ? (
+            <button
+              type="button"
+              onClick={flushPendingAdvance}
+              className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-xs active:scale-98 transition-all"
+            >
+              <span>Chạm để sang câu tiếp →</span>
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={!typedInput.trim()}
+              className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-xs active:scale-98 transition-all"
+            >
+              <Check className="w-4 h-4" />
+              <span>Kiểm tra đáp án</span>
+            </button>
+          )}
         </form>
       )}
     </div>

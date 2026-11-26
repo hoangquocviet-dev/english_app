@@ -915,21 +915,34 @@ export function FlashcardView({
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="grid grid-cols-2 gap-2.5 sm:gap-3 pt-3 pb-2">
+      {/* Thumb-Friendly Bottom Action Bar (1-Handed Swipe + Center Undo) */}
+      <div className="flex items-center gap-2 sm:gap-2.5 pt-3 pb-1">
         <button
+          type="button"
           onClick={() => handleAction('review')}
-          className="py-3 px-3 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-bold text-xs sm:text-sm whitespace-nowrap flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+          className="flex-1 min-h-12 py-3 px-3 rounded-2xl bg-amber-500/12 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/25 font-bold text-xs sm:text-sm whitespace-nowrap flex items-center justify-center gap-1.5 active:scale-95 transition-all"
         >
-          <X className="w-4 h-4 shrink-0" />
+          <X className="w-4.5 h-4.5 shrink-0" />
           <span>Chưa nhớ</span>
         </button>
 
         <button
-          onClick={() => handleAction('mastered')}
-          className="py-3 px-3 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold text-xs sm:text-sm whitespace-nowrap flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+          type="button"
+          onClick={handleUndo}
+          disabled={history.length === 0}
+          aria-label="Hoàn tác thẻ trước"
+          title="Hoàn tác thẻ vừa vuốt"
+          className="min-h-12 w-12 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 text-slate-600 dark:text-slate-300 disabled:opacity-30 flex items-center justify-center shrink-0 shadow-2xs active:scale-92 transition-all"
         >
-          <Check className="w-4 h-4 shrink-0" />
+          <Undo2 className="w-4.5 h-4.5" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleAction('mastered')}
+          className="flex-1 min-h-12 py-3 px-3 rounded-2xl bg-emerald-500/12 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 font-bold text-xs sm:text-sm whitespace-nowrap flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+        >
+          <Check className="w-4.5 h-4.5 shrink-0" />
           <span>Đã thuộc</span>
         </button>
       </div>

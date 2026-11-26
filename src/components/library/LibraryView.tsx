@@ -817,6 +817,7 @@ export function LibraryView({
           <div className="relative flex-1">
             <input
               type="text"
+              enterKeyHint="search"
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value)
@@ -824,8 +825,8 @@ export function LibraryView({
               }}
               placeholder={
                 searchAllDecks
-                  ? `Tìm trên toàn bộ ${allWords.length.toLocaleString()} từ...`
-                  : `Tìm kiếm trong "${activeDeck.name}"...`
+                  ? `Tìm trong ${allWords.length.toLocaleString()} từ...`
+                  : 'Tìm từ, nghĩa, ví dụ...'
               }
               className="w-full py-2.5 pl-9 pr-8 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-2xs"
             />
@@ -878,6 +879,22 @@ export function LibraryView({
             >
               Tất cả ({sourceWords.length})
             </button>
+            {learningTotal > 0 && (
+              <button
+                onClick={() => {
+                  setStatusFilter((prev) => (prev === 'learning' ? 'all' : 'learning'))
+                  setVisibleLimit(PAGE_SIZE)
+                }}
+                title="Chỉ lọc riêng các từ bạn từng trả lời sai hoặc đánh dấu Chưa nhớ"
+                className={`py-1.5 px-2.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all ${
+                  statusFilter === 'learning'
+                    ? 'bg-rose-600 text-white'
+                    : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                }`}
+              >
+                Hay nhầm ({learningTotal})
+              </button>
+            )}
             <button
               onClick={() => {
                 setStatusFilter('mastered')
@@ -904,22 +921,6 @@ export function LibraryView({
             >
               Cần ôn ({sourceWords.length - masteredTotal})
             </button>
-            {learningTotal > 0 && (
-              <button
-                onClick={() => {
-                  setStatusFilter((prev) => (prev === 'learning' ? 'all' : 'learning'))
-                  setVisibleLimit(PAGE_SIZE)
-                }}
-                title="Chỉ lọc riêng các từ bạn từng trả lời sai hoặc đánh dấu Chưa nhớ"
-                className={`py-1.5 px-2.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all ${
-                  statusFilter === 'learning'
-                    ? 'bg-rose-600 text-white'
-                    : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
-                }`}
-              >
-                Hay nhầm ({learningTotal})
-              </button>
-            )}
             {dueTotal > 0 && (
               <button
                 onClick={() => {
@@ -1054,19 +1055,26 @@ export function LibraryView({
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center flex-wrap gap-1.5 mb-1">
-                      <span className="font-bold text-slate-900 dark:text-slate-100 text-sm">
-                        {word.term}
-                      </span>
-                      {word.ipa && (
-                        <span className="text-xs font-sans font-medium tracking-wide text-slate-400">
-                          {word.ipa}
+                      <button
+                        type="button"
+                        onClick={() => void audioService.speak(word.term)}
+                        title="Chạm để nghe phát âm"
+                        className="inline-flex items-baseline gap-1.5 text-left active:opacity-75 transition-opacity"
+                      >
+                        <span className="font-bold text-slate-900 dark:text-slate-100 text-sm">
+                          {word.term}
                         </span>
-                      )}
+                        {word.ipa && (
+                          <span className="text-xs font-sans font-medium tracking-wide text-slate-400">
+                            {word.ipa}
+                          </span>
+                        )}
+                      </button>
                       <button
                         type="button"
                         onClick={() => handleToggleWordStatus(word)}
                         title="Chạm để đổi trạng thái Đã thuộc / Cần ôn"
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition-colors ${
+                        className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full active:scale-95 transition-all ${
                           isMastered
                             ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
                             : word.status === 'learning'
@@ -1108,36 +1116,40 @@ export function LibraryView({
                     )}
                   </div>
 
-                  <div className="flex items-center gap-0.5 shrink-0">
+                  {/* Thumb-Safe 2x2 Touch Grid on Mobile (36x36px targets prevent fat-fingering Delete!) */}
+                  <div className="grid grid-cols-2 sm:flex items-center gap-1 shrink-0">
                     <button
                       type="button"
                       onClick={() => handleToggleWordStar(word)}
-                      className={`p-1.5 rounded-lg transition-colors ${
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center active:scale-92 transition-all ${
                         word.starred
-                          ? 'text-amber-500'
-                          : 'text-slate-300 dark:text-slate-600 hover:text-amber-500'
+                          ? 'text-amber-500 bg-amber-500/10'
+                          : 'text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-900/50 sm:bg-transparent hover:text-amber-500'
                       }`}
                       title={word.starred ? 'Bỏ đánh dấu sao' : 'Đánh dấu sao từ quan trọng'}
                     >
                       <Star className={`w-4 h-4 ${word.starred ? 'fill-amber-400' : ''}`} />
                     </button>
                     <button
-                      onClick={() => audioService.speak(word.term)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                      type="button"
+                      onClick={() => void audioService.speak(word.term)}
+                      className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50 sm:bg-transparent hover:text-indigo-600 dark:hover:text-indigo-400 active:scale-92 transition-all"
                       title="Nghe phát âm"
                     >
                       <Volume2 className="w-4 h-4" />
                     </button>
                     <button
+                      type="button"
                       onClick={() => openEditModal(word)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-sky-500 transition-colors"
+                      className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 bg-slate-50 dark:bg-slate-900/50 sm:bg-transparent hover:text-sky-500 active:scale-92 transition-all"
                       title="Sửa thẻ từ"
                     >
                       <Pencil className="w-3.5 h-3.5" />
                     </button>
                     <button
+                      type="button"
                       onClick={() => handleDeleteWord(word)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 transition-colors"
+                      className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 bg-slate-50 dark:bg-slate-900/50 sm:bg-transparent hover:text-rose-500 active:scale-92 transition-all"
                       title="Xóa từ"
                     >
                       <Trash2 className="w-4 h-4" />

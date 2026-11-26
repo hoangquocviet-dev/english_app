@@ -720,7 +720,7 @@ export function WordBombGame({ words, deckName, onStudyMissedWords, onBack }: Wo
                   type="button"
                   onClick={() => audioService.speak(bomb.word.term, 0.9)}
                   title="Nghe gợi ý phát âm (Phím Space)"
-                  className="p-1.5 rounded-xl bg-indigo-500/25 hover:bg-indigo-500/40 text-cyan-300 transition-colors"
+                  className="w-9 h-9 rounded-xl bg-indigo-500/25 hover:bg-indigo-500/40 text-cyan-300 flex items-center justify-center active:scale-92 transition-all"
                 >
                   <Volume2 className="w-4 h-4" />
                 </button>
@@ -734,7 +734,7 @@ export function WordBombGame({ words, deckName, onStudyMissedWords, onBack }: Wo
               <p className="text-xs font-mono text-cyan-300/80 mt-1">{bomb.word.ipa}</p>
             )}
 
-            {/* Bomb Wire Letter Slots Grouped by Word (Responsive sizing + wrap guard prevents 360px overflow) */}
+            {/* Bomb Wire Letter Slots Grouped by Word (Tap filled slot to undo on mobile!) */}
             <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 mt-4 mb-1">
               {wordGroups.map((group, gIdx) => (
                 <div
@@ -752,6 +752,8 @@ export function WordBombGame({ words, deckName, onStudyMissedWords, onBack }: Wo
                     }
 
                     const isCurrentCursor = idx === nextActiveSlotIdx && status === 'ticking'
+                    const canTapUndo =
+                      Boolean(slot.filledChar && !slot.locked) && status === 'ticking'
                     const slotSize =
                       maxWordLen >= 13
                         ? 'w-[19px] h-7.5 text-[11px] sm:w-7 sm:h-9 sm:text-sm'
@@ -762,8 +764,23 @@ export function WordBombGame({ words, deckName, onStudyMissedWords, onBack }: Wo
                         : 'w-8 h-10 sm:w-9 sm:h-11 text-base sm:text-lg'
 
                     return (
-                      <div
+                      <button
                         key={idx}
+                        type="button"
+                        disabled={!canTapUndo}
+                        onClick={() => {
+                          if (!canTapUndo) return
+                          const cur = bombRef.current
+                          const releasedTileId = cur.slots[idx]?.tileId
+                          const nextSlots = cur.slots.map((s, i) =>
+                            i === idx ? { ...s, filledChar: null, tileId: undefined } : s
+                          )
+                          const nextPool = cur.pool.map((t) =>
+                            t.id === releasedTileId ? { ...t, used: false } : t
+                          )
+                          audioService.playClick()
+                          commitBomb({ ...cur, slots: nextSlots, pool: nextPool })
+                        }}
                         className={`${slotSize} rounded-xl font-black uppercase flex items-center justify-center border-2 transition-all ${
                           status === 'defused'
                             ? 'bg-emerald-500 border-emerald-400 text-white scale-105'
@@ -772,14 +789,14 @@ export function WordBombGame({ words, deckName, onStudyMissedWords, onBack }: Wo
                             : slot.filledChar
                             ? slot.locked
                               ? 'bg-slate-800 border-slate-600 text-amber-300'
-                              : 'bg-cyan-500/25 border-cyan-400 text-cyan-200'
+                              : 'bg-cyan-500/25 border-cyan-400 text-cyan-200 active:scale-90'
                             : isCurrentCursor
                             ? 'bg-indigo-950/90 border-cyan-400 ring-2 ring-cyan-400/40 animate-pulse'
                             : 'bg-slate-950/70 border-slate-700 border-dashed text-slate-500'
                         }`}
                       >
                         {slot.filledChar || ''}
-                      </div>
+                      </button>
                     )
                   })}
                 </div>
@@ -811,7 +828,7 @@ export function WordBombGame({ words, deckName, onStudyMissedWords, onBack }: Wo
                 disabled={status !== 'ticking'}
                 onClick={handleBackspace}
                 title="Xóa 1 chữ (Backspace)"
-                className="h-12 px-3 rounded-xl bg-slate-200/80 dark:bg-slate-700/80 hover:bg-rose-500/20 text-slate-600 dark:text-slate-200 border-2 border-slate-300 dark:border-slate-950 border-b-4 active:border-b-2 active:translate-y-0.5 flex items-center justify-center"
+                className="h-12 px-3.5 rounded-xl bg-slate-200/80 dark:bg-slate-700/80 hover:bg-rose-500/20 text-slate-600 dark:text-slate-200 border-2 border-slate-300 dark:border-slate-950 border-b-4 active:border-b-2 active:translate-y-0.5 flex items-center justify-center"
               >
                 <Delete className="w-5 h-5" />
               </button>
@@ -819,7 +836,12 @@ export function WordBombGame({ words, deckName, onStudyMissedWords, onBack }: Wo
 
             <div className="mt-2.5 text-center text-[11px] font-medium text-slate-400 dark:text-slate-500 flex items-center justify-center gap-1">
               <Sparkles className="w-3 h-3 text-amber-500 shrink-0" />
-              <span>Gõ trực tiếp bàn phím hoặc chạm chữ • Phím Tab để cắt dây gợi ý</span>
+              <span className="sm:hidden">
+                Chạm chữ để tháo ngòi • Chạm ô đã điền để gỡ lại
+              </span>
+              <span className="hidden sm:inline">
+                Gõ trực tiếp bàn phím hoặc chạm chữ • Phím Tab để cắt dây gợi ý
+              </span>
             </div>
           </div>
 

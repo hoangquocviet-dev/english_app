@@ -493,8 +493,14 @@ export function App() {
             </div>
           )}
 
-          {/* Main Content Area */}
-          <main className={`w-full flex-1 flex flex-col ${isFullScreenSession ? 'pb-2' : 'pb-20'}`}>
+          {/* Main Content Area (Safe-area aware for notched & home-indicator phones) */}
+          <main
+            className={`w-full flex-1 flex flex-col ${
+              isFullScreenSession
+                ? 'pb-[max(0.625rem,env(safe-area-inset-bottom,0px))]'
+                : 'pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))]'
+            }`}
+          >
             <Suspense fallback={<ViewLoader />}>
               {/* Active Study Mode Screens */}
               {activeStudyMode === 'flashcard' && activeDeck && (

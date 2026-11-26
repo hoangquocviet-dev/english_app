@@ -36,6 +36,24 @@
     display: flex;
     flex-direction: column;
   }
+
+  /* Eliminate 300ms double-tap zoom lag on rapid mobile thumb taps (Spelling, WordBomb, Arcade) */
+  button,
+  [role='button'],
+  a,
+  select,
+  summary {
+    touch-action: manipulation;
+  }
+
+  /* Prevent iOS Safari viewport auto-zoom when tapping inputs < 16px on coarse-pointer phones */
+  @media (max-width: 639px) and (hover: none) and (pointer: coarse) {
+    input,
+    textarea,
+    select {
+      font-size: 16px !important;
+    }
+  }
 }
 
 /* 3D Flashcard Utilities */

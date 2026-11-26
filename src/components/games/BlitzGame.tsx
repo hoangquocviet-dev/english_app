@@ -688,7 +688,7 @@ export function BlitzGame({ words, deckName, onStudyMissedWords, onBack }: Blitz
             )}
           </div>
 
-          {/* 3D Tactile Arcade Push-Buttons */}
+          {/* 3D Tactile Arcade Push-Buttons (Touch-native labels on phones!) */}
           <div className="grid grid-cols-2 gap-3 pt-3.5">
             <button
               type="button"
@@ -698,7 +698,10 @@ export function BlitzGame({ words, deckName, onStudyMissedWords, onBack }: Blitz
               <X className="w-6 h-6 stroke-[2.8]" />
               <div className="flex flex-col items-start leading-none">
                 <span>SAI</span>
-                <span className="text-[10px] font-mono opacity-80 font-semibold mt-0.5">
+                <span className="sm:hidden text-[10px] opacity-85 font-semibold mt-0.5">
+                  Vuốt Trái
+                </span>
+                <span className="hidden sm:inline text-[10px] font-mono opacity-80 font-semibold mt-0.5">
                   Phím A / ◀
                 </span>
               </div>
@@ -712,7 +715,10 @@ export function BlitzGame({ words, deckName, onStudyMissedWords, onBack }: Blitz
               <Check className="w-6 h-6 stroke-[2.8]" />
               <div className="flex flex-col items-start leading-none">
                 <span>ĐÚNG</span>
-                <span className="text-[10px] font-mono opacity-80 font-semibold mt-0.5">
+                <span className="sm:hidden text-[10px] opacity-85 font-semibold mt-0.5">
+                  Vuốt Phải
+                </span>
+                <span className="hidden sm:inline text-[10px] font-mono opacity-80 font-semibold mt-0.5">
                   Phím D / ▶
                 </span>
               </div>

@@ -728,30 +728,38 @@ export function SpellingView({
         ))}
       </div>
 
-      {/* Status banner */}
+      {/* Status banner (1-tap fast-forward on touchscreen!) */}
       {isSuccess && (
-        <div className="flex items-center justify-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold text-sm py-2">
-          <Check className="w-4 h-4" />
-          <span>Chính xác! Chuẩn bị sang từ tiếp theo...</span>
-        </div>
+        <button
+          type="button"
+          onClick={flushPendingAdvance}
+          className="w-full mt-2 py-2 px-3 rounded-xl bg-emerald-500/12 border border-emerald-500/30 flex items-center justify-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs sm:text-sm active:scale-98 transition-transform"
+        >
+          <Check className="w-4 h-4 shrink-0" />
+          <span>Chính xác! Chạm sang từ tiếp →</span>
+        </button>
       )}
 
       {isRevealed && (
-        <div className="mt-2.5 p-2.5 px-3 rounded-xl bg-amber-500/12 border border-amber-500/30 text-center space-y-1 animate-fadeIn">
+        <button
+          type="button"
+          onClick={flushPendingAdvance}
+          className="w-full mt-2.5 p-2.5 px-3 rounded-xl bg-amber-500/12 border border-amber-500/30 text-center space-y-1 animate-fadeIn active:scale-98 transition-transform"
+        >
           <div className="text-xs font-bold text-amber-700 dark:text-amber-300">
-            Đáp án chuẩn: <span className="underline">{currentWord.term}</span> • Đã xếp ôn lại ở cuối lượt
+            Đáp án chuẩn: <span className="underline">{currentWord.term}</span> • Chạm sang từ tiếp →
           </div>
           {currentWord.example && (
             <p className="text-[11px] italic text-slate-600 dark:text-slate-300 leading-snug">
               "{currentWord.example}"
             </p>
           )}
-        </div>
+        </button>
       )}
 
       {isWrong && (
         <div className="text-center text-rose-500 font-medium text-xs py-2">
-          Chưa đúng, chạm chữ để gỡ ra hoặc bấm biểu tượng bóng đèn (Tab) để gợi ý 1 chữ.
+          Chưa đúng, chạm chữ để gỡ ra hoặc bấm bóng đèn để gợi ý 1 chữ.
         </div>
       )}
 
