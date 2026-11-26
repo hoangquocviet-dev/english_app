@@ -4,15 +4,17 @@ import { audioService } from '../../utils/audio'
 import { forceReloadApp } from '../../utils/reload'
 
 interface PullToRefreshProps {
+  disabled?: boolean
   children: React.ReactNode
 }
 
-export function PullToRefresh({ children }: PullToRefreshProps) {
+export function PullToRefresh({ disabled = false, children }: PullToRefreshProps) {
   const [pullDistance, setPullDistance] = useState(0)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isReady, setIsReady] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
 
+  const touchStartXRef = useRef(0)
   const touchStartYRef = useRef(0)
   const canPullRef = useRef(false)
   const thresholdPassedRef = useRef(false)
@@ -21,12 +23,17 @@ export function PullToRefresh({ children }: PullToRefreshProps) {
   const MAX_PULL = 110
 
   useEffect(() => {
+    if (disabled) {
+      canPullRef.current = false
+      return
+    }
+
     const getPageScrollTop = () =>
       window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0
 
     const handleTouchStart = (e: TouchEvent) => {
       // Only initiate pull when user is scrolled to the very top
-      if (getPageScrollTop() > 5 || isRefreshing) {
+      if (getPageScrollTop() > 5 || isRefreshing || e.touches.length !== 1) {
         canPullRef.current = false
         return
       }
@@ -42,23 +49,33 @@ export function PullToRefresh({ children }: PullToRefreshProps) {
         return
       }
 
-      // Do not hijack inner scrollable containers
+      // Do not hijack inner vertical OR horizontal scrollable containers (e.g. Deck Carousels & Filter Pills)
       let node: HTMLElement | null = target
       while (node && node !== document.body && node !== document.documentElement) {
         if (node.scrollHeight > node.clientHeight + 2 && node.scrollTop > 0) {
           canPullRef.current = false
           return
         }
+        const style = window.getComputedStyle(node)
+        const overflowX = style.overflowX
+        if (
+          (overflowX === 'auto' || overflowX === 'scroll') &&
+          node.scrollWidth > node.clientWidth + 4
+        ) {
+          canPullRef.current = false
+          return
+        }
         node = node.parentElement
       }
 
+      touchStartXRef.current = e.touches[0].clientX
       touchStartYRef.current = e.touches[0].clientY
       canPullRef.current = true
       thresholdPassedRef.current = false
     }
 
     const handleTouchMove = (e: TouchEvent) => {
-      if (!canPullRef.current || isRefreshing) return
+      if (!canPullRef.current || isRefreshing || e.touches.length === 0) return
 
       if (getPageScrollTop() > 0) {
         canPullRef.current = false
@@ -68,8 +85,17 @@ export function PullToRefresh({ children }: PullToRefreshProps) {
         return
       }
 
-      const currentY = e.touches[0].clientY
-      const deltaY = currentY - touchStartYRef.current
+      const deltaX = e.touches[0].clientX - touchStartXRef.current
+      const deltaY = e.touches[0].clientY - touchStartYRef.current
+
+      // Abort immediately if the user is swiping horizontally rather than pulling straight down
+      if (Math.abs(deltaX) > 10 && Math.abs(deltaX) > Math.abs(deltaY) * 0.75) {
+        canPullRef.current = false
+        setIsDragging(false)
+        setPullDistance(0)
+        setIsReady(false)
+        return
+      }
 
       if (deltaY > 0) {
         setIsDragging(true)
@@ -109,18 +135,15 @@ export function PullToRefresh({ children }: PullToRefreshProps) {
 
       if (thresholdPassedRef.current || isReady) {
         setIsRefreshing(true)
-        setPullDistance(THRESHOLD) // Lock in view while refreshing
+        setPullDistance(THRESHOLD)
         audioService.playClick()
 
         if (navigator.vibrate) {
           try {
             navigator.vibrate([20, 50, 20])
-          } catch {
-            // Ignore
-          }
+          } catch {}
         }
 
-        // Brief delay for visual satisfaction before reload
         setTimeout(() => {
           void forceReloadApp()
         }, 320)
@@ -141,14 +164,14 @@ export function PullToRefresh({ children }: PullToRefreshProps) {
       window.removeEventListener('touchend', handleTouchEnd)
       window.removeEventListener('touchcancel', handleTouchEnd)
     }
-  }, [isReady, isRefreshing])
+  }, [disabled, isReady, isRefreshing])
 
   const rotation = Math.min(360, (pullDistance / THRESHOLD) * 360)
 
   return (
     <>
       {/* Floating Pull-to-Refresh Pill */}
-      {(pullDistance > 0 || isRefreshing) && (
+      {!disabled && (pullDistance > 0 || isRefreshing) && (
         <div
           className="fixed top-0 left-0 right-0 z-50 pointer-events-none flex justify-center px-4"
           style={{
@@ -158,30 +181,21 @@ export function PullToRefresh({ children }: PullToRefreshProps) {
         >
           <div
             className={`px-4 py-2 rounded-full shadow-lg border backdrop-blur-md flex items-center gap-2.5 text-xs font-semibold select-none transition-all duration-200 ${
-              isRefreshing || isReady
-                ? 'bg-indigo-600 text-white border-indigo-500 shadow-indigo-500/25 scale-105'
-                : 'bg-white/95 dark:bg-slate-800/95 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 shadow-slate-900/10 scale-100'
+              isReady || isRefreshing
+                ? 'bg-indigo-600/95 text-white border-indigo-400/50 shadow-indigo-500/25'
+                : 'bg-white/95 dark:bg-slate-800/95 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700'
             }`}
           >
             <RefreshCw
-              className={`w-4 h-4 shrink-0 transition-transform ${
-                isRefreshing ? 'animate-spin' : ''
-              }`}
-              style={
-                !isRefreshing
-                  ? {
-                      transform: `rotate(${rotation}deg)`,
-                      transition: isDragging ? 'none' : 'transform 0.2s',
-                    }
-                  : undefined
-              }
+              className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`}
+              style={!isRefreshing ? { transform: `rotate(${rotation}deg)` } : undefined}
             />
             <span>
               {isRefreshing
-                ? 'Đang tải lại...'
+                ? 'Đang cập nhật ứng dụng...'
                 : isReady
                 ? 'Thả tay để tải lại'
-                : 'Kéo xuống để tải lại'}
+                : 'Kéo xuống để cập nhật'}
             </span>
           </div>
         </div>

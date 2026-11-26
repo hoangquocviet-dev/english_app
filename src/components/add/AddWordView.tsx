@@ -396,10 +396,10 @@ export function AddWordView({
               <button
                 type="button"
                 onClick={() => void audioService.speak(sameDeckMatch.term)}
-                className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-amber-500/15 shrink-0"
+                className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-amber-500/15 shrink-0 active:scale-95"
                 title="Nghe phát âm"
               >
-                <Volume2 className="w-3.5 h-3.5" />
+                <Volume2 className="w-4 h-4" />
               </button>
             </div>
           )}
@@ -419,7 +419,7 @@ export function AddWordView({
                   setExample(crossDeckMatch.word.example || '')
                   audioService.playClick()
                 }}
-                className="min-h-8 py-1.5 px-2.5 rounded-lg bg-indigo-600 text-white font-bold whitespace-nowrap shrink-0 active:scale-95"
+                className="min-h-9 px-3 rounded-lg bg-indigo-600 text-white font-bold flex items-center whitespace-nowrap shrink-0 active:scale-95"
               >
                 Điền nhanh
               </button>

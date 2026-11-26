@@ -1,9 +1,9 @@
 import {
+  ArrowUp,
   Check,
   Download,
   FileText,
   Globe,
-  Layers,
   Pencil,
   Plus,
   RefreshCw,
@@ -113,6 +113,17 @@ export function LibraryView({
       setEditingWord(null)
     }
   })
+
+  const [showScrollTop, setShowScrollTop] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY || document.documentElement.scrollTop || 0
+      setShowScrollTop(y > 420)
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   const nowMs = storageService.getNowMs()
   const sourceWords = searchAllDecks ? allWords : words
@@ -985,17 +996,17 @@ export function LibraryView({
         {onStartFilteredStudy &&
           filteredWords.length > 0 &&
           (Boolean(searchQuery.trim()) || statusFilter !== 'all' || searchAllDecks) && (
-            <div className="p-2.5 px-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/25 flex items-center justify-between gap-2 flex-wrap animate-fadeIn">
+            <div className="p-2.5 px-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/25 space-y-2 animate-fadeIn">
               <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-700 dark:text-indigo-300">
                 <Sparkles className="w-3.5 h-3.5 shrink-0" />
                 <span>Luyện nhanh {filteredWords.length.toLocaleString()} thẻ đang lọc:</span>
               </div>
 
-              <div className="flex items-center gap-1.5 flex-wrap">
+              <div className="grid grid-cols-4 gap-1.5">
                 {(
                   [
-                    { mode: 'smart-mix', label: '⚡ Tổng hợp' },
-                    { mode: 'flashcard', label: 'Flashcard' },
+                    { mode: 'smart-mix', label: '⚡ Gộp' },
+                    { mode: 'flashcard', label: 'Thẻ 3D' },
                     { mode: 'quiz', label: 'Quiz' },
                     { mode: 'cloze', label: 'Cloze' },
                   ] as const
@@ -1014,13 +1025,12 @@ export function LibraryView({
                         audioService.playClick()
                         onStartFilteredStudy(filteredWords, item.mode, customLabel, searchAllDecks)
                       }}
-                      className={`min-h-8.5 py-1.5 px-3 rounded-xl text-[11px] font-bold flex items-center gap-1 whitespace-nowrap active:scale-95 transition-all ${
+                      className={`min-h-9 px-2 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1 whitespace-nowrap active:scale-95 transition-all ${
                         item.mode === 'smart-mix'
                           ? 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-2xs'
                           : 'bg-indigo-600/90 hover:bg-indigo-500 text-white'
                       }`}
                     >
-                      {item.mode === 'flashcard' && <Layers className="w-3 h-3" />}
                       <span>{item.label}</span>
                     </button>
                   )
@@ -1239,9 +1249,22 @@ export function LibraryView({
 
             <div className="grid grid-cols-2 gap-2.5">
               <div>
-                <label className="text-xs font-semibold text-slate-500 block mb-1">
-                  Phiên âm IPA
-                </label>
+                <div className="flex items-center justify-between mb-1 min-h-6">
+                  <label className="text-xs font-semibold text-slate-500">
+                    Phiên âm IPA
+                  </label>
+                  {editTerm.trim() && (
+                    <button
+                      type="button"
+                      onClick={() => void audioService.speak(editTerm.trim())}
+                      className="py-0.5 px-2 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-[11px] font-bold flex items-center gap-1 active:scale-95"
+                      title="Nghe thử phát âm"
+                    >
+                      <Volume2 className="w-3 h-3" />
+                      <span>Nghe</span>
+                    </button>
+                  )}
+                </div>
                 <input
                   type="text"
                   enterKeyHint="next"
@@ -1251,17 +1274,19 @@ export function LibraryView({
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-500 block mb-1">Từ loại</label>
+                <div className="flex items-center mb-1 min-h-6">
+                  <label className="text-xs font-semibold text-slate-500">Từ loại</label>
+                </div>
                 <select
                   value={editPos}
                   onChange={(e) => setEditPos(e.target.value)}
                   className="w-full py-2.5 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-900 dark:text-slate-100 focus:outline-none"
                 >
-                  <option value="verb">verb</option>
-                  <option value="noun">noun</option>
-                  <option value="adj">adj</option>
-                  <option value="adv">adv</option>
-                  <option value="phrase">phrase</option>
+                  <option value="verb">Động từ</option>
+                  <option value="noun">Danh từ</option>
+                  <option value="adj">Tính từ</option>
+                  <option value="adv">Trạng từ</option>
+                  <option value="phrase">Cụm từ</option>
                 </select>
               </div>
             </div>
@@ -1357,6 +1382,23 @@ export function LibraryView({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Floating 1-Thumb Scroll-to-Top Pill (Centered so it never covers right-hand 2x2 word actions!) */}
+      {showScrollTop && !editingWord && !confirmAction && !isSyncModalOpen && (
+        <button
+          type="button"
+          data-testid="library-scroll-top"
+          onClick={() => {
+            audioService.playClick()
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+          }}
+          aria-label="Cuộn lên đầu trang Kho từ"
+          className="fixed left-1/2 -translate-x-1/2 bottom-[calc(4.65rem+env(safe-area-inset-bottom,0px))] z-30 min-h-10 px-4 rounded-full bg-indigo-600/95 hover:bg-indigo-500 backdrop-blur-xs text-white text-xs font-extrabold shadow-lg shadow-indigo-600/30 flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-all animate-fadeIn"
+        >
+          <ArrowUp className="w-3.5 h-3.5" />
+          <span>Lên đầu trang</span>
+        </button>
       )}
 
       {/* Sync Modal */}

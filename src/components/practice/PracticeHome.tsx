@@ -74,6 +74,7 @@ export function PracticeHome({
   const [filterMode, setFilterMode] = useState<
     'all' | 'learning' | 'global-learning' | 'due' | 'global-due' | 'starred'
   >('all')
+  const [selectedDayKey, setSelectedDayKey] = useState<string | null>(null)
 
   useChildModalBack(showResetConfirm, () => setShowResetConfirm(false))
 
@@ -255,9 +256,17 @@ export function PracticeHome({
                 Mục tiêu hôm nay
               </span>
               <span className="text-[11px] text-slate-500 dark:text-slate-400 truncate block mt-0.5">
-                {isGoalReached
-                  ? 'Xuất sắc! Đã đạt mục tiêu ngày'
-                  : 'Chạm số lượt để đổi mục tiêu'}
+                {(() => {
+                  const picked = selectedDayKey
+                    ? weeklySeries.find((d) => d.dateKey === selectedDayKey)
+                    : null
+                  if (picked) {
+                    return `${picked.label} (${picked.dateKey.slice(8, 10)}/${picked.dateKey.slice(5, 7)}): ${picked.count} lượt học`
+                  }
+                  return isGoalReached
+                    ? 'Xuất sắc! Đã đạt mục tiêu ngày'
+                    : 'Chạm số lượt để đổi mục tiêu'
+                })()}
               </span>
             </div>
           </div>
@@ -265,7 +274,7 @@ export function PracticeHome({
             type="button"
             onClick={handleCycleGoal}
             title="Chạm để đổi mục tiêu ngày (10 / 20 / 30 / 50 lượt)"
-            className={`text-xs font-extrabold px-2.5 py-1 rounded-full whitespace-nowrap shrink-0 transition-transform active:scale-95 ${
+            className={`min-h-9 text-xs font-extrabold px-3 rounded-full flex items-center whitespace-nowrap shrink-0 transition-transform active:scale-95 ${
               isGoalReached
                 ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
                 : 'bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400'
@@ -286,19 +295,29 @@ export function PracticeHome({
           />
         </div>
 
-        {/* 7-Day Study Activity Spark-Bars */}
+        {/* 7-Day Study Activity Spark-Bars (Tap any bar on mobile to inspect day!) */}
         {hasAnyWeeklyActivity && (
           <div className="grid grid-cols-7 gap-1.5 mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-700/50">
             {weeklySeries.map((day) => {
               const heightPct = day.count > 0 ? Math.max(20, Math.round((day.count / maxWeeklyCount) * 100)) : 8
               const metGoal = day.count >= dailyProgress.goal
+              const isPicked = selectedDayKey === day.dateKey
               return (
-                <div
+                <button
                   key={day.dateKey}
-                  className="flex flex-col items-center gap-1"
+                  type="button"
+                  onClick={() => {
+                    audioService.playClick()
+                    setSelectedDayKey((prev) => (prev === day.dateKey ? null : day.dateKey))
+                  }}
+                  className="flex flex-col items-center gap-1 active:scale-95 transition-transform"
                   title={`${day.label} (${day.dateKey}): ${day.count} lượt`}
                 >
-                  <div className="w-full h-7 rounded-md bg-slate-100 dark:bg-slate-900/80 flex items-end p-0.5 overflow-hidden">
+                  <div
+                    className={`w-full h-7 rounded-md bg-slate-100 dark:bg-slate-900/80 flex items-end p-0.5 overflow-hidden ${
+                      isPicked ? 'ring-2 ring-indigo-500' : ''
+                    }`}
+                  >
                     <div
                       style={{ height: `${heightPct}%` }}
                       className={`w-full rounded-xs transition-all duration-300 ${
@@ -314,14 +333,14 @@ export function PracticeHome({
                   </div>
                   <span
                     className={`text-[9.5px] leading-none ${
-                      day.isToday
+                      isPicked || day.isToday
                         ? 'font-extrabold text-indigo-600 dark:text-indigo-400'
                         : 'font-medium text-slate-400'
                     }`}
                   >
                     {day.label}
                   </span>
-                </div>
+                </button>
               )
             })}
           </div>
@@ -432,7 +451,7 @@ export function PracticeHome({
               audioService.playClick()
               onGoToLibrary()
             }}
-            className="py-2 px-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-900/60 dark:hover:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-center gap-1.5 border border-slate-200 dark:border-slate-700/80 whitespace-nowrap transition-all active:scale-98"
+            className="min-h-10 py-2 px-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-900/60 dark:hover:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-center gap-1.5 border border-slate-200 dark:border-slate-700/80 whitespace-nowrap transition-all active:scale-98"
           >
             <BookOpen className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
             <span className="truncate">Danh sách thẻ</span>
@@ -445,7 +464,7 @@ export function PracticeHome({
                 audioService.playClick()
                 setShowResetConfirm(true)
               }}
-              className="py-2 px-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center justify-center gap-1.5 border border-amber-500/25 whitespace-nowrap transition-all active:scale-98"
+              className="min-h-10 py-2 px-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center justify-center gap-1.5 border border-amber-500/25 whitespace-nowrap transition-all active:scale-98"
               title="Hiện lại các thẻ đã thuộc để học lại từ đầu"
             >
               <RotateCcw className="w-3.5 h-3.5 shrink-0" />
@@ -458,7 +477,7 @@ export function PracticeHome({
                 audioService.playClick()
                 onGoToAddWord()
               }}
-              className="py-2 px-2.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-xs font-semibold text-indigo-600 dark:text-indigo-400 flex items-center justify-center gap-1.5 border border-indigo-500/20 whitespace-nowrap transition-all active:scale-98"
+              className="min-h-10 py-2 px-2.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-xs font-semibold text-indigo-600 dark:text-indigo-400 flex items-center justify-center gap-1.5 border border-indigo-500/20 whitespace-nowrap transition-all active:scale-98"
             >
               <Plus className="w-3.5 h-3.5 shrink-0" />
               <span className="truncate">Thêm từ mới</span>
@@ -734,7 +753,7 @@ export function PracticeHome({
                       audioService.playClick()
                       onChangeBatchSize(opt.value)
                     }}
-                    className={`min-h-8 px-2.5 rounded-lg whitespace-nowrap flex items-center transition-colors ${
+                    className={`min-h-9 px-2.5 rounded-lg whitespace-nowrap flex items-center transition-colors ${
                       batchSize === opt.value
                         ? 'bg-indigo-600 text-white shadow-2xs'
                         : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'

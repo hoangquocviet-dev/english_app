@@ -13,7 +13,7 @@ import {
   Volume2,
   X,
 } from 'lucide-react'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { Deck, GameHighScores, StudyMode, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
 import { storageService } from '../../utils/storage'
@@ -44,6 +44,8 @@ export function StatsModal({
   onStartGlobalStarredReview,
   onStartGlobalDueReview,
 }: StatsModalProps) {
+  const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null)
+
   useEffect(() => {
     if (!isOpen) return
     const onKeyDown = (e: KeyboardEvent) => {
@@ -311,7 +313,7 @@ export function StatsModal({
           </div>
         </div>
 
-        {/* 14-Day Activity Chart */}
+        {/* 14-Day Activity Chart (Tap any bar on mobile to inspect exact date & count!) */}
         <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 space-y-2.5">
           <div className="flex items-center justify-between gap-2 text-xs">
             <span className="font-bold text-slate-800 dark:text-slate-200">
@@ -327,11 +329,19 @@ export function StatsModal({
               const hPct =
                 day.count > 0 ? Math.max(18, Math.round((day.count / max14) * 100)) : 8
               const metGoal = day.count >= dailyGoal
+              const isPicked = selectedDateKey === day.dateKey
               return (
-                <div
+                <button
                   key={day.dateKey}
+                  type="button"
+                  onClick={() => {
+                    audioService.playClick()
+                    setSelectedDateKey((prev) => (prev === day.dateKey ? null : day.dateKey))
+                  }}
                   title={`${day.dateKey}: ${day.count} lượt`}
-                  className="flex-1 h-full rounded-md bg-slate-200/70 dark:bg-slate-900/80 flex items-end p-0.5 overflow-hidden"
+                  className={`flex-1 h-full rounded-md bg-slate-200/70 dark:bg-slate-900/80 flex items-end p-0.5 overflow-hidden transition-all active:scale-95 ${
+                    isPicked ? 'ring-2 ring-indigo-500' : ''
+                  }`}
                 >
                   <div
                     style={{ height: `${hPct}%` }}
@@ -345,12 +355,24 @@ export function StatsModal({
                         : 'bg-indigo-400/75 dark:bg-indigo-500/65'
                     }`}
                   />
-                </div>
+                </button>
               )
             })}
           </div>
-          <div className="flex items-center justify-between text-[10px] text-slate-400 font-medium">
-            <span>13 ngày trước</span>
+          <div className="flex items-center justify-between text-[10.5px] text-slate-400 font-medium">
+            {(() => {
+              const picked = selectedDateKey
+                ? series14.find((d) => d.dateKey === selectedDateKey)
+                : null
+              if (picked) {
+                return (
+                  <span className="text-indigo-600 dark:text-indigo-400 font-bold">
+                    Ngày {picked.dateKey.slice(8, 10)}/{picked.dateKey.slice(5, 7)}: {picked.count} lượt học
+                  </span>
+                )
+              }
+              return <span>Chạm cột để xem từng ngày</span>
+            })()}
             <span>Hôm nay ({series14[series14.length - 1]?.count || 0} lượt)</span>
           </div>
         </div>
@@ -371,32 +393,32 @@ export function StatsModal({
             {badges.map((b) => (
               <div
                 key={b.id}
-                className={`p-2.5 rounded-2xl border flex items-start gap-2 transition-colors ${
+                className={`p-3 rounded-2xl border flex flex-col justify-between transition-colors ${
                   b.unlocked
                     ? 'bg-amber-500/10 border-amber-500/30 text-slate-900 dark:text-slate-100'
-                    : 'bg-slate-50/70 dark:bg-slate-800/40 border-slate-200/70 dark:border-slate-800 opacity-65'
+                    : 'bg-slate-50/70 dark:bg-slate-800/40 border-slate-200/70 dark:border-slate-800 opacity-70'
                 }`}
               >
-                <div
-                  className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
-                    b.unlocked
-                      ? 'bg-amber-500 text-slate-950'
-                      : 'bg-slate-200 dark:bg-slate-700 text-slate-400'
-                  }`}
-                >
-                  {b.unlocked ? (
-                    <Sparkles className="w-3.5 h-3.5" />
-                  ) : (
-                    <Lock className="w-3.5 h-3.5" />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-1">
-                    <span className="text-xs font-bold truncate">{b.title}</span>
-                    <span className="text-[10px] font-extrabold text-amber-600 dark:text-amber-400 shrink-0">
-                      {b.unlocked ? '✓' : b.progress}
-                    </span>
+                <div className="flex items-center justify-between gap-1.5 mb-1.5">
+                  <div
+                    className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 ${
+                      b.unlocked
+                        ? 'bg-amber-500 text-slate-950'
+                        : 'bg-slate-200 dark:bg-slate-700 text-slate-400'
+                    }`}
+                  >
+                    {b.unlocked ? (
+                      <Sparkles className="w-3.5 h-3.5" />
+                    ) : (
+                      <Lock className="w-3.5 h-3.5" />
+                    )}
                   </div>
+                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/12 text-amber-600 dark:text-amber-400 shrink-0">
+                    {b.unlocked ? '✓ Đã mở' : b.progress}
+                  </span>
+                </div>
+                <div>
+                  <div className="text-xs font-bold leading-snug">{b.title}</div>
                   <p className="text-[10.5px] text-slate-500 dark:text-slate-400 leading-snug mt-0.5">
                     {b.desc}
                   </p>
@@ -422,7 +444,7 @@ export function StatsModal({
                       audioService.playClick()
                       onStartGlobalWeakReview('smart-mix')
                     }}
-                    className="py-1 px-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-bold flex items-center gap-1 whitespace-nowrap active:scale-95 transition-transform"
+                    className="min-h-9 px-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-bold flex items-center gap-1 whitespace-nowrap active:scale-95 transition-transform"
                     title="Luyện 4 kỹ năng cho nhóm từ hay nhầm"
                   >
                     <Target className="w-3 h-3" />
@@ -434,7 +456,7 @@ export function StatsModal({
                       audioService.playClick()
                       onStartGlobalWeakReview('flashcard')
                     }}
-                    className="py-1 px-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-rose-50 dark:hover:bg-slate-800 text-rose-600 dark:text-rose-300 border border-rose-500/25 text-[11px] font-bold whitespace-nowrap active:scale-95 transition-transform"
+                    className="min-h-9 px-2.5 rounded-xl bg-white dark:bg-slate-900 hover:bg-rose-50 dark:hover:bg-slate-800 text-rose-600 dark:text-rose-300 border border-rose-500/25 text-[11px] font-bold flex items-center whitespace-nowrap active:scale-95 transition-transform"
                     title="Lật thẻ nhanh nhóm từ hay nhầm"
                   >
                     Flashcard
@@ -449,7 +471,11 @@ export function StatsModal({
                   key={w.id}
                   className="p-2 px-2.5 rounded-xl bg-white/90 dark:bg-slate-900/75 border border-rose-500/15 flex items-center justify-between gap-2"
                 >
-                  <div className="min-w-0 flex-1">
+                  <button
+                    type="button"
+                    onClick={() => void audioService.speak(w.term)}
+                    className="min-w-0 flex-1 text-left active:opacity-75"
+                  >
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-xs font-extrabold text-slate-900 dark:text-slate-100 truncate">
                         {w.term}
@@ -466,14 +492,14 @@ export function StatsModal({
                     <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
                       {w.definition}
                     </p>
-                  </div>
+                  </button>
                   <button
                     type="button"
                     onClick={() => void audioService.speak(w.term)}
                     aria-label={`Nghe phát âm ${w.term}`}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
+                    className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0 active:scale-95 transition-transform"
                   >
-                    <Volume2 className="w-3.5 h-3.5" />
+                    <Volume2 className="w-4 h-4" />
                   </button>
                 </div>
               ))}

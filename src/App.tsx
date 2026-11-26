@@ -523,7 +523,7 @@ export function App() {
 
   return (
     <ErrorBoundary>
-      <PullToRefresh>
+      <PullToRefresh disabled={isFullScreenSession}>
         <div className="w-full min-h-[100dvh] flex flex-col bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans transition-colors">
           {/* Top Header */}
           <Navbar
