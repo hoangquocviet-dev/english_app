@@ -1,6 +1,6 @@
 import type { WordItem } from '../types'
 
-export type ExportFormat = 'md' | 'csv' | 'json'
+export type ExportFormat = 'md' | 'csv' | 'tsv' | 'json'
 
 export interface ParseResult {
   words: Array<Omit<WordItem, 'id' | 'deckId' | 'status' | 'reviewCount'>>
@@ -55,10 +55,23 @@ const POS_TAG_MAP: Record<string, string> = {
   adv: 'adv',
   adverb: 'adv',
   prep: 'prep',
+  preposition: 'prep',
   conj: 'conj',
+  conjunction: 'conj',
   pron: 'pron',
+  pronoun: 'pron',
   phr: 'phrase',
   phrase: 'phrase',
+  idiom: 'phrase',
+  'phrasal verb': 'phrase',
+  expression: 'phrase',
+}
+
+export function normalizePartOfSpeech(rawPos?: string): string | undefined {
+  if (!rawPos) return undefined
+  const clean = rawPos.trim().toLowerCase().replace(/\.$/, '')
+  if (!clean) return undefined
+  return POS_TAG_MAP[clean] || clean
 }
 
 const PREPOSITION_HINT_SET = new Set([
@@ -88,7 +101,7 @@ export function normalizeImportedTerm(
   rawPos?: string
 ): { term: string; partOfSpeech?: string } {
   let t = rawTerm.replace(/^\*\*|\*\*$/g, '').replace(/\s+/g, ' ').trim()
-  let inferredPos = rawPos?.trim() || undefined
+  let inferredPos = normalizePartOfSpeech(rawPos)
 
   const parenMatch = /^(.+?)\s*\(([^()]+)\)\s*$/.exec(t)
   if (parenMatch) {
@@ -128,7 +141,7 @@ export function normalizeImportedTerm(
 }
 
 function isHeaderRow(term: string, def: string): boolean {
-  const t = term.trim().toLowerCase()
+  const t = term.replace(/^\uFEFF/, '').trim().toLowerCase()
   const d = def.trim().toLowerCase()
   const termHeaders = new Set(['term', 'word', 'english', 'en', 'front', 'tu', 'từ', 'từ vựng'])
   const defHeaders = new Set([
@@ -144,14 +157,51 @@ function isHeaderRow(term: string, def: string): boolean {
   return termHeaders.has(t) && defHeaders.has(d)
 }
 
+function isCsvShapedLine(line: string): boolean {
+  let inQuotes = false
+  let inSlashes = false
+  let firstComma = -1
+  let firstColon = -1
+
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i]
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        i++
+      } else {
+        inQuotes = !inQuotes
+      }
+    } else if (!inQuotes && ch === '/') {
+      inSlashes = !inSlashes
+    } else if (!inQuotes && ch === ',' && firstComma === -1) {
+      firstComma = i
+    } else if (!inQuotes && !inSlashes && ch === ':' && firstColon === -1) {
+      firstColon = i
+    }
+  }
+
+  return firstComma !== -1 && (firstColon === -1 || firstComma < firstColon)
+}
+
+function isLikelyCsvLines(nonEmptyLines: string[]): boolean {
+  if (nonEmptyLines.length === 0) return false
+  const firstCols = parseCsvLine(nonEmptyLines[0])
+  if (firstCols.length >= 2 && isHeaderRow(firstCols[0], firstCols[1])) {
+    return true
+  }
+  const csvShapedCount = nonEmptyLines.filter((l) => isCsvShapedLine(l)).length
+  return csvShapedCount >= Math.ceil(nonEmptyLines.length * 0.6)
+}
+
 /**
  * Smart multi-format parser supporting:
  * 1. JSON array (or { words: [...] })
  * 2. TSV (Quizlet / Anki / Excel copy-paste: Term \t Definition [\t IPA \t Example])
- * 3. CSV (Term, Definition [, IPA, PartOfSpeech, Example])
+ * 3. CSV (Term, Definition [, IPA, PartOfSpeech, Example]) — safe even when definitions/examples contain colons!
  * 4. Markdown / daily-english ([- ] Term [/IPA/]: Definition)
  */
-export function parseDailyEnglish(text: string): ParseResult {
+export function parseDailyEnglish(rawInput: string): ParseResult {
+  const text = rawInput.replace(/^\uFEFF/, '')
   const trimmed = text.trim()
   if (!trimmed) {
     return { words: [], skippedCount: 0, totalLines: 0 }
@@ -228,7 +278,7 @@ export function parseDailyEnglish(text: string): ParseResult {
         return
       }
       if (idx === 0 && isHeaderRow(rawTerm, definition)) return
-      const { term, partOfSpeech } = normalizeImportedTerm(rawTerm)
+      const { term, partOfSpeech } = normalizeImportedTerm(rawTerm, cols[4] || undefined)
       if (!term) {
         skippedCount++
         return
@@ -240,14 +290,8 @@ export function parseDailyEnglish(text: string): ParseResult {
     return { words, skippedCount, totalLines: lines.length, detectedFormat: 'tsv' }
   }
 
-  // 3. Check if lines are CSV (contain commas, and no Markdown `Term: Meaning` colons)
-  const colonLineCount = nonEmptyLines.filter((l) => l.includes(':')).length
-  const commaLineCount = nonEmptyLines.filter((l) => l.includes(',')).length
-  if (
-    nonEmptyLines.length > 0 &&
-    colonLineCount === 0 &&
-    commaLineCount >= Math.ceil(nonEmptyLines.length * 0.6)
-  ) {
+  // 3. Check if lines are CSV (header row OR unquoted comma precedes any colon)
+  if (isLikelyCsvLines(nonEmptyLines)) {
     const words: Array<Omit<WordItem, 'id' | 'deckId' | 'status' | 'reviewCount'>> = []
     let skippedCount = 0
     nonEmptyLines.forEach((line, idx) => {
@@ -390,6 +434,27 @@ export function exportVocabCsv(words: WordItem[]): string {
       escapeCsvCell(w.partOfSpeech),
       escapeCsvCell(w.example),
     ].join(',')
+  )
+  return [header, ...rows].join('\r\n')
+}
+
+function sanitizeTsvCell(val?: string): string {
+  return (val || '').replace(/[\t\r\n]+/g, ' ').trim()
+}
+
+/**
+ * Exports words into Tab-Separated Values (TSV) ready for Quizlet, Anki, Excel & Google Sheets
+ */
+export function exportVocabTsv(words: WordItem[]): string {
+  const header = 'term\tdefinition\tipa\texample\tpartOfSpeech'
+  const rows = words.map((w) =>
+    [
+      sanitizeTsvCell(w.term),
+      sanitizeTsvCell(w.definition),
+      sanitizeTsvCell(w.ipa),
+      sanitizeTsvCell(w.example),
+      sanitizeTsvCell(w.partOfSpeech),
+    ].join('\t')
   )
   return [header, ...rows].join('\r\n')
 }

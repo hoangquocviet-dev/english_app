@@ -7,6 +7,7 @@ import {
   exportDailyEnglish,
   exportVocabCsv,
   exportVocabJson,
+  exportVocabTsv,
   parseDailyEnglish,
 } from '../../utils/parser'
 import { storageService } from '../../utils/storage'
@@ -17,6 +18,7 @@ interface ImportExportModalProps {
   activeDeck: Deck
   decks: Deck[]
   words: WordItem[]
+  filteredWords?: WordItem[]
   onSelectDeck: (deckId: string) => void
   onDataChanged: () => void
 }
@@ -27,11 +29,13 @@ export function ImportExportModal({
   activeDeck,
   decks,
   words,
+  filteredWords,
   onSelectDeck,
   onDataChanged,
 }: ImportExportModalProps) {
   const [activeTab, setActiveTab] = useState<'export' | 'import'>('export')
   const [exportFormat, setExportFormat] = useState<ExportFormat>('md')
+  const [exportOnlyFiltered, setExportOnlyFiltered] = useState(() => Boolean(filteredWords?.length))
   const [importText, setImportText] = useState('')
   const [rawTargetDeckId, setTargetDeckId] = useState(activeDeck.id)
   const [newDeckName, setNewDeckName] = useState('')
@@ -65,12 +69,17 @@ export function ImportExportModal({
 
   if (!isOpen) return null
 
+  const activeExportPool =
+    filteredWords && filteredWords.length > 0 && exportOnlyFiltered ? filteredWords : words
+
   const exportedText =
     exportFormat === 'csv'
-      ? exportVocabCsv(words)
+      ? exportVocabCsv(activeExportPool)
+      : exportFormat === 'tsv'
+      ? exportVocabTsv(activeExportPool)
       : exportFormat === 'json'
-      ? exportVocabJson(words)
-      : exportDailyEnglish(words)
+      ? exportVocabJson(activeExportPool)
+      : exportDailyEnglish(activeExportPool)
 
   const handleCopy = async () => {
     setErrorBanner(null)
@@ -100,16 +109,19 @@ export function ImportExportModal({
     const mime =
       exportFormat === 'csv'
         ? 'text/csv;charset=utf-8'
+        : exportFormat === 'tsv'
+        ? 'text/tab-separated-values;charset=utf-8'
         : exportFormat === 'json'
         ? 'application/json;charset=utf-8'
         : 'text/markdown;charset=utf-8'
-    // Prepend UTF-8 BOM on CSV so Excel on Windows renders Vietnamese accents cleanly
-    const content = exportFormat === 'csv' ? `\uFEFF${exportedText}` : exportedText
+    // Prepend UTF-8 BOM on CSV/TSV so Excel on Windows renders Vietnamese accents cleanly
+    const content =
+      exportFormat === 'csv' || exportFormat === 'tsv' ? `\uFEFF${exportedText}` : exportedText
     const blob = new Blob([content], { type: mime })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `${baseName}.${ext}`
+    a.download = `${baseName}${exportOnlyFiltered && filteredWords ? '_filtered' : ''}.${ext}`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -196,7 +208,7 @@ export function ImportExportModal({
           <div className="flex items-center gap-2 min-w-0">
             <FileText className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0" />
             <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 truncate">
-              Nhập / Xuất bộ từ (MD • CSV • JSON)
+              Nhập / Xuất bộ từ (MD • CSV • TSV • JSON)
             </h3>
           </div>
           <button
@@ -224,7 +236,7 @@ export function ImportExportModal({
                 : 'text-slate-500'
             }`}
           >
-            Xuất dữ liệu ({words.length} từ)
+            Xuất dữ liệu ({activeExportPool.length} từ)
           </button>
           <button
             type="button"
@@ -254,16 +266,56 @@ export function ImportExportModal({
 
           {activeTab === 'export' ? (
             <div className="space-y-3.5">
+              {/* Optional Scope Selector when user has active search/filter in LibraryView */}
+              {filteredWords && filteredWords.length > 0 && (
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                    Phạm vi xuất:
+                  </span>
+                  <div className="inline-flex rounded-xl bg-slate-100 dark:bg-slate-800 p-0.5 text-xs font-bold">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        audioService.playClick()
+                        setExportOnlyFiltered(true)
+                      }}
+                      className={`px-2.5 py-1 rounded-lg transition-colors whitespace-nowrap ${
+                        exportOnlyFiltered
+                          ? 'bg-indigo-600 text-white shadow-2xs'
+                          : 'text-slate-500 dark:text-slate-400'
+                      }`}
+                    >
+                      Đang lọc ({filteredWords.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        audioService.playClick()
+                        setExportOnlyFiltered(false)
+                      }}
+                      className={`px-2.5 py-1 rounded-lg transition-colors whitespace-nowrap ${
+                        !exportOnlyFiltered
+                          ? 'bg-indigo-600 text-white shadow-2xs'
+                          : 'text-slate-500 dark:text-slate-400'
+                      }`}
+                    >
+                      Cả bộ ({words.length})
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Export Format Selector */}
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                  Định dạng xuất:
+                  Định dạng:
                 </span>
                 <div className="inline-flex rounded-xl bg-slate-100 dark:bg-slate-800 p-0.5 text-xs font-bold">
                   {(
                     [
-                      { id: 'md', label: 'Markdown (.md)' },
-                      { id: 'csv', label: 'Excel (.csv)' },
+                      { id: 'md', label: 'MD' },
+                      { id: 'csv', label: 'CSV' },
+                      { id: 'tsv', label: 'TSV (Anki)' },
                       { id: 'json', label: 'JSON' },
                     ] as const
                   ).map((fmt) => (
@@ -274,7 +326,7 @@ export function ImportExportModal({
                         audioService.playClick()
                         setExportFormat(fmt.id)
                       }}
-                      className={`px-2.5 py-1 rounded-lg transition-colors ${
+                      className={`px-2.5 py-1 rounded-lg transition-colors whitespace-nowrap ${
                         exportFormat === fmt.id
                           ? 'bg-indigo-600 text-white shadow-2xs'
                           : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'

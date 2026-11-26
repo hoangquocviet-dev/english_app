@@ -2,6 +2,7 @@ import { ArrowLeft, ArrowLeftRight, Check, Star, Volume2, X } from 'lucide-react
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { StudyFilterMode, StudyMode, StudySessionStats, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
+import { normalizePartOfSpeech } from '../../utils/parser'
 import { GLOBAL_SRS_DECK_ID, storageService } from '../../utils/storage'
 import { StudySummary } from './StudySummary'
 
@@ -71,7 +72,7 @@ function buildQuestions(
         termLower,
         def,
         defLower,
-        pos: (w.partOfSpeech || '').trim().toLowerCase(),
+        pos: normalizePartOfSpeech(w.partOfSpeech) || '',
       })
     }
   }
@@ -91,7 +92,7 @@ function buildQuestions(
     const correctLower = correctText.toLowerCase()
     const targetTermLower = targetWord.term.trim().toLowerCase()
     const targetDefLower = targetWord.definition.trim().toLowerCase()
-    const targetPos = (targetWord.partOfSpeech || '').trim().toLowerCase()
+    const targetPos = normalizePartOfSpeech(targetWord.partOfSpeech) || ''
 
     const picked: string[] = []
     const pickedLower = new Set<string>([correctLower])

@@ -1264,6 +1264,13 @@ export function LibraryView({
           activeDeck={activeDeck}
           decks={decks}
           words={words}
+          filteredWords={
+            (Boolean(searchQuery.trim()) || statusFilter !== 'all' || searchAllDecks) &&
+            filteredWords.length > 0 &&
+            filteredWords.length !== words.length
+              ? filteredWords
+              : undefined
+          }
           onSelectDeck={onSelectDeck}
           onDataChanged={onDataChanged}
         />

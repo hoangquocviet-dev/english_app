@@ -14,6 +14,7 @@ import type { StudyFilterMode, StudyMode, StudySessionStats, WordItem } from '..
 import { formatArcadeMeaning } from '../../utils/arcadeText'
 import { audioService } from '../../utils/audio'
 import { splitClozeSentence } from '../../utils/cloze'
+import { normalizePartOfSpeech } from '../../utils/parser'
 import { GLOBAL_SRS_DECK_ID, storageService } from '../../utils/storage'
 import { StudySummary } from './StudySummary'
 
@@ -86,7 +87,7 @@ function buildSingleQuestion(
 
   const targetTermLower = targetWord.term.trim().toLowerCase()
   const targetDefLower = targetWord.definition.trim().toLowerCase()
-  const targetPos = (targetWord.partOfSpeech || '').trim().toLowerCase()
+  const targetPos = normalizePartOfSpeech(targetWord.partOfSpeech) || ''
 
   const eligible = candidates.filter(
     (c) =>
@@ -95,7 +96,7 @@ function buildSingleQuestion(
   )
 
   const samePos = targetPos
-    ? eligible.filter((c) => (c.partOfSpeech || '').trim().toLowerCase() === targetPos)
+    ? eligible.filter((c) => (normalizePartOfSpeech(c.partOfSpeech) || '') === targetPos)
     : []
   const primaryPool = samePos.length >= 3 ? samePos : eligible
 

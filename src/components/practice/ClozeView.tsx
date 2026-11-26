@@ -14,6 +14,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { StudyFilterMode, StudyMode, StudySessionStats, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
 import { maskClozeSkeleton, normalizeClozeAttempt, splitClozeSentence } from '../../utils/cloze'
+import { normalizePartOfSpeech } from '../../utils/parser'
 import { GLOBAL_SRS_DECK_ID, storageService } from '../../utils/storage'
 import { StudySummary } from './StudySummary'
 
@@ -85,7 +86,7 @@ function buildClozeQuestions(
         term: w.term,
         termKey,
         defKey: w.definition.trim().toLowerCase(),
-        pos: (w.partOfSpeech || '').trim().toLowerCase(),
+        pos: normalizePartOfSpeech(w.partOfSpeech) || '',
       })
     }
   }
@@ -93,7 +94,7 @@ function buildClozeQuestions(
   const questions: ClozeQuestion[] = sourceWords.map((targetWord) => {
     const targetKey = targetWord.term.trim().toLowerCase()
     const targetDefKey = targetWord.definition.trim().toLowerCase()
-    const targetPos = (targetWord.partOfSpeech || '').trim().toLowerCase()
+    const targetPos = normalizePartOfSpeech(targetWord.partOfSpeech) || ''
     const sentence =
       targetWord.example?.trim() ||
       `${targetWord.term} plays a key role: ${targetWord.definition}.`

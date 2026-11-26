@@ -14,6 +14,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { StudyFilterMode, StudyMode, StudySessionStats, WordItem } from '../../types'
 import { formatArcadeMeaning } from '../../utils/arcadeText'
 import { audioService } from '../../utils/audio'
+import { maskClozeSkeleton, normalizeClozeAttempt } from '../../utils/cloze'
+import { normalizePartOfSpeech } from '../../utils/parser'
 import { GLOBAL_SRS_DECK_ID, storageService } from '../../utils/storage'
 import { StudySummary } from './StudySummary'
 
@@ -54,26 +56,8 @@ function shuffleArray<T>(array: T[]): T[] {
   return arr
 }
 
-function normalizeDictation(raw: string): string {
-  return raw
-    .toLowerCase()
-    .replace(/\([^)]*\)/g, ' ')
-    .replace(/[-_']/g, ' ')
-    .replace(/[^a-z0-9\s]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
-
-function maskTermSkeleton(term: string): string {
-  return term
-    .trim()
-    .split(/\s+/)
-    .map((part) => {
-      if (part.length <= 2) return `${part[0] || ''}${'_'.repeat(Math.max(0, part.length - 1))}`
-      return `${part[0]} ${Array.from({ length: part.length - 2 }, () => '_').join(' ')} ${part[part.length - 1]}`
-    })
-    .join('   ')
-}
+const normalizeDictation = normalizeClozeAttempt
+const maskTermSkeleton = maskClozeSkeleton
 
 function buildListeningQuestions(
   sourceWords: WordItem[],
@@ -96,7 +80,7 @@ function buildListeningQuestions(
         definition: w.definition,
         termKey,
         defKey: w.definition.trim().toLowerCase(),
-        pos: (w.partOfSpeech || '').trim().toLowerCase(),
+        pos: normalizePartOfSpeech(w.partOfSpeech) || '',
       })
     }
   }
@@ -104,7 +88,7 @@ function buildListeningQuestions(
   const generated: ListeningQuestion[] = sourceWords.map((targetWord) => {
     const targetKey = targetWord.term.trim().toLowerCase()
     const targetDefKey = targetWord.definition.trim().toLowerCase()
-    const targetPos = (targetWord.partOfSpeech || '').trim().toLowerCase()
+    const targetPos = normalizePartOfSpeech(targetWord.partOfSpeech) || ''
 
     const eligible = uniquePool.filter(
       (c) => c.termKey !== targetKey && c.defKey !== targetDefKey

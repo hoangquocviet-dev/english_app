@@ -23,6 +23,8 @@ interface AddWordViewProps {
   onGoToPractice: (deckId: string) => void
 }
 
+const NEW_DECK_SENTINEL = '__new__'
+
 export function AddWordView({
   decks,
   activeDeckId,
@@ -30,9 +32,11 @@ export function AddWordView({
   onGoToPractice,
 }: AddWordViewProps) {
   const [rawSelectedDeckId, setSelectedDeckId] = useState(activeDeckId)
-  const selectedDeckId = decks.some((d) => d.id === rawSelectedDeckId)
-    ? rawSelectedDeckId
-    : activeDeckId
+  const selectedDeckId =
+    rawSelectedDeckId === NEW_DECK_SENTINEL || decks.some((d) => d.id === rawSelectedDeckId)
+      ? rawSelectedDeckId
+      : activeDeckId
+  const [newDeckTitle, setNewDeckTitle] = useState('')
   const [term, setTerm] = useState('')
   const [ipa, setIpa] = useState('')
   const [partOfSpeech, setPartOfSpeech] = useState('noun')
@@ -42,21 +46,35 @@ export function AddWordView({
   const [isLoading, setIsLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
+  const [lastSavedDeckId, setLastSavedDeckId] = useState(activeDeckId)
   const [, setListTick] = useState(0)
 
-  const recentCustomWords = storageService
-    .getWords(selectedDeckId)
-    .filter((w) => w.id.startsWith('w-'))
-    .slice(0, 5)
+  const recentCustomWords =
+    selectedDeckId === NEW_DECK_SENTINEL
+      ? []
+      : storageService
+          .getWords(selectedDeckId)
+          .filter((w) => w.id.startsWith('w-'))
+          .slice(0, 5)
+
+  const normalizedTypedTerm = normalizeImportedTerm(term).term.trim().toLowerCase()
+
+  const sameDeckMatch = (() => {
+    if (selectedDeckId === NEW_DECK_SENTINEL || !normalizedTypedTerm) return null
+    return (
+      storageService
+        .getWords(selectedDeckId)
+        .find((w) => w.term.trim().toLowerCase() === normalizedTypedTerm) || null
+    )
+  })()
 
   const crossDeckMatch = (() => {
-    const normalizedPreview = normalizeImportedTerm(term).term.trim().toLowerCase()
-    if (!normalizedPreview || normalizedPreview.length < 2) return null
+    if (sameDeckMatch || !normalizedTypedTerm || normalizedTypedTerm.length < 2) return null
     const found = storageService
       .getWords()
       .find(
         (w) =>
-          w.deckId !== selectedDeckId && w.term.trim().toLowerCase() === normalizedPreview
+          w.deckId !== selectedDeckId && w.term.trim().toLowerCase() === normalizedTypedTerm
       )
     if (!found) return null
     const foundDeck = decks.find((d) => d.id === found.deckId)
@@ -218,18 +236,31 @@ export function AddWordView({
       return
     }
 
-    const existingWords = storageService.getWords(selectedDeckId)
-    const isDuplicate = existingWords.some(
-      (w) => w.term.trim().toLowerCase() === cleanTerm.toLowerCase()
-    )
+    let targetDeckId = selectedDeckId
+    if (selectedDeckId === NEW_DECK_SENTINEL) {
+      const cleanDeckName = newDeckTitle.trim()
+      if (!cleanDeckName) {
+        setErrorMsg('Vui lòng nhập tên cho bộ từ vựng mới.')
+        return
+      }
+      const created = storageService.createDeck(cleanDeckName, 'Bộ từ vựng tự tạo')
+      targetDeckId = created.id
+      setSelectedDeckId(created.id)
+      setNewDeckTitle('')
+    } else {
+      const existingWords = storageService.getWords(targetDeckId)
+      const isDuplicate = existingWords.some(
+        (w) => w.term.trim().toLowerCase() === cleanTerm.toLowerCase()
+      )
 
-    if (isDuplicate) {
-      setErrorMsg(`Từ "${cleanTerm}" đã có sẵn trong bộ từ này rồi!`)
-      return
+      if (isDuplicate) {
+        setErrorMsg(`Từ "${cleanTerm}" đã có sẵn trong bộ từ này rồi!`)
+        return
+      }
     }
 
     const newWord: Omit<WordItem, 'id' | 'status' | 'reviewCount'> = {
-      deckId: selectedDeckId,
+      deckId: targetDeckId,
       term: cleanTerm,
       ipa: ipa.trim() || undefined,
       partOfSpeech: inferredPos || partOfSpeech.trim() || undefined,
@@ -245,9 +276,10 @@ export function AddWordView({
     setDefinition('')
     setEnglishHint('')
     setExample('')
+    setLastSavedDeckId(targetDeckId)
     setSuccessMsg(`Đã lưu thẻ "${cleanTerm}"! Bạn có thể tiếp tục thêm từ khác.`)
 
-    onWordAdded(selectedDeckId)
+    onWordAdded(targetDeckId)
   }
 
   return (
@@ -264,21 +296,42 @@ export function AddWordView({
         className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4"
       >
         {/* Deck Select */}
-        <div>
-          <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-1.5">
-            Lưu vào bộ từ
-          </label>
-          <select
-            value={selectedDeckId}
-            onChange={(e) => setSelectedDeckId(e.target.value)}
-            className="w-full py-2.5 px-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          >
-            {decks.map((deck) => (
-              <option key={deck.id} value={deck.id}>
-                {deck.name}
-              </option>
-            ))}
-          </select>
+        <div className="space-y-2.5">
+          <div>
+            <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-1.5">
+              Lưu vào bộ từ
+            </label>
+            <select
+              value={selectedDeckId}
+              onChange={(e) => {
+                setSelectedDeckId(e.target.value)
+                setErrorMsg('')
+              }}
+              className="w-full py-2.5 px-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value={NEW_DECK_SENTINEL}>+ Tạo bộ từ vựng mới...</option>
+              {decks.map((deck) => (
+                <option key={deck.id} value={deck.id}>
+                  {deck.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {selectedDeckId === NEW_DECK_SENTINEL && (
+            <div className="animate-fadeIn">
+              <label className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 block mb-1">
+                Tên bộ từ vựng mới <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={newDeckTitle}
+                onChange={(e) => setNewDeckTitle(e.target.value)}
+                placeholder="Ví dụ: Từ vựng Họp dự án, IELTS Reading..."
+                className="w-full py-2 px-3 rounded-xl bg-indigo-500/5 dark:bg-slate-900 border border-indigo-500/35 text-slate-900 dark:text-slate-100 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+          )}
         </div>
 
         {/* English Term + Lookup Button */}
@@ -314,6 +367,22 @@ export function AddWordView({
               <span>Tra từ</span>
             </button>
           </div>
+          {sameDeckMatch && (
+            <div className="mt-2 p-2 px-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-between gap-2 text-[11px] text-amber-700 dark:text-amber-300 animate-fadeIn">
+              <span className="truncate">
+                Đã có sẵn trong bộ này: <strong>{sameDeckMatch.definition}</strong> (
+                {sameDeckMatch.status === 'mastered' ? 'Đã thuộc' : 'Cần ôn'})
+              </span>
+              <button
+                type="button"
+                onClick={() => void audioService.speak(sameDeckMatch.term)}
+                className="p-1 rounded-lg hover:bg-amber-500/15 shrink-0"
+                title="Nghe phát âm"
+              >
+                <Volume2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
           {crossDeckMatch && !definition.trim() && (
             <div className="mt-2 p-2 px-2.5 rounded-xl bg-indigo-500/8 dark:bg-indigo-500/12 border border-indigo-500/20 flex items-center justify-between gap-2 text-[11px]">
               <span className="text-slate-600 dark:text-slate-300 truncate">
@@ -434,7 +503,7 @@ export function AddWordView({
             {!term && (
               <button
                 type="button"
-                onClick={() => onGoToPractice(selectedDeckId)}
+                onClick={() => onGoToPractice(lastSavedDeckId)}
                 className="w-full py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors"
               >
                 <span>Luyện tập ngay bộ từ này</span>
