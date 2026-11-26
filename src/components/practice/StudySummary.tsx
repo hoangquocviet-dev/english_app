@@ -17,7 +17,7 @@ import { audioService } from '../../utils/audio'
 interface StudySummaryProps {
   stats: StudySessionStats
   onContinueRemaining?: (remainingWords: WordItem[]) => void
-  onResetDeck: () => void
+  onResetDeck?: () => void
   onBackToHome: () => void
 }
 
@@ -83,7 +83,7 @@ export function StudySummary({
   const handleConfirmReset = () => {
     audioService.playClick()
     setShowResetConfirm(false)
-    onResetDeck()
+    onResetDeck?.()
   }
 
   return (
@@ -94,7 +94,11 @@ export function StudySummary({
       </div>
 
       <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-1">
-        {isAllDeckMastered ? 'Đã thuộc trọn bộ từ!' : 'Hoàn thành lượt học!'}
+        {isAllDeckMastered
+          ? onResetDeck
+            ? 'Đã thuộc trọn bộ từ!'
+            : 'Hoàn tất ôn tập SRS!'
+          : 'Hoàn thành lượt học!'}
       </h2>
       <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
         Bộ từ: <span className="font-semibold text-slate-700 dark:text-slate-300">{stats.deckName}</span>
@@ -102,7 +106,15 @@ export function StudySummary({
 
       {isAllDeckMastered && (
         <div className="w-full px-3.5 py-2.5 mb-4 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-700 dark:text-emerald-300 text-xs font-medium leading-relaxed">
-          Toàn bộ các thẻ đã thuộc được ẩn đi để bạn không phải học lại. Khi nào muốn ôn lại từ đầu, hãy bấm nút <strong>Reset bộ từ</strong>.
+          {onResetDeck ? (
+            <>
+              Toàn bộ các thẻ đã thuộc được ẩn đi để bạn không phải học lại. Khi nào muốn ôn lại từ đầu, hãy bấm nút <strong>Reset bộ từ</strong>.
+            </>
+          ) : (
+            <>
+              Tuyệt vời! Toàn bộ thẻ đến hạn SRS đã được nâng lên chu kỳ ghi nhớ dài hạn tiếp theo.
+            </>
+          )}
         </div>
       )}
 
@@ -210,16 +222,18 @@ export function StudySummary({
           <span>Về trang chủ</span>
         </button>
 
-        <button
-          onClick={() => {
-            audioService.playClick()
-            setShowResetConfirm(true)
-          }}
-          className="w-full py-2.5 px-4 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 text-amber-600 dark:text-amber-400 font-semibold text-xs flex items-center justify-center gap-1.5 transition-transform active:scale-95"
-        >
-          <RotateCcw className="w-3.5 h-3.5" />
-          <span>Reset bộ từ để hiện lại toàn bộ thẻ</span>
-        </button>
+        {onResetDeck && (
+          <button
+            onClick={() => {
+              audioService.playClick()
+              setShowResetConfirm(true)
+            }}
+            className="w-full py-2.5 px-4 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 text-amber-600 dark:text-amber-400 font-semibold text-xs flex items-center justify-center gap-1.5 transition-transform active:scale-95"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Reset bộ từ để hiện lại toàn bộ thẻ</span>
+          </button>
+        )}
       </div>
 
       {/* Safety Confirmation Modal for Reset Deck */}

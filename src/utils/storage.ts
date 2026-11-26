@@ -8,7 +8,9 @@ import type {
   WordItem,
 } from '../types'
 
-const CURRENT_SEED_VERSION = 7
+const CURRENT_SEED_VERSION = 8
+
+export const GLOBAL_SRS_DECK_ID = '__global_srs__'
 
 export const SRS_INTERVALS_MS: Record<number, number> = {
   1: 1 * 24 * 60 * 60 * 1000, // Level 1: 1 day (86,400,000 ms)
@@ -419,9 +421,22 @@ class SafeStorageService {
 
   // Spaced Repetition (SRS) helper queries
   public getDueReviewWords(deckId?: string): WordItem[] {
-    const words = this.getWords(deckId)
+    const words = deckId && deckId !== GLOBAL_SRS_DECK_ID ? this.getWords(deckId) : this.getWords()
     const now = Date.now()
     return words.filter((w) => w.status === 'mastered' && (!w.nextReview || w.nextReview <= now))
+  }
+
+  public getRemainingWordsForSession(deckId: string, sessionWords: WordItem[]): WordItem[] {
+    if (deckId === GLOBAL_SRS_DECK_ID) {
+      const now = Date.now()
+      const sessionIdSet = new Set(sessionWords.map((w) => w.id))
+      return this.getWords().filter(
+        (w) =>
+          (w.status === 'mastered' && (!w.nextReview || w.nextReview <= now)) ||
+          (sessionIdSet.has(w.id) && w.status !== 'mastered')
+      )
+    }
+    return this.getWords(deckId).filter((w) => w.status !== 'mastered')
   }
 
   public getSrsStats(deckId?: string): {

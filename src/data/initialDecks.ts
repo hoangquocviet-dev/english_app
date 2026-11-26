@@ -4783,7 +4783,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Early computing centers archived cold backup archives onto magnetic Tape spools."
+    "example": "Early computing centers archived cold backup archives onto magnetic Tape spools.",
+    "ipa": "/teɪp/"
   },
   {
     "id": "cs-16",
@@ -4793,17 +4794,19 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Engineers interact with remote Linux cloud instances through a secure bash Terminal window."
+    "example": "Engineers interact with remote Linux cloud instances through a secure bash Terminal window.",
+    "ipa": "/ˈtɜːrmɪnl/"
   },
   {
     "id": "cs-17",
     "deckId": "deck-cs-foundations",
     "term": "Transmit",
     "definition": "Truyền",
-    "partOfSpeech": "noun",
+    "partOfSpeech": "verb",
     "status": "new",
     "reviewCount": 0,
-    "example": "Satellites Transmit telemetry coordinates back to earth stations in real time."
+    "example": "Satellites Transmit telemetry coordinates back to earth stations in real time.",
+    "ipa": "/trænzˈmɪt/"
   },
   {
     "id": "cs-18",
@@ -4813,27 +4816,30 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Ancient merchants calculated trade balances using an early bead Abacus counting frame."
+    "example": "Ancient merchants calculated trade balances using an early bead Abacus counting frame.",
+    "ipa": "/ˈæbəkəs/"
   },
   {
     "id": "cs-19",
     "deckId": "deck-cs-foundations",
     "term": "Allocate",
     "definition": "Phân phối",
-    "partOfSpeech": "noun",
+    "partOfSpeech": "verb",
     "status": "new",
     "reviewCount": 0,
-    "example": "The operating system memory manager must Allocate free RAM blocks to newly launched apps."
+    "example": "The operating system memory manager must Allocate free RAM blocks to newly launched apps.",
+    "ipa": "/ˈæləkeɪt/"
   },
   {
     "id": "cs-20",
     "deckId": "deck-cs-foundations",
     "term": "Analog",
     "definition": "Tương tự",
-    "partOfSpeech": "noun",
+    "partOfSpeech": "adj",
     "status": "new",
     "reviewCount": 0,
-    "example": "A sound wave is an Analog waveform that must be sampled into discrete digital numbers."
+    "example": "A sound wave is an Analog waveform that must be sampled into discrete digital numbers.",
+    "ipa": "/ˈænəlɔːɡ/"
   },
   {
     "id": "cs-21",
@@ -4843,17 +4849,19 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Download the official mobile Application from the app store to manage your account."
+    "example": "Download the official mobile Application from the app store to manage your account.",
+    "ipa": "/ˌæplɪˈkeɪʃn/"
   },
   {
     "id": "cs-22",
     "deckId": "deck-cs-foundations",
     "term": "Binary",
     "definition": "Nhị phân, thuộc về nhị phân",
-    "partOfSpeech": "noun",
+    "partOfSpeech": "adj",
     "status": "new",
     "reviewCount": 0,
-    "example": "Computers represent all instructions and data using Binary combinations of zeroes and ones."
+    "example": "Computers represent all instructions and data using Binary combinations of zeroes and ones.",
+    "ipa": "/ˈbaɪnəri/"
   },
   {
     "id": "cs-23",
@@ -4863,7 +4871,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Performing a 3D matrix Calculation requires heavy floating-point GPU processing power."
+    "example": "Performing a 3D matrix Calculation requires heavy floating-point GPU processing power.",
+    "ipa": "/ˌkælkjuˈleɪʃn/"
   },
   {
     "id": "cs-24",
@@ -4873,57 +4882,63 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Type the git status Command into the command-line prompt to check repository changes."
+    "example": "Type the git status Command into the command-line prompt to check repository changes.",
+    "ipa": "/kəˈmænd/"
   },
   {
     "id": "cs-25",
     "deckId": "deck-cs-foundations",
     "term": "Dependable",
     "definition": "Có thể tin cậy được",
-    "partOfSpeech": "noun",
+    "partOfSpeech": "adj",
     "status": "new",
     "reviewCount": 0,
-    "example": "Banking infrastructures require highly Dependable servers that provide five-nines uptime."
+    "example": "Banking infrastructures require highly Dependable servers that provide five-nines uptime.",
+    "ipa": "/dɪˈpendəbl/"
   },
   {
     "id": "cs-26",
     "deckId": "deck-cs-foundations",
     "term": "Devise",
     "definition": "Phát minh",
-    "partOfSpeech": "noun",
+    "partOfSpeech": "verb",
     "status": "new",
     "reviewCount": 0,
-    "example": "Computer scientists Devise novel encryption algorithms to protect sensitive medical data."
+    "example": "Computer scientists Devise novel encryption algorithms to protect sensitive medical data.",
+    "ipa": "/dɪˈvaɪz/"
   },
   {
     "id": "cs-27",
     "deckId": "deck-cs-foundations",
     "term": "Different",
     "definition": "Khác biệt",
-    "partOfSpeech": "noun",
+    "partOfSpeech": "adj",
     "status": "new",
     "reviewCount": 0,
-    "example": "Modern compilers generate Different assembly instructions depending on the target architecture."
+    "example": "Modern compilers generate Different assembly instructions depending on the target architecture.",
+    "ipa": "/ˈdɪfrənt/"
   },
   {
     "id": "cs-28",
     "deckId": "deck-cs-foundations",
     "term": "Digital",
     "definition": "Số, thuộc về số",
-    "partOfSpeech": "noun",
+    "partOfSpeech": "adj",
     "status": "new",
     "reviewCount": 0,
-    "example": "Digital electronics process information encoded as discrete high and low voltage states."
+    "example": "Digital electronics process information encoded as discrete high and low voltage states.",
+    "ipa": "/ˈdɪdʒɪtl/"
   },
   {
     "id": "cs-29",
     "deckId": "deck-cs-foundations",
     "term": "Etch",
     "definition": "Khắc axit",
-    "partOfSpeech": "noun",
+    "partOfSpeech": "verb",
     "status": "new",
     "reviewCount": 0,
-    "example": "Semiconductor fabrication plants Etch microscopic transistor gates onto silicon wafers."
+    "example": "Semiconductor fabrication plants Etch microscopic transistor gates onto silicon wafers.",
+    "ipa": "/etʃ/"
   },
   {
     "id": "cs-30",
@@ -4933,7 +4948,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Researchers run a controlled scientific Experiment to benchmark algorithmic performance."
+    "example": "Researchers run a controlled scientific Experiment to benchmark algorithmic performance.",
+    "ipa": "/ɪkˈsperɪmənt/"
   },
   {
     "id": "cs-31",
@@ -4943,17 +4959,19 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "phrase",
     "status": "new",
     "reviewCount": 0,
-    "example": "VPN software allows employees secure Remote Access to internal corporate intranet resources."
+    "example": "VPN software allows employees secure Remote Access to internal corporate intranet resources.",
+    "ipa": "/rɪˈmoʊt ˈækses/"
   },
   {
     "id": "cs-32",
     "deckId": "deck-cs-foundations",
     "term": "Computerize",
     "definition": "Tin học hóa",
-    "partOfSpeech": "noun",
+    "partOfSpeech": "verb",
     "status": "new",
     "reviewCount": 0,
-    "example": "Hospitals decided to Computerize paper patient charts to eliminate transcription mistakes."
+    "example": "Hospitals decided to Computerize paper patient charts to eliminate transcription mistakes.",
+    "ipa": "/kəmˈpjuːtəraɪz/"
   },
   {
     "id": "cs-33",
@@ -4963,7 +4981,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Cloud Storage providers offer scalable object buckets for hosting media files."
+    "example": "Cloud Storage providers offer scalable object buckets for hosting media files.",
+    "ipa": "/ˈstɔːrɪdʒ/"
   },
   {
     "id": "cs-34",
@@ -4973,7 +4992,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "phrase",
     "status": "new",
     "reviewCount": 0,
-    "example": "Engineers worked late to Figure out the obscure cause of the production memory leak."
+    "example": "Engineers worked late to Figure out the obscure cause of the production memory leak.",
+    "ipa": "/ˈfɪɡjər aʊt/"
   },
   {
     "id": "cs-35",
@@ -4983,7 +5003,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Each new Generation of microchips doubles transistor density while reducing power draw."
+    "example": "Each new Generation of microchips doubles transistor density while reducing power draw.",
+    "ipa": "/ˌdʒenəˈreɪʃn/"
   },
   {
     "id": "cs-36",
@@ -4993,7 +5014,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Studying the History of computer science provides valuable insight into modern design choices."
+    "example": "Studying the History of computer science provides valuable insight into modern design choices.",
+    "ipa": "/ˈhɪstəri/"
   },
   {
     "id": "cs-37",
@@ -5003,17 +5025,19 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Printers leave a permanent ink Imprint of barcode labels onto shipping cartons."
+    "example": "Printers leave a permanent ink Imprint of barcode labels onto shipping cartons.",
+    "ipa": "/ˈɪmprɪnt/"
   },
   {
     "id": "cs-38",
     "deckId": "deck-cs-foundations",
     "term": "Integrate",
     "definition": "Tích hợp",
-    "partOfSpeech": "noun",
+    "partOfSpeech": "verb",
     "status": "new",
     "reviewCount": 0,
-    "example": "We plan to Integrate the payment gateway with our inventory management database."
+    "example": "We plan to Integrate the payment gateway with our inventory management database.",
+    "ipa": "/ˈɪntɪɡreɪt/"
   },
   {
     "id": "cs-39",
@@ -5023,7 +5047,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "The Invention of the silicon transistor revolutionized global telecommunications."
+    "example": "The Invention of the silicon transistor revolutionized global telecommunications.",
+    "ipa": "/ɪnˈvenʃn/"
   },
   {
     "id": "cs-40",
@@ -5033,7 +5058,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "The transport Layer in the network model manages end-to-end packet delivery confirmation."
+    "example": "The transport Layer in the network model manages end-to-end packet delivery confirmation.",
+    "ipa": "/ˈleɪər/"
   },
   {
     "id": "cs-41",
@@ -5043,7 +5069,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "phrase",
     "status": "new",
     "reviewCount": 0,
-    "example": "Large financial enterprises historically relied on an IBM Mainframe computer for batch billing."
+    "example": "Large financial enterprises historically relied on an IBM Mainframe computer for batch billing.",
+    "ipa": "/ˈmeɪnfreɪm kəmˈpjuːtər/"
   },
   {
     "id": "cs-42",
@@ -5053,17 +5080,19 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "The new graphics architecture demonstrates the Ability to render ray-traced shadows smoothly."
+    "example": "The new graphics architecture demonstrates the Ability to render ray-traced shadows smoothly.",
+    "ipa": "/əˈbɪləti/"
   },
   {
     "id": "cs-43",
     "deckId": "deck-cs-foundations",
     "term": "Access",
     "definition": "Truy cập; sự truy cập",
-    "partOfSpeech": "noun",
+    "partOfSpeech": "verb",
     "status": "new",
     "reviewCount": 0,
-    "example": "Only authorized administrators possess permission to Access production database servers."
+    "example": "Only authorized administrators possess permission to Access production database servers.",
+    "ipa": "/ˈækses/"
   },
   {
     "id": "cs-44",
@@ -5073,7 +5102,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "phrase",
     "status": "new",
     "reviewCount": 0,
-    "example": "Early telecommuters dialed into mainframe networks using an Acoustic coupler telephone modem."
+    "example": "Early telecommuters dialed into mainframe networks using an Acoustic coupler telephone modem.",
+    "ipa": "/əˈkuːstɪk ˈkʌplər/"
   },
   {
     "id": "cs-45",
@@ -5083,7 +5113,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "A senior systems Analyst diagrams business requirements into technical system specifications."
+    "example": "A senior systems Analyst diagrams business requirements into technical system specifications.",
+    "ipa": "/ˈænəlɪst/"
   },
   {
     "id": "cs-46",
@@ -5093,7 +5124,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "The relational database serves as the architectural Centerpiece of our web service."
+    "example": "The relational database serves as the architectural Centerpiece of our web service.",
+    "ipa": "/ˈsentərpiːs/"
   },
   {
     "id": "cs-47",
@@ -5103,7 +5135,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Fiber optic strands provide a dedicated communications Channel with immense bandwidth."
+    "example": "Fiber optic strands provide a dedicated communications Channel with immense bandwidth.",
+    "ipa": "/ˈtʃænl/"
   },
   {
     "id": "cs-48",
@@ -5113,7 +5146,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Low power consumption is a key Characteristic of modern mobile ARM processors."
+    "example": "Low power consumption is a key Characteristic of modern mobile ARM processors.",
+    "ipa": "/ˌkærəktəˈrɪstɪk/"
   },
   {
     "id": "cs-49",
@@ -5123,7 +5157,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "phrase",
     "status": "new",
     "reviewCount": 0,
-    "example": "A Cluster controller coordinates data transfers between mainframe channels and local terminals."
+    "example": "A Cluster controller coordinates data transfers between mainframe channels and local terminals.",
+    "ipa": "/ˈklʌstər kənˈtroʊlər/"
   },
   {
     "id": "cs-50",
@@ -5133,17 +5168,19 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "phrase",
     "status": "new",
     "reviewCount": 0,
-    "example": "Modern relational databases Consist of tables, indexes, triggers, and stored procedures."
+    "example": "Modern relational databases Consist of tables, indexes, triggers, and stored procedures.",
+    "ipa": "/kənˈsɪst əv/"
   },
   {
     "id": "cs-51",
     "deckId": "deck-cs-foundations",
     "term": "Convert",
     "definition": "Chuyển đổi",
-    "partOfSpeech": "noun",
+    "partOfSpeech": "verb",
     "status": "new",
     "reviewCount": 0,
-    "example": "Digital converters Convert continuous analog audio waveforms into compressed MP3 bytes."
+    "example": "Digital converters Convert continuous analog audio waveforms into compressed MP3 bytes.",
+    "ipa": "/kənˈvɜːrt/"
   },
   {
     "id": "cs-52",
@@ -5153,7 +5190,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Server racks contain specialized networking Equipment including routers, switches, and patch panels."
+    "example": "Server racks contain specialized networking Equipment including routers, switches, and patch panels.",
+    "ipa": "/ɪˈkwɪpmənt/"
   },
   {
     "id": "cs-53",
@@ -5163,7 +5201,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "A hardware Multiplexor merges multiple input data streams into a single high-speed line."
+    "example": "A hardware Multiplexor merges multiple input data streams into a single high-speed line.",
+    "ipa": "/ˈmʌltɪpleksər/"
   },
   {
     "id": "cs-54",
@@ -5173,7 +5212,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Connecting computers together forms a Network capable of sharing files and printers."
+    "example": "Connecting computers together forms a Network capable of sharing files and printers.",
+    "ipa": "/ˈnetwɜːrk/"
   },
   {
     "id": "cs-55",
@@ -5183,7 +5223,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "A USB mouse is an external input Peripheral connected to the desktop workstation."
+    "example": "A USB mouse is an external input Peripheral connected to the desktop workstation.",
+    "ipa": "/pəˈrɪfərəl/"
   },
   {
     "id": "cs-56",
@@ -5193,17 +5234,19 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Extensive stress testing proved the Reliability of the distributed database under heavy load."
+    "example": "Extensive stress testing proved the Reliability of the distributed database under heavy load.",
+    "ipa": "/rɪˌlaɪəˈbɪləti/"
   },
   {
     "id": "cs-57",
     "deckId": "deck-cs-foundations",
     "term": "Single-purpose",
     "definition": "Đơn mục đích",
-    "partOfSpeech": "noun",
+    "partOfSpeech": "adj",
     "status": "new",
     "reviewCount": 0,
-    "example": "A barcode scanner is a Single-purpose input device designed solely for retail inventory."
+    "example": "A barcode scanner is a Single-purpose input device designed solely for retail inventory.",
+    "ipa": "/ˈsɪŋɡl ˈpɜːrpəs/"
   },
   {
     "id": "cs-58",
@@ -5213,17 +5256,19 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Remote engineering teams host a weekly Teleconference over video to align sprint goals."
+    "example": "Remote engineering teams host a weekly Teleconference over video to align sprint goals.",
+    "ipa": "/ˈtelɪkɑːnfərəns/"
   },
   {
     "id": "cs-59",
     "deckId": "deck-cs-foundations",
     "term": "Multi-task",
     "definition": "Đa nhiệm",
-    "partOfSpeech": "noun",
+    "partOfSpeech": "verb",
     "status": "new",
     "reviewCount": 0,
-    "example": "Modern preemptive operating systems allow CPUs to Multi-task smoothly between dozens of apps."
+    "example": "Modern preemptive operating systems allow CPUs to Multi-task smoothly between dozens of apps.",
+    "ipa": "/ˌmʌltiˈtæsk/"
   },
   {
     "id": "cs-60",
@@ -5233,7 +5278,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "The processor arithmetic logic unit carries out integer Arithmetic such as addition and division."
+    "example": "The processor arithmetic logic unit carries out integer Arithmetic such as addition and division.",
+    "ipa": "/əˈrɪθmətɪk/"
   },
   {
     "id": "cs-61",
@@ -5243,7 +5289,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Aerospace computers use specialized metal Alloy casings to shield circuits from radiation."
+    "example": "Aerospace computers use specialized metal Alloy casings to shield circuits from radiation.",
+    "ipa": "/ˈælɔɪ/"
   },
   {
     "id": "cs-62",
@@ -5253,7 +5300,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Experimental Bubble memory stored data in magnetic domains before flash memory took over."
+    "example": "Experimental Bubble memory stored data in magnetic domains before flash memory took over.",
+    "ipa": "/ˈbʌbl ˈmeməri/"
   },
   {
     "id": "cs-63",
@@ -5263,7 +5311,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "This enterprise hard drive has a storage Capacity of twenty terabytes of user data."
+    "example": "This enterprise hard drive has a storage Capacity of twenty terabytes of user data.",
+    "ipa": "/kəˈpæsəti/"
   },
   {
     "id": "cs-64",
@@ -5273,7 +5322,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Early computers relied on magnetic Core memory matrices to hold operative program state."
+    "example": "Early computers relied on magnetic Core memory matrices to hold operative program state.",
+    "ipa": "/kɔːr ˈmeməri/"
   },
   {
     "id": "cs-65",
@@ -5283,7 +5333,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "verb",
     "status": "new",
     "reviewCount": 0,
-    "example": "Arm architecture processors Dominate modern smartphones due to their high power efficiency."
+    "example": "Arm architecture processors Dominate modern smartphones due to their high power efficiency.",
+    "ipa": "/ˈdɑːmɪneɪt/"
   },
   {
     "id": "cs-66",
@@ -5293,7 +5344,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Core memory threaded copper wires through tiny Ferrite ring elements to store binary bits."
+    "example": "Core memory threaded copper wires through tiny Ferrite ring elements to store binary bits.",
+    "ipa": "/ˈferaɪt rɪŋ/"
   },
   {
     "id": "cs-67",
@@ -5303,7 +5355,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "adj",
     "status": "new",
     "reviewCount": 0,
-    "example": "Draw a Horizontal timeline across the canvas to represent transaction processing stages."
+    "example": "Draw a Horizontal timeline across the canvas to represent transaction processing stages.",
+    "ipa": "/ˌhɔːrɪˈzɑːntl/"
   },
   {
     "id": "cs-68",
@@ -5313,7 +5366,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Natural neural networks provided Inspiration for modern artificial intelligence algorithms."
+    "example": "Natural neural networks provided Inspiration for modern artificial intelligence algorithms.",
+    "ipa": "/ˌɪnspəˈreɪʃn/"
   },
   {
     "id": "cs-69",
@@ -5323,17 +5377,19 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "A grid Intersection indicates the coordinates where row and column electrical traces meet."
+    "example": "A grid Intersection indicates the coordinates where row and column electrical traces meet.",
+    "ipa": "/ˌɪntərˈsekʃn/"
   },
   {
     "id": "cs-70",
     "deckId": "deck-cs-foundations",
     "term": "Detailed",
     "definition": "Chi tiết",
-    "partOfSpeech": "noun",
+    "partOfSpeech": "adj",
     "status": "new",
     "reviewCount": 0,
-    "example": "The architect delivered a Detailed specification outlining database migration procedures."
+    "example": "The architect delivered a Detailed specification outlining database migration procedures.",
+    "ipa": "/dɪˈteɪld/"
   },
   {
     "id": "cs-71",
@@ -5343,7 +5399,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "adj",
     "status": "new",
     "reviewCount": 0,
-    "example": "Modules execute their Respective duties according to their defined domain boundaries."
+    "example": "Modules execute their Respective duties according to their defined domain boundaries.",
+    "ipa": "/rɪˈspektɪv/"
   },
   {
     "id": "cs-72",
@@ -5353,7 +5410,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "verb",
     "status": "new",
     "reviewCount": 0,
-    "example": "Non-volatile storage drives Retain written data even after system electricity is cut off."
+    "example": "Non-volatile storage drives Retain written data even after system electricity is cut off.",
+    "ipa": "/rɪˈteɪn/"
   },
   {
     "id": "cs-73",
@@ -5363,7 +5421,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "A smartwatch is a portable consumer Gadget equipped with biometric sensors and Bluetooth."
+    "example": "A smartwatch is a portable consumer Gadget equipped with biometric sensors and Bluetooth.",
+    "ipa": "/ˈɡædʒɪt/"
   },
   {
     "id": "cs-74",
@@ -5373,7 +5432,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Dynamic RAM is the dominant form of Semiconductor memory in personal computers today."
+    "example": "Dynamic RAM is the dominant form of Semiconductor memory in personal computers today.",
+    "ipa": "/ˌsemikənˈdʌktər ˈmeməri/"
   },
   {
     "id": "cs-75",
@@ -5383,7 +5443,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "adj",
     "status": "new",
     "reviewCount": 0,
-    "example": "Each registered user receives a Unique identifier that never collides in the database."
+    "example": "Each registered user receives a Unique identifier that never collides in the database.",
+    "ipa": "/juˈniːk/"
   },
   {
     "id": "cs-76",
@@ -5393,7 +5454,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "adj",
     "status": "new",
     "reviewCount": 0,
-    "example": "Stack columns along a Vertical axis to compare yearly server utilization metrics."
+    "example": "Stack columns along a Vertical axis to compare yearly server utilization metrics.",
+    "ipa": "/ˈvɜːrtɪkl/"
   },
   {
     "id": "cs-77",
@@ -5403,7 +5465,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Copper Wire conducts electrical signals between the motherboard and power supply unit."
+    "example": "Copper Wire conducts electrical signals between the motherboard and power supply unit.",
+    "ipa": "/ˈwaɪər/"
   },
   {
     "id": "cs-78",
@@ -5413,7 +5476,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Graphics processors multiply a 4x4 coordinate Matrix to transform 3D model vertices."
+    "example": "Graphics processors multiply a 4x4 coordinate Matrix to transform 3D model vertices.",
+    "ipa": "/ˈmeɪtrɪks/"
   },
   {
     "id": "cs-79",
@@ -5423,7 +5487,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Libraries historically archived delicate newspaper pages onto reels of Microfilm sheets."
+    "example": "Libraries historically archived delicate newspaper pages onto reels of Microfilm sheets.",
+    "ipa": "/ˈmaɪkroʊfɪlm/"
   },
   {
     "id": "cs-80",
@@ -5433,7 +5498,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "adj",
     "status": "new",
     "reviewCount": 0,
-    "example": "Adding caching produced a Noticeable decrease in average HTTP request response times."
+    "example": "Adding caching produced a Noticeable decrease in average HTTP request response times.",
+    "ipa": "/ˈnoʊtɪsəbl/"
   },
   {
     "id": "cs-81",
@@ -5443,7 +5509,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Quantum tunneling is a subatomic Phenomenon observed when chip transistors shrink to nanometers."
+    "example": "Quantum tunneling is a subatomic Phenomenon observed when chip transistors shrink to nanometers.",
+    "ipa": "/fəˈnɑːmɪnɑːn/"
   },
   {
     "id": "cs-82",
@@ -5453,7 +5520,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Calculate the exact screen Position of the button before rendering the dropdown menu."
+    "example": "Calculate the exact screen Position of the button before rendering the dropdown menu.",
+    "ipa": "/pəˈzɪʃn/"
   },
   {
     "id": "cs-83",
@@ -5463,7 +5531,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "The neural network made an accurate Prediction of future server load based on historical trends."
+    "example": "The neural network made an accurate Prediction of future server load based on historical trends.",
+    "ipa": "/prɪˈdɪkʃn/"
   },
   {
     "id": "cs-84",
@@ -5473,7 +5542,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "High code Quality reduces defects and minimizes maintenance costs throughout application lifecycles."
+    "example": "High code Quality reduces defects and minimizes maintenance costs throughout application lifecycles.",
+    "ipa": "/ˈkwɑːləti/"
   },
   {
     "id": "cs-85",
@@ -5483,7 +5553,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Track the remaining Quantity of items in the e-commerce shopping cart during checkout."
+    "example": "Track the remaining Quantity of items in the e-commerce shopping cart during checkout.",
+    "ipa": "/ˈkwɑːntəti/"
   },
   {
     "id": "cs-86",
@@ -5493,7 +5564,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Impact dot-matrix printers strike an inked fabric Ribbon against paper to print receipts."
+    "example": "Impact dot-matrix printers strike an inked fabric Ribbon against paper to print receipts.",
+    "ipa": "/ˈrɪbən/"
   },
   {
     "id": "cs-87",
@@ -5503,7 +5575,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "A mathematical Set contains distinct elements without any duplicate items allowed."
+    "example": "A mathematical Set contains distinct elements without any duplicate items allowed.",
+    "ipa": "/set/"
   },
   {
     "id": "cs-88",
@@ -5513,7 +5586,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "verb",
     "status": "new",
     "reviewCount": 0,
-    "example": "Traditional magnetic hard disk platters Spin at seven thousand two hundred revolutions per minute."
+    "example": "Traditional magnetic hard disk platters Spin at seven thousand two hundred revolutions per minute.",
+    "ipa": "/spɪn/"
   },
   {
     "id": "cs-89",
@@ -5523,7 +5597,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "verb",
     "status": "new",
     "reviewCount": 0,
-    "example": "In impact printing, mechanical hammers Strike the ribbon to transfer characters onto the page."
+    "example": "In impact printing, mechanical hammers Strike the ribbon to transfer characters onto the page.",
+    "ipa": "/straɪk/"
   },
   {
     "id": "cs-90",
@@ -5533,7 +5608,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "adj",
     "status": "new",
     "reviewCount": 0,
-    "example": "The new flagship processor delivers Superb energy efficiency during heavy video rendering."
+    "example": "The new flagship processor delivers Superb energy efficiency during heavy video rendering.",
+    "ipa": "/suːˈpɜːrb/"
   },
   {
     "id": "cs-91",
@@ -5543,7 +5619,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "The kernel Supervisor mode has full permission to configure CPU registers and memory pages."
+    "example": "The kernel Supervisor mode has full permission to configure CPU registers and memory pages.",
+    "ipa": "/ˈsuːpərvaɪzər/"
   },
   {
     "id": "cs-92",
@@ -5553,17 +5630,19 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "adj",
     "status": "new",
     "reviewCount": 0,
-    "example": "Point-of-sale receipt printers use heat-sensitive Thermal paper rather than liquid ink cartridges."
+    "example": "Point-of-sale receipt printers use heat-sensitive Thermal paper rather than liquid ink cartridges.",
+    "ipa": "/ˈθɜːrml/"
   },
   {
     "id": "cs-93",
     "deckId": "deck-cs-foundations",
     "term": "Train",
     "definition": "Đoàn tàu, dòng, dãy, chuỗi",
-    "partOfSpeech": "noun",
+    "partOfSpeech": "verb",
     "status": "new",
     "reviewCount": 0,
-    "example": "We must Train the machine learning classifier using thousands of labeled image samples."
+    "example": "We must Train the machine learning classifier using thousands of labeled image samples.",
+    "ipa": "/treɪn/"
   },
   {
     "id": "cs-94",
@@ -5573,7 +5652,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "adj",
     "status": "new",
     "reviewCount": 0,
-    "example": "Overlaying a Translucent layer creates a stylish frosted glass visual effect on modern user interfaces."
+    "example": "Overlaying a Translucent layer creates a stylish frosted glass visual effect on modern user interfaces.",
+    "ipa": "/trænzˈluːsnt/"
   },
   {
     "id": "cs-95",
@@ -5583,17 +5663,19 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Check the server Configuration file to update the database port and host settings."
+    "example": "Check the server Configuration file to update the database port and host settings.",
+    "ipa": "/kənˌfɪɡjəˈreɪʃn/"
   },
   {
     "id": "cs-96",
     "deckId": "deck-cs-foundations",
     "term": "Implement",
     "definition": "Công cụ, phương tiện",
-    "partOfSpeech": "noun",
+    "partOfSpeech": "verb",
     "status": "new",
     "reviewCount": 0,
-    "example": "Developers will Implement the new payment gateway using official developer documentation."
+    "example": "Developers will Implement the new payment gateway using official developer documentation.",
+    "ipa": "/ˈɪmplɪment/"
   },
   {
     "id": "cs-97",
@@ -5603,7 +5685,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Store large video recordings onto an external optical Disk or solid-state hard drive."
+    "example": "Store large video recordings onto an external optical Disk or solid-state hard drive.",
+    "ipa": "/dɪsk/"
   },
   {
     "id": "cs-98",
@@ -5613,17 +5696,19 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "PostgreSQL is a reliable open-source Alternative to proprietary enterprise database solutions."
+    "example": "PostgreSQL is a reliable open-source Alternative to proprietary enterprise database solutions.",
+    "ipa": "/ɔːlˈtɜːrnətɪv/"
   },
   {
     "id": "cs-99",
     "deckId": "deck-cs-foundations",
     "term": "Apt",
     "definition": "Có khả năng, có khuynh hướng",
-    "partOfSpeech": "verb",
+    "partOfSpeech": "adj",
     "status": "new",
     "reviewCount": 0,
-    "example": "This design pattern is an Apt solution for decoupling message producers from message consumers."
+    "example": "This design pattern is an Apt solution for decoupling message producers from message consumers.",
+    "ipa": "/æpt/"
   },
   {
     "id": "cs-100",
@@ -5633,7 +5718,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "An electron Beam in cathode ray tube monitors illuminated phosphor pixels on the glass screen."
+    "example": "An electron Beam in cathode ray tube monitors illuminated phosphor pixels on the glass screen.",
+    "ipa": "/biːm/"
   },
   {
     "id": "cs-101",
@@ -5643,7 +5729,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Cryptographic blocks form an immutable Chain linked together through SHA-256 hashes."
+    "example": "Cryptographic blocks form an immutable Chain linked together through SHA-256 hashes.",
+    "ipa": "/tʃeɪn/"
   },
   {
     "id": "cs-102",
@@ -5653,17 +5740,19 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "verb",
     "status": "new",
     "reviewCount": 0,
-    "example": "Add comments to Clarify non-obvious business calculations for teammates reviewing the code."
+    "example": "Add comments to Clarify non-obvious business calculations for teammates reviewing the code.",
+    "ipa": "/ˈklærəfaɪ/"
   },
   {
     "id": "cs-103",
     "deckId": "deck-cs-foundations",
     "term": "Coil",
     "definition": "Cuộn",
-    "partOfSpeech": "verb",
+    "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "An electromagnetic Coil in the speaker converts amplified audio voltage into sound waves."
+    "example": "An electromagnetic Coil in the speaker converts amplified audio voltage into sound waves.",
+    "ipa": "/kɔɪl/"
   },
   {
     "id": "cs-104",
@@ -5673,7 +5762,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "verb",
     "status": "new",
     "reviewCount": 0,
-    "example": "Gzip algorithms Condense raw HTML text into smaller packets for faster network delivery."
+    "example": "Gzip algorithms Condense raw HTML text into smaller packets for faster network delivery.",
+    "ipa": "/kənˈdens/"
   },
   {
     "id": "cs-105",
@@ -5683,7 +5773,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "verb",
     "status": "new",
     "reviewCount": 0,
-    "example": "Swagger documentation files Describe all available REST endpoints and their payload types."
+    "example": "Swagger documentation files Describe all available REST endpoints and their payload types.",
+    "ipa": "/dɪˈskraɪb/"
   },
   {
     "id": "cs-106",
@@ -5693,7 +5784,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Specify the exact height and width Dimension parameters when resizing user avatars."
+    "example": "Specify the exact height and width Dimension parameters when resizing user avatars.",
+    "ipa": "/daɪˈmenʃn/"
   },
   {
     "id": "cs-107",
@@ -5703,17 +5795,19 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Early computing machines stored volatile data on a revolving magnetic Drum cylinder."
+    "example": "Early computing machines stored volatile data on a revolving magnetic Drum cylinder.",
+    "ipa": "/drʌm/"
   },
   {
     "id": "cs-108",
     "deckId": "deck-cs-foundations",
-    "term": "Electro sensitive",
+    "term": "Electro-sensitive",
     "definition": "Nhiếm điện",
     "partOfSpeech": "adj",
     "status": "new",
     "reviewCount": 0,
-    "example": "Early thermal facsimiles relied on Electro sensitive paper that darkened under electric current."
+    "example": "Early thermal facsimiles relied on Electro-sensitive paper that darkened under electric current.",
+    "ipa": "/ɪˌlektroʊˈsensətɪv/"
   },
   {
     "id": "cs-109",
@@ -5723,7 +5817,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "adj",
     "status": "new",
     "reviewCount": 0,
-    "example": "Laser printers rely on Electrostatic charges to attract dry toner powder onto the imaging drum."
+    "example": "Laser printers rely on Electrostatic charges to attract dry toner powder onto the imaging drum.",
+    "ipa": "/ɪˌlektroʊˈstætɪk/"
   },
   {
     "id": "cs-110",
@@ -5733,7 +5828,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "verb",
     "status": "new",
     "reviewCount": 0,
-    "example": "Never Expose private API secrets or cryptographic keys inside client-side browser bundles."
+    "example": "Never Expose private API secrets or cryptographic keys inside client-side browser bundles.",
+    "ipa": "/ɪkˈspoʊz/"
   },
   {
     "id": "cs-111",
@@ -5743,7 +5839,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "verb",
     "status": "new",
     "reviewCount": 0,
-    "example": "Cloud hosting service level agreements Guarantee ninety-nine point nine percent server availability."
+    "example": "Cloud hosting service level agreements Guarantee ninety-nine point nine percent server availability.",
+    "ipa": "/ˌɡærənˈtiː/"
   },
   {
     "id": "cs-112",
@@ -5753,7 +5850,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "verb",
     "status": "new",
     "reviewCount": 0,
-    "example": "Technicians Demagnetize old backup drives before recycling hardware to protect confidential data."
+    "example": "Technicians Demagnetize old backup drives before recycling hardware to protect confidential data.",
+    "ipa": "/diːˈmæɡnətaɪz/"
   },
   {
     "id": "cs-113",
@@ -5763,7 +5861,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Employees browse the company Intranet to access internal HR documents and holiday calendars."
+    "example": "Employees browse the company Intranet to access internal HR documents and holiday calendars.",
+    "ipa": "/ˈɪntrənet/"
   },
   {
     "id": "cs-114",
@@ -5773,7 +5872,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "An impact printer fires a tiny metal Hammer to press characters firmly against the inked ribbon."
+    "example": "An impact printer fires a tiny metal Hammer to press characters firmly against the inked ribbon.",
+    "ipa": "/ˈhæmər/"
   },
   {
     "id": "cs-115",
@@ -5783,7 +5883,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "adj",
     "status": "new",
     "reviewCount": 0,
-    "example": "Each Individual user account has isolated permissions and customized dashboard settings."
+    "example": "Each Individual user account has isolated permissions and customized dashboard settings.",
+    "ipa": "/ˌɪndɪˈvɪdʒuəl/"
   },
   {
     "id": "cs-116",
@@ -5793,7 +5894,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Mechanical Inertia causes spinning hard drive platters to take a second to spin down."
+    "example": "Mechanical Inertia causes spinning hard drive platters to take a second to spin down.",
+    "ipa": "/ɪˈnɜːrʃə/"
   },
   {
     "id": "cs-117",
@@ -5803,7 +5905,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "The automated monitor detected an unexpected Irregularity in the server network bandwidth."
+    "example": "The automated monitor detected an unexpected Irregularity in the server network bandwidth.",
+    "ipa": "/ɪˌreɡjəˈlærəti/"
   },
   {
     "id": "cs-118",
@@ -5813,7 +5916,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "verb",
     "status": "new",
     "reviewCount": 0,
-    "example": "The client application must Establish a secure TLS handshake before sending HTTP requests."
+    "example": "The client application must Establish a secure TLS handshake before sending HTTP requests.",
+    "ipa": "/ɪˈstæblɪʃ/"
   },
   {
     "id": "cs-119",
@@ -5823,7 +5927,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "adj",
     "status": "new",
     "reviewCount": 0,
-    "example": "Save database backups in Permanent optical storage so files survive hardware failures."
+    "example": "Save database backups in Permanent optical storage so files survive hardware failures.",
+    "ipa": "/ˈpɜːrmənənt/"
   },
   {
     "id": "cs-120",
@@ -5833,7 +5938,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "adj",
     "status": "new",
     "reviewCount": 0,
-    "example": "The engineering team comprises people with Diverse skillsets ranging from UI design to DevOps."
+    "example": "The engineering team comprises people with Diverse skillsets ranging from UI design to DevOps.",
+    "ipa": "/daɪˈvɜːrs/"
   },
   {
     "id": "cs-121",
@@ -5843,7 +5949,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "adj",
     "status": "new",
     "reviewCount": 0,
-    "example": "Modern cloud architectures utilize Sophisticated container orchestrators to manage workloads."
+    "example": "Modern cloud architectures utilize Sophisticated container orchestrators to manage workloads.",
+    "ipa": "/səˈfɪstɪkeɪtɪd/"
   },
   {
     "id": "cs-122",
@@ -5853,7 +5960,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "adj",
     "status": "new",
     "reviewCount": 0,
-    "example": "Classic terminal displays were Monochromatic showing bright green text against a black background."
+    "example": "Classic terminal displays were Monochromatic showing bright green text against a black background.",
+    "ipa": "/ˌmɑːnəkroʊˈmætɪk/"
   },
   {
     "id": "cs-123",
@@ -5863,17 +5971,19 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "verb",
     "status": "new",
     "reviewCount": 0,
-    "example": "Configure the cursor to Blink at a comfortable rate inside the text editing component."
+    "example": "Configure the cursor to Blink at a comfortable rate inside the text editing component.",
+    "ipa": "/blɪŋk/"
   },
   {
     "id": "cs-124",
     "deckId": "deck-cs-foundations",
     "term": "Dual-density",
     "definition": "Dày gấp đôi",
-    "partOfSpeech": "noun",
+    "partOfSpeech": "adj",
     "status": "new",
     "reviewCount": 0,
-    "example": "A Dual-density floppy disk doubled storage capacity compared to early single-density media."
+    "example": "A Dual-density floppy disk doubled storage capacity compared to early single-density media.",
+    "ipa": "/ˈduːəl ˈdensəti/"
   },
   {
     "id": "cs-125",
@@ -5883,7 +5993,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Vector graphics scale to any Shape without losing crisp sharpness on retina screens."
+    "example": "Vector graphics scale to any Shape without losing crisp sharpness on retina screens.",
+    "ipa": "/ʃeɪp/"
   },
   {
     "id": "cs-126",
@@ -5893,7 +6004,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "The Bézier Curve allows graphic software to draw smooth vectors between anchor points."
+    "example": "The Bézier Curve allows graphic software to draw smooth vectors between anchor points.",
+    "ipa": "/kɜːrv/"
   },
   {
     "id": "cs-127",
@@ -5903,7 +6015,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Architects use a wide-format Plotter to print detailed blue-prints onto drafting paper."
+    "example": "Architects use a wide-format Plotter to print detailed blue-prints onto drafting paper.",
+    "ipa": "/ˈplɑːtər/"
   },
   {
     "id": "cs-128",
@@ -5913,7 +6026,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "adj",
     "status": "new",
     "reviewCount": 0,
-    "example": "Haptic mobile feedback provides Tactile confirmation when users tap virtual keypad buttons."
+    "example": "Haptic mobile feedback provides Tactile confirmation when users tap virtual keypad buttons.",
+    "ipa": "/ˈtæktl/"
   },
   {
     "id": "cs-129",
@@ -5923,17 +6037,19 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "adj",
     "status": "new",
     "reviewCount": 0,
-    "example": "Developers test multi-node clusters inside a Virtual machine sandbox running on their laptops."
+    "example": "Developers test multi-node clusters inside a Virtual machine sandbox running on their laptops.",
+    "ipa": "/ˈvɜːrtʃuəl/"
   },
   {
     "id": "cs-130",
     "deckId": "deck-cs-foundations",
     "term": "Compatible",
     "definition": "Tương thích",
-    "partOfSpeech": "noun",
+    "partOfSpeech": "adj",
     "status": "new",
     "reviewCount": 0,
-    "example": "Ensure the compiled binary is Compatible with both ARM and x86 operating systems."
+    "example": "Ensure the compiled binary is Compatible with both ARM and x86 operating systems.",
+    "ipa": "/kəmˈpætəbl/"
   },
   {
     "id": "cs-131",
@@ -5943,7 +6059,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "HTTP is the foundational communication Protocol powering the World Wide Web."
+    "example": "HTTP is the foundational communication Protocol powering the World Wide Web.",
+    "ipa": "/ˈproʊtəkɔːl/"
   },
   {
     "id": "cs-132",
@@ -5953,7 +6070,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "An indexing engine accelerates structured search across our customer Database."
+    "example": "An indexing engine accelerates structured search across our customer Database.",
+    "ipa": "/ˈdeɪtəbeɪs/"
   },
   {
     "id": "cs-133",
@@ -5963,7 +6081,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "An integrated Circuit combines millions of microscopic transistors onto a tiny silicon die."
+    "example": "An integrated Circuit combines millions of microscopic transistors onto a tiny silicon die.",
+    "ipa": "/ˈsɜːrkɪt/"
   },
   {
     "id": "cs-134",
@@ -5973,7 +6092,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Keep application Software updated with the latest security patches to block vulnerabilities."
+    "example": "Keep application Software updated with the latest security patches to block vulnerabilities.",
+    "ipa": "/ˈsɔːftwer/"
   },
   {
     "id": "cs-135",
@@ -5983,17 +6103,19 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Upgrading server Hardware with additional RAM improved concurrent database query throughput."
+    "example": "Upgrading server Hardware with additional RAM improved concurrent database query throughput.",
+    "ipa": "/ˈhɑːrdwer/"
   },
   {
     "id": "cs-136",
     "deckId": "deck-cs-foundations",
     "term": "Multi-user",
     "definition": "Đa người dùng",
-    "partOfSpeech": "noun",
+    "partOfSpeech": "adj",
     "status": "new",
     "reviewCount": 0,
-    "example": "UNIX was designed from inception as a secure Multi-user time-sharing operating system."
+    "example": "UNIX was designed from inception as a secure Multi-user time-sharing operating system.",
+    "ipa": "/ˌmʌltiˈjuːzər/"
   },
   {
     "id": "cs-137",
@@ -6003,37 +6125,41 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Modern video games require dedicated 3D Graphics processing units to achieve high framerates."
+    "example": "Modern video games require dedicated 3D Graphics processing units to achieve high framerates.",
+    "ipa": "/ˈɡræfɪks/"
   },
   {
     "id": "cs-138",
     "deckId": "deck-cs-foundations",
     "term": "Employ",
     "definition": "Thuê ai làm gì",
-    "partOfSpeech": "noun",
+    "partOfSpeech": "verb",
     "status": "new",
     "reviewCount": 0,
-    "example": "Tech enterprises Employ thousands of software engineers to build scalable cloud infrastructure."
+    "example": "Tech enterprises Employ thousands of software engineers to build scalable cloud infrastructure.",
+    "ipa": "/ɪmˈplɔɪ/"
   },
   {
     "id": "cs-139",
     "deckId": "deck-cs-foundations",
     "term": "Oversee",
     "definition": "Quan sát",
-    "partOfSpeech": "noun",
+    "partOfSpeech": "verb",
     "status": "new",
     "reviewCount": 0,
-    "example": "Staff software architects Oversee engineering standards across multiple distributed product teams."
+    "example": "Staff software architects Oversee engineering standards across multiple distributed product teams.",
+    "ipa": "/ˌoʊvərˈsiː/"
   },
   {
     "id": "cs-140",
     "deckId": "deck-cs-foundations",
     "term": "Available",
     "definition": "Dùng được, có hiệu lực",
-    "partOfSpeech": "noun",
+    "partOfSpeech": "adj",
     "status": "new",
     "reviewCount": 0,
-    "example": "The cloud storage service is Available across multiple geographical availability zones."
+    "example": "The cloud storage service is Available across multiple geographical availability zones.",
+    "ipa": "/əˈveɪləbl/"
   },
   {
     "id": "cs-141",
@@ -6043,7 +6169,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "The main Drawback of relational databases is the complexity of horizontal sharding."
+    "example": "The main Drawback of relational databases is the complexity of horizontal sharding.",
+    "ipa": "/ˈdrɔːbæk/"
   },
   {
     "id": "cs-142",
@@ -6053,7 +6180,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Deep learning breakthroughs are fueled by cutting-edge academic Research in neural models."
+    "example": "Deep learning breakthroughs are fueled by cutting-edge academic Research in neural models.",
+    "ipa": "/rɪˈsɜːrtʃ/"
   },
   {
     "id": "cs-143",
@@ -6063,7 +6191,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "An Enterprise software contract includes dedicated 24/7 technical customer support."
+    "example": "An Enterprise software contract includes dedicated 24/7 technical customer support.",
+    "ipa": "/ˈentərpraɪz/"
   },
   {
     "id": "cs-144",
@@ -6073,17 +6202,19 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Serverless cloud computing is an accelerating Trend in modern web application engineering."
+    "example": "Serverless cloud computing is an accelerating Trend in modern web application engineering.",
+    "ipa": "/trend/"
   },
   {
     "id": "cs-145",
     "deckId": "deck-cs-foundations",
     "term": "Replace",
     "definition": "Thay thế",
-    "partOfSpeech": "noun",
+    "partOfSpeech": "verb",
     "status": "new",
     "reviewCount": 0,
-    "example": "We need to Replace deprecated cryptographic libraries with modern SHA-256 implementations."
+    "example": "We need to Replace deprecated cryptographic libraries with modern SHA-256 implementations.",
+    "ipa": "/rɪˈpleɪs/"
   },
   {
     "id": "cs-146",
@@ -6093,7 +6224,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Consulting architects bring valuable technical Expertise to solve difficult concurrency bugs."
+    "example": "Consulting architects bring valuable technical Expertise to solve difficult concurrency bugs.",
+    "ipa": "/ˌekspɜːrˈtiːz/"
   },
   {
     "id": "cs-147",
@@ -6103,7 +6235,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "The processor decodes and executes a binary machine Instruction during every clock cycle."
+    "example": "The processor decodes and executes a binary machine Instruction during every clock cycle.",
+    "ipa": "/ɪnˈstrʌkʃn/"
   },
   {
     "id": "cs-148",
@@ -6113,7 +6246,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "phrase",
     "status": "new",
     "reviewCount": 0,
-    "example": "The official product documentation is the Chief source of information for software developers."
+    "example": "The official product documentation is the Chief source of information for software developers.",
+    "ipa": "/tʃiːf sɔːrs əv ˌɪnfərˈmeɪʃn/"
   },
   {
     "id": "cs-149",
@@ -6123,7 +6257,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Linux is a free open-source Operating system powering supercomputers and internet servers."
+    "example": "Linux is a free open-source Operating system powering supercomputers and internet servers.",
+    "ipa": "/ˈɑːpəreɪtɪŋ ˈsɪstəm/"
   },
   {
     "id": "cs-150",
@@ -6133,7 +6268,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "phrase",
     "status": "new",
     "reviewCount": 0,
-    "example": "Software can be grouped under the Broad classification of system tools or user applications."
+    "example": "Software can be grouped under the Broad classification of system tools or user applications.",
+    "ipa": "/brɔːd ˌklæsɪfɪˈkeɪʃn/"
   },
   {
     "id": "cs-151",
@@ -6143,7 +6279,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "phrase",
     "status": "new",
     "reviewCount": 0,
-    "example": "University libraries cross-reference physical book holdings through a centralized Union catalog."
+    "example": "University libraries cross-reference physical book holdings through a centralized Union catalog.",
+    "ipa": "/ˈjuːnjən ˈkætəlɔːɡ/"
   },
   {
     "id": "cs-152",
@@ -6153,7 +6290,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Dial-up connections encapsulated internet traffic using the point-to-point PPP link protocol."
+    "example": "Dial-up connections encapsulated internet traffic using the point-to-point PPP link protocol.",
+    "ipa": "/ˌpiː piː ˈpiː/"
   },
   {
     "id": "cs-153",
@@ -6163,7 +6301,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "phrase",
     "status": "new",
     "reviewCount": 0,
-    "example": "Version control systems track historical changes made to human-readable Source Code."
+    "example": "Version control systems track historical changes made to human-readable Source Code.",
+    "ipa": "/sɔːrs koʊd/"
   },
   {
     "id": "cs-154",
@@ -6173,7 +6312,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "phrase",
     "status": "new",
     "reviewCount": 0,
-    "example": "Librarians perform Authority work to ensure author names and catalog subjects remain consistent."
+    "example": "Librarians perform Authority work to ensure author names and catalog subjects remain consistent.",
+    "ipa": "/əˈθɔːrəti wɜːrk/"
   },
   {
     "id": "cs-155",
@@ -6183,17 +6323,19 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "phrase",
     "status": "new",
     "reviewCount": 0,
-    "example": "Passwords and postal codes contain Alphanumeric data consisting of letters and numbers."
+    "example": "Passwords and postal codes contain Alphanumeric data consisting of letters and numbers.",
+    "ipa": "/ˌælfənuːˈmerɪk ˈdeɪtə/"
   },
   {
     "id": "cs-156",
     "deckId": "deck-cs-foundations",
-    "term": "Convenience convenience",
+    "term": "Convenience",
     "definition": "Thuận tiện",
-    "partOfSpeech": "phrase",
+    "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Online banking brings immense convenience convenience for customers paying bills from home."
+    "example": "Online banking brings immense Convenience for customers paying bills from home.",
+    "ipa": "/kənˈviːniəns/"
   },
   {
     "id": "cs-157",
@@ -6203,7 +6345,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Check the project FAQ page to find quick answers to common setup and installation issues."
+    "example": "Check the project FAQ page to find quick answers to common setup and installation issues.",
+    "ipa": "/ˌef eɪ ˈkjuː/"
   },
   {
     "id": "cs-158",
@@ -6213,7 +6356,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Web pages use semantic HTML tags to structure headings, paragraphs, and navigation links."
+    "example": "Web pages use semantic HTML tags to structure headings, paragraphs, and navigation links.",
+    "ipa": "/ˌeɪtʃ tiː em ˈel/"
   },
   {
     "id": "cs-159",
@@ -6223,7 +6367,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "Office workstations connect to the local printer over a high-speed Ethernet LAN network."
+    "example": "Office workstations connect to the local printer over a high-speed Ethernet LAN network.",
+    "ipa": "/læn/"
   },
   {
     "id": "cs-160",
@@ -6233,7 +6378,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "phrase",
     "status": "new",
     "reviewCount": 0,
-    "example": "A skilled Network Administrator configures firewalls, routing tables, and subnet masks."
+    "example": "A skilled Network Administrator configures firewalls, routing tables, and subnet masks.",
+    "ipa": "/ˈnetwɜːrk ədˈmɪnɪstreɪtər/"
   },
   {
     "id": "cs-161",
@@ -6243,7 +6389,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0,
-    "example": "The standard OSI seven-layer model conceptualizes network communications from physical to application."
+    "example": "The standard OSI seven-layer model conceptualizes network communications from physical to application.",
+    "ipa": "/ˌoʊ es ˈaɪ/"
   },
   {
     "id": "cs-162",
@@ -6253,7 +6400,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "phrase",
     "status": "new",
     "reviewCount": 0,
-    "example": "Legacy dial-up modems used Point-to-Point Protocol framing to establish direct server sessions."
+    "example": "Legacy dial-up modems used Point-to-Point Protocol framing to establish direct server sessions.",
+    "ipa": "/pɔɪnt tə pɔɪnt ˈproʊtəkɔːl/"
   },
   {
     "id": "cs-163",
@@ -6263,7 +6411,8 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "phrase",
     "status": "new",
     "reviewCount": 0,
-    "example": "Programs load executable instructions into volatile Random Access Memory for instant CPU access."
+    "example": "Programs load executable instructions into volatile Random Access Memory for instant CPU access.",
+    "ipa": "/ˈrændəm ˈækses ˈmeməri/"
   },
   {
     "id": "it-41",
@@ -11541,6 +11690,886 @@ export const INITIAL_WORDS: WordItem[] = [
     "ipa": "/ɪmˈpɪrɪkl ˈevɪdəns/",
     "definition": "Bằng chứng thực nghiệm kiểm chứng được qua số liệu thực tế",
     "example": "Back every architectural change with solid empirical evidence.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-201",
+    "deckId": "deck-clean-code",
+    "term": "introduce assertion",
+    "ipa": "/ˌɪn.trəˈduːs əˈsɜː.ʃən/",
+    "definition": "Kỹ thuật refactoring thêm một câu lệnh điều kiện giả định (assert) vào mã nguồn để làm rõ các giả định của lập trình viên về trạng thái hợp lệ của chương trình tại một thời điểm nhất định.",
+    "example": "Use introduce assertion to document invariants that must hold true at runtime.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-202",
+    "deckId": "deck-clean-code",
+    "term": "change value to reference",
+    "ipa": "/tʃeɪndʒ ˈvæl.juː tuː ˈref.ər.əns/",
+    "definition": "Kỹ thuật refactoring chuyển đổi một đối tượng giá trị (value object) bất biến thành một đối tượng tham chiếu (reference object) khi nhiều đối tượng cần chia sẻ cùng một thực thể.",
+    "example": "Apply change value to reference when multiple orders must share one live customer instance.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-203",
+    "deckId": "deck-clean-code",
+    "term": "change reference to value",
+    "ipa": "/tʃeɪndʒ ˈref.ər.əns tuː ˈvæl.juː/",
+    "definition": "Kỹ thuật refactoring chuyển đổi một đối tượng tham chiếu thành một đối tượng giá trị (value object) khi đối tượng đó nhỏ, bất biến và việc quản lý tham chiếu trở nên phức tạp không cần thiết.",
+    "example": "Apply change reference to value when a small money object should be immutable.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-204",
+    "deckId": "deck-clean-code",
+    "term": "duplicate observed data",
+    "ipa": "/ˈduː.plɪ.keɪt əbˈzɜːvd ˈdeɪ.tə/",
+    "definition": "Kỹ thuật refactoring tách biệt dữ liệu miền (domain data) khỏi giao diện người dùng bằng cách sao chép dữ liệu miền sang lớp giao diện và sử dụng Observer để đồng bộ hóa chúng.",
+    "example": "Legacy GUI apps used duplicate observed data to sync domain state with view controls.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-205",
+    "deckId": "deck-clean-code",
+    "term": "form template method",
+    "ipa": "/fɔːm ˈtem.plɪt ˈmeθ.əd/",
+    "definition": "Kỹ thuật refactoring khi có các phương thức thực hiện các bước tương tự nhau trong các lớp con nhưng khác chi tiết, bằng cách kéo phần chung lên lớp cha sử dụng mẫu thiết kế Template Method.",
+    "example": "We used form template method to lift common export steps into the base class.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-206",
+    "deckId": "deck-clean-code",
+    "term": "replace constructor with factory method",
+    "ipa": "/rɪˈpleɪs kənˈstrʌk.tər wɪð ˈfæk.tər.i ˈmeθ.əd/",
+    "definition": "Kỹ thuật refactoring thay thế việc gọi trực tiếp hàm tạo (constructor) bằng một phương thức nhà máy (factory method) để cung cấp khả năng khởi tạo đối tượng linh hoạt hơn.",
+    "example": "Apply replace constructor with factory method when object creation requires descriptive naming.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-207",
+    "deckId": "deck-clean-code",
+    "term": "encapsulate field",
+    "ipa": "/ɪnˈkæp.sjə.leɪt fiːld/",
+    "definition": "Kỹ thuật refactoring biến một trường dữ liệu (field) thành dạng riêng tư (private) và cung cấp các phương thức truy cập (getter/setter) để kiểm soát quyền truy cập.",
+    "example": "Always encapsulate field access behind clear methods instead of exposing public mutable properties.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-208",
+    "deckId": "deck-clean-code",
+    "term": "hide field",
+    "ipa": "/haɪd fiːld/",
+    "definition": "Kỹ thuật refactoring đảm bảo không có phương thức nào bên ngoài lớp truy cập trực tiếp vào một trường dữ liệu của lớp đó, giúp giảm mức độ phụ thuộc giữa các thành phần.",
+    "example": "Refactoring to hide field reduces tight coupling between neighboring classes.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-209",
+    "deckId": "deck-clean-code",
+    "term": "replace error code with exception",
+    "ipa": "/rɪˈpleɪs ˈer.ər koʊd wɪð ɪkˈsep.ʃən/",
+    "definition": "Kỹ thuật refactoring thay thế việc trả về mã lỗi (error code) bằng cơ chế ném ngoại lệ (exception) để làm cho luồng xử lý lỗi rõ ràng và tách biệt hơn khỏi logic chính.",
+    "example": "Modern APIs replace error code with exception handling so failure paths cannot be silently ignored.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-210",
+    "deckId": "deck-clean-code",
+    "term": "replace exception with test",
+    "ipa": "/rɪˈpleɪs ɪkˈsep.ʃən wɪð test/",
+    "definition": "Kỹ thuật refactoring thay thế việc sử dụng ngoại lệ cho các tình huống có thể kiểm tra trước bằng một câu lệnh điều kiện thông thường để cải thiện hiệu suất và tính dễ đọc.",
+    "example": "You should replace exception with test checks when an empty queue is an expected condition.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-211",
+    "deckId": "deck-clean-code",
+    "term": "Readability",
+    "ipa": "/ˌriːdəˈbɪləti/",
+    "definition": "Khả năng mã nguồn dễ dàng được đọc, hiểu và diễn giải bởi các nhà phát triển khác, giúp giảm thời gian bảo trì và sửa lỗi.",
+    "example": "Clear variable names dramatically improve code Readability for the whole engineering team.",
+    "partOfSpeech": "noun",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-212",
+    "deckId": "deck-qa-security",
+    "term": "Testability",
+    "ipa": "/ˌtɛstəˈbɪləti/",
+    "definition": "Mức độ dễ dàng mà một thành phần hoặc hệ thống phần mềm có thể được kiểm tra bằng các bài kiểm thử tự động, là yếu tố then chốt cho việc refactoring an toàn.",
+    "example": "Dependency injection improves Testability by letting unit tests swap out database clients.",
+    "partOfSpeech": "noun",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-213",
+    "deckId": "deck-clean-code",
+    "term": "Extensibility",
+    "ipa": "/ɪkˌstɛnsəˈbɪləti/",
+    "definition": "Khả năng mở rộng hoặc thêm các tính năng mới vào hệ thống mà không yêu cầu thay đổi đáng kể mã nguồn hiện có, thường là kết quả của thiết kế mô-đun và tuân thủ các nguyên tắc thiết kế.",
+    "example": "Plugin hooks provide Extensibility without modifying the core application engine.",
+    "partOfSpeech": "noun",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-214",
+    "deckId": "deck-clean-code",
+    "term": "Flexibility",
+    "ipa": "/ˌflɛksəˈbɪləti/",
+    "definition": "Khả năng của hệ thống hoặc mã nguồn dễ dàng thích ứng với các yêu cầu thay đổi hoặc các trường hợp sử dụng mới mà không gây ra sự phức tạp hoặc lỗi đáng kể.",
+    "example": "Clean interfaces give our architecture the Flexibility to switch cloud storage providers.",
+    "partOfSpeech": "noun",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-215",
+    "deckId": "deck-clean-code",
+    "term": "Clarity of Intent",
+    "ipa": "/ˈklærəti ɒv ɪnˈtɛnt/",
+    "definition": "Mức độ mà mã nguồn truyền đạt rõ ràng mục đích và lý do tồn tại của nó, giúp các nhà phát triển khác dễ dàng hiểu được ý định ban đầu của người viết mã mà không cần tài liệu bổ sung quá nhiều.",
+    "example": "Small well-named functions communicate Clarity of Intent better than long comments.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-216",
+    "deckId": "deck-clean-code",
+    "term": "Modularity",
+    "ipa": "/ˌmɒdjuˈlærəti/",
+    "definition": "Nguyên tắc thiết kế phần mềm chia nhỏ hệ thống thành các thành phần độc lập, có thể thay thế hoặc tái sử dụng được, mỗi thành phần có trách nhiệm rõ ràng và giao tiếp thông qua các giao diện định nghĩa tốt.",
+    "example": "High Modularity lets independent teams deploy feature updates without merge conflicts.",
+    "partOfSpeech": "noun",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-217",
+    "deckId": "deck-clean-code",
+    "term": "Decomposition",
+    "ipa": "/ˌdiːkəmˌpəʊˈzɪʃən/",
+    "definition": "Quá trình chia một vấn đề hoặc hệ thống phức tạp thành các phần nhỏ hơn, dễ quản lý hơn, thường là bước đầu tiên trong thiết kế và refactoring để cải thiện cấu trúc mã.",
+    "example": "Careful Decomposition breaks a monolithic billing service into manageable domain modules.",
+    "partOfSpeech": "noun",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-218",
+    "deckId": "deck-clean-code",
+    "term": "Refactoring Cycle",
+    "ipa": "/ˌriːˈfæktərɪŋ ˈsaɪkl/",
+    "definition": "Chu trình lặp đi lặp lại của việc cải thiện cấu trúc nội bộ của mã nguồn mà không thay đổi hành vi bên ngoài của nó, thường bao gồm các bước như nhận diện mã xấu, áp dụng refactoring nhỏ, và chạy kiểm thử.",
+    "example": "Each Refactoring Cycle applies one small safe change followed immediately by unit tests.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-219",
+    "deckId": "deck-clean-code",
+    "term": "Emergent Design",
+    "ipa": "/ɪˈmɜːrdʒənt dɪˈzaɪn/",
+    "definition": "Một triết lý thiết kế phần mềm nơi cấu trúc và kiến trúc của hệ thống phát triển dần dần thông qua quá trình lặp đi lặp lại của việc viết mã, kiểm thử và refactoring, thay vì được thiết kế hoàn chỉnh từ đầu.",
+    "example": "Agile teams practice Emergent Design by evolving clean architecture through continuous refactoring.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-220",
+    "deckId": "deck-clean-code",
+    "term": "Principle of Least Astonishment (POLA)",
+    "ipa": "/ˈprɪnsəpl ɒv liːst əˈstɒnɪʃmənt/",
+    "definition": "Nguyên tắc thiết kế khuyến khích các thành phần của hệ thống hoạt động theo cách mà người dùng hoặc nhà phát triển mong đợi, giảm thiểu sự ngạc nhiên và làm cho mã dễ hiểu và dễ sử dụng hơn.",
+    "example": "Follow the Principle of Least Astonishment (POLA) so APIs behave exactly as callers expect.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-221",
+    "deckId": "deck-clean-code",
+    "term": "introduce local extension",
+    "ipa": "/ˌɪntrəˈduːs ˈloʊkəl ɪkˈstɛnʃən/",
+    "definition": "Kỹ thuật refactoring khi bạn cần thêm phương thức vào một lớp nguồn mở hoặc thư viện có sẵn nhưng không thể sửa đổi trực tiếp mã nguồn của nó, bằng cách tạo một lớp phụ trợ hoặc extension method.",
+    "example": "Use introduce local extension when you need extra helper methods on a third-party date class.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-222",
+    "deckId": "deck-clean-code",
+    "term": "form template method refactoring",
+    "ipa": "/fɔːm ˈtɛmplɪt ˈmɛθəd riˈfæktərɪŋ/",
+    "definition": "Kỹ thuật tái cấu trúc mã nguồn bằng cách dịch chuyển các bước thuật toán giống nhau từ các lớp con lên lớp cha (superclass) vào một template method duy nhất, trong khi giữ lại các bước khác biệt ở lớp con.",
+    "example": "Applying form template method refactoring eliminated duplicate report-generation boilerplate.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-223",
+    "deckId": "deck-clean-code",
+    "term": "pull up constructor body",
+    "ipa": "/pʊl ʌp kənˈstrʌktər ˈbɑːdi/",
+    "definition": "Kỹ thuật di chuyển mã khởi tạo trùng lặp từ các phương thức khởi tạo (constructor) của các lớp con lên constructor của lớp cha để giảm thiểu sự lặp lại mã.",
+    "example": "Use pull up constructor body to move shared initialization fields into the superclass constructor.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-224",
+    "deckId": "deck-clean-code",
+    "term": "collapse hierarchy",
+    "ipa": "/kəˈlæps ˈhaɪərɑːrki/",
+    "definition": "Kỹ thuật hợp nhất một lớp cha (superclass) và lớp con (subclass) lại với nhau khi chúng không còn đủ khác biệt hoặc không mang lại giá trị thiết kế phân cấp nữa.",
+    "example": "When a subclass adds no distinct behavior, collapse hierarchy into a single clean class.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-225",
+    "deckId": "deck-clean-code",
+    "term": "replace inheritance with delegation",
+    "ipa": "/rɪˈpleɪs ɪnˈhɛrɪtəns wɪð ˌdɛlɪˈɡeɪʃən/",
+    "definition": "Kỹ thuật thay thế mối quan hệ kế thừa (inheritance) bằng ủy quyền (delegation) khi một lớp con chỉ sử dụng một phần chức năng của lớp cha hoặc để phá vỡ sự phụ thuộc chặt chẽ.",
+    "example": "Prefer to replace inheritance with delegation when a class only reuses part of a base class.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-226",
+    "deckId": "deck-clean-code",
+    "term": "replace delegation with inheritance",
+    "ipa": "/rɪˈpleɪs ˌdɛlɪˈɡeɪʃən wɪð ɪnˈhɛrɪtəns/",
+    "definition": "Kỹ thuật thay thế mối quan hệ ủy quyền bằng kế thừa khi một lớp thực hiện quá nhiều lệnh ủy quyền đơn giản và việc kế thừa trở nên tự nhiên, gọn gàng hơn.",
+    "example": "You may replace delegation with inheritance when a wrapper forwards every single method unchanged.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-227",
+    "deckId": "deck-clean-code",
+    "term": "introduce null object",
+    "ipa": "/ˌɪntrəˈduːs nʌl ˈɑːbdʒɪkt/",
+    "definition": "Kỹ thuật thay thế các giá trị null bằng một đối tượng cụ thể đại diện cho trạng thái rỗng, giúp loại bỏ hàng loạt các câu lệnh kiểm tra null (if (val != null)) trong mã nguồn.",
+    "example": "We used introduce null object to return a guest profile instead of scattering null checks.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-228",
+    "deckId": "deck-clean-code",
+    "term": "preserve whole object refactoring",
+    "ipa": "/prɪˈzɜːrv hoʊl ˈɑːbdʒɪkt riˈfæktərɪŋ/",
+    "definition": "Kỹ thuật thay thế việc truyền nhiều giá trị rời rạc từ một đối tượng vào phương thức bằng cách truyền chính đối tượng nguyên vẹn đó, giúp định nghĩa hàm gọn hơn và giảm sự kết dính tham số.",
+    "example": "Apply preserve whole object refactoring instead of passing six separate fields from the same config.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-229",
+    "deckId": "deck-clean-code",
+    "term": "change value to reference refactoring",
+    "ipa": "/tʃeɪndʒ ˈvæljuː tuː ˈrɛfrəns riˈfæktərɪŋ/",
+    "definition": "Kỹ thuật chuyển đổi một đối tượng giá trị (value object) thành một đối tượng tham chiếu (reference object) khi có nhiều bản sao cần được đại diện bởi một thực thể duy nhất trong hệ thống.",
+    "example": "Use change value to reference refactoring so updates to a shared repository reflect everywhere.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-230",
+    "deckId": "deck-clean-code",
+    "term": "change reference to value refactoring",
+    "ipa": "/tʃeɪndʒ ˈrɛfrəns tuː ˈvæljuː riˈfæktərɪŋ/",
+    "definition": "Kỹ thuật chuyển đổi một đối tượng tham chiếu thành một đối tượng giá trị (immutable) khi đối tượng đó nhỏ, bất biến và giúp đơn giản hóa quản lý trạng thái.",
+    "example": "Use change reference to value refactoring to make coordinate pairs safe to compare by value.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-231",
+    "deckId": "deck-clean-code",
+    "term": "Permissive Method",
+    "ipa": "/pərˈmɪsɪv ˈmɛθəd/",
+    "definition": "Phương thức cho phép hoặc nới lỏng các điều kiện kiểm tra, thường dẫn đến việc xử lý các giá trị không hợp lệ mà không báo lỗi sớm.",
+    "example": "Avoid writing a Permissive Method that silently accepts malformed null inputs without validation.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-232",
+    "deckId": "deck-clean-code",
+    "term": "Deep Nesting",
+    "ipa": "/diːp ˈnɛstɪŋ/",
+    "definition": "Hiện tượng lồng nhiều tầng các khối lệnh điều kiện (if-else, loops) vào nhau, làm giảm nghiêm trọng tính dễ đọc của mã nguồn.",
+    "example": "Guard clauses eliminate Deep Nesting and keep function control flow flat and readable.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-233",
+    "deckId": "deck-clean-code",
+    "term": "Shadowing Variable",
+    "ipa": "/ˈʃædoʊɪŋ ˈvɛriəbəl/",
+    "definition": "Kỹ thuật khai báo biến trong phạm vi cục bộ trùng tên với biến ở phạm vi bên ngoài, dễ gây nhầm lẫn và lỗi logic khó phát hiện.",
+    "example": "Declaring a Shadowing Variable with the same name as an outer state variable causes subtle bugs.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-234",
+    "deckId": "deck-clean-code",
+    "term": "Magic Boolean",
+    "ipa": "/ˈmædʒɪk ˈbuːliən/",
+    "definition": "Giá trị kiểu boolean được truyền trực tiếp vào hàm mà không rõ ngữ cảnh (ví dụ: doStuff(true)), làm mã nguồn khó hiểu.",
+    "example": "Replace a confusing Magic Boolean parameter with a named options object or descriptive enum.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-235",
+    "deckId": "deck-clean-code",
+    "term": "Feature Hoarding",
+    "ipa": "/ˈfiːtʃər ˈhɔːrdɪŋ/",
+    "definition": "Tình trạng một lớp hoặc mô-đun ôm đồm quá nhiều tính năng, vi phạm nguyên tắc thiết kế phân rã chức năng.",
+    "example": "God classes suffer from Feature Hoarding when every unrelated helper is dumped into one file.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-236",
+    "deckId": "deck-clean-code",
+    "term": "Accidental Complexity",
+    "ipa": "/ˌæksɪˈdɛntəl kəmˈplɛsɪti/",
+    "definition": "Độ phức tạp được tạo ra không do bản chất bài toán mà do lựa chọn thiết kế hoặc công cụ kém, có thể được loại bỏ bằng refactoring.",
+    "example": "Over-engineered abstractions introduce Accidental Complexity that slows down onboarding.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-237",
+    "deckId": "deck-clean-code",
+    "term": "Leaking Implementation",
+    "ipa": "/ˈliːkɪŋ ˌɪmpləmɛnˈteɪʃən/",
+    "definition": "Việc để lộ các chi tiết cài đặt nội bộ ra bên ngoài giao diện công khai của mô-đun, phá vỡ tính đóng gói.",
+    "example": "Returning raw SQL rows from a UI controller is a classic case of Leaking Implementation details.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-238",
+    "deckId": "deck-clean-code",
+    "term": "Dead Branch",
+    "ipa": "/dɛd bræntʃ/",
+    "definition": "Nhánh điều kiện trong mã nguồn không bao giờ có cơ hội được thực thi do các ràng buộc logic cố định.",
+    "example": "Static analysis flagged a Dead Branch that could never execute after the early return.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-239",
+    "deckId": "deck-clean-code",
+    "term": "Premature Optimization",
+    "ipa": "/ˈpriːmətʊər ˌɒptɪmaɪˈzeɪʃən/",
+    "definition": "Việc tối ưu hóa mã nguồn quá sớm khi chưa cần thiết, làm tăng độ phức tạp và giảm tính rõ ràng của code.",
+    "example": "Profile real bottlenecks first to avoid Premature Optimization that hurts code clarity.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-240",
+    "deckId": "deck-clean-code",
+    "term": "Inappropriate Intimacy",
+    "ipa": "/ɪnəˈproʊpriət ˈɪntɪməsi/",
+    "definition": "Mùi mã (code smell) xảy ra khi hai lớp quá gắn kết và xâm phạm sâu vào các thuộc tính riêng tư của nhau.",
+    "example": "Two classes reaching into each other private fields exhibit the Inappropriate Intimacy code smell.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-241",
+    "deckId": "deck-clean-code",
+    "term": "Ubiquitous Language",
+    "ipa": "/juːˈbɪkwɪtəs ˈlæŋɡwɪdʒ/",
+    "definition": "Ngôn ngữ chung được sử dụng nhất quán trong toàn bộ dự án, đặc biệt giữa các chuyên gia nghiệp vụ và nhà phát triển, giúp làm rõ ý định và giảm sự mơ hồ trong mã.",
+    "example": "Product managers and engineers share a Ubiquitous Language so domain terms match the code.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-242",
+    "deckId": "deck-clean-code",
+    "term": "Domain Primitive",
+    "ipa": "/ˈdoʊmeɪn ˈprɪmɪtɪv/",
+    "definition": "Một kiểu dữ liệu nhỏ, tự định nghĩa, đại diện cho một khái niệm cụ thể trong miền nghiệp vụ (ví dụ: EmailAddress, Money), giúp tăng cường tính an toàn kiểu dữ liệu và tính rõ ràng của mã.",
+    "example": "Wrapping email strings in a validated Domain Primitive prevents invalid data from spreading.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-243",
+    "deckId": "deck-clean-code",
+    "term": "Anemic Domain Model",
+    "ipa": "/əˈniːmɪk ˈdoʊmeɪn ˈmɒdl/",
+    "definition": "Một mô hình miền nghiệp vụ mà các đối tượng chỉ chứa dữ liệu (getter/setter) mà không có hành vi nghiệp vụ, đẩy logic kinh doanh vào các lớp dịch vụ, làm giảm tính đóng gói và phức tạp hóa việc bảo trì.",
+    "example": "Classes with only getters and zero business rules create an Anemic Domain Model anti-pattern.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-244",
+    "deckId": "deck-clean-code",
+    "term": "Inversion of Control (IoC)",
+    "ipa": "/ɪnˈvɜːrʒn əv kənˈtroʊl/",
+    "definition": "Một nguyên lý thiết kế trong đó các thành phần của chương trình nhận quyền kiểm soát từ một framework hoặc container thay vì tự tạo hoặc quản lý các phụ thuộc của chúng, giúp giảm sự ghép nối và tăng tính module.",
+    "example": "Frameworks apply Inversion of Control (IoC) to inject dependencies rather than hardcoding them.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-245",
+    "deckId": "deck-qa-security",
+    "term": "Test Double",
+    "ipa": "/ˈtɛst ˈdʌbl/",
+    "definition": "Một đối tượng thay thế cho đối tượng thật trong quá trình kiểm thử, giúp cô lập mã cần kiểm thử và kiểm soát các phụ thuộc bên ngoài (bao gồm fakes, stubs, mocks, spies).",
+    "example": "Inject a lightweight Test Double to simulate payment gateway timeouts during unit tests.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-246",
+    "deckId": "deck-qa-security",
+    "term": "Golden Master Testing",
+    "ipa": "/ˈɡoʊldən ˈmæstər ˈtɛstɪŋ/",
+    "definition": "Một kỹ thuật kiểm thử hồi quy, đặc biệt hữu ích khi refactor mã kế thừa, bằng cách ghi lại đầu ra của hệ thống hiện có (master vàng) và so sánh với đầu ra sau khi thay đổi để đảm bảo không có lỗi hồi quy.",
+    "example": "Before refactoring legacy billing logic, capture outputs using Golden Master Testing snapshots.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-247",
+    "deckId": "deck-qa-security",
+    "term": "Seam",
+    "ipa": "/siːm/",
+    "definition": "Một điểm trong mã nguồn nơi bạn có thể thay đổi hành vi của chương trình mà không cần chỉnh sửa trực tiếp mã tại điểm đó, thường được sử dụng để chèn các test double hoặc thay đổi logic trong hệ thống kế thừa.",
+    "example": "Extracting an interface creates a clean Seam where automated tests can swap external services.",
+    "partOfSpeech": "noun",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-248",
+    "deckId": "deck-clean-code",
+    "term": "Domain-Driven Design (DDD)",
+    "ipa": "/ˈdoʊmeɪn ˈdrɪvn dɪˈzaɪn/",
+    "definition": "Một phương pháp phát triển phần mềm tập trung vào việc hiểu sâu sắc và mô hình hóa miền nghiệp vụ, nhằm tạo ra mã nguồn phản ánh chính xác các khái niệm và logic kinh doanh.",
+    "example": "Complex enterprise platforms apply Domain-Driven Design (DDD) to align bounded contexts.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-249",
+    "deckId": "deck-clean-code",
+    "term": "Value Object",
+    "ipa": "/ˈvælju ˈɒbdʒɪkt/",
+    "definition": "Một đối tượng nhỏ, bất biến, đại diện cho một thuộc tính mô tả của miền nghiệp vụ (ví dụ: Money, DateRange), được định nghĩa bởi các thuộc tính của nó chứ không phải bởi một định danh duy nhất.",
+    "example": "A Money Value Object compares equality by amount and currency rather than database ID.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-250",
+    "deckId": "deck-qa-security",
+    "term": "Red-Green-Refactor",
+    "ipa": "/rɛd ɡriːn ˌriːˈfæktər/",
+    "definition": "Chu trình phát triển phần mềm ba bước trong TDD: viết một bài kiểm thử thất bại (đỏ), viết mã tối thiểu để bài kiểm thử vượt qua (xanh), và sau đó cải thiện cấu trúc mã (refactor) mà không thay đổi hành vi.",
+    "example": "Test-driven developers follow the Red-Green-Refactor loop to keep every change verified.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-251",
+    "deckId": "deck-clean-code",
+    "term": "dead code pruning",
+    "ipa": "/dɛd koʊd ˈpruːnɪŋ/",
+    "definition": "Quá trình loại bỏ các đoạn mã không bao giờ thực thi hoặc không còn được sử dụng trong codebase để giảm độ phức tạp.",
+    "example": "Regular dead code pruning removes unused modules and shrinks the production bundle size.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-252",
+    "deckId": "deck-clean-code",
+    "term": "arrow anti-pattern",
+    "ipa": "/ˈæroʊ ˈæntiˌpætərn/",
+    "definition": "Một dạng mã nguồn bị lồng nhiều tầng điều kiện (if-else) tạo hình mũi tên thụt lề sang phải, làm giảm tính dễ đọc.",
+    "example": "Five nested if statements form an arrow anti-pattern that should be flattened with early returns.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-253",
+    "deckId": "deck-clean-code",
+    "term": "magic literal",
+    "ipa": "/ˈmædʒɪk ˈlɪtərəl/",
+    "definition": "Các giá trị hằng số thô được mã hóa cứng trực tiếp trong logic mà không thông qua tên định danh hoặc biến giải nghĩa.",
+    "example": "Extract every unexplained magic literal into a named constant with clear units.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-254",
+    "deckId": "deck-clean-code",
+    "term": "temporal coupling smell",
+    "ipa": "/ˈtɛmpərəl ˈkʌpəlɪŋ smɛl/",
+    "definition": "Dấu hiệu thiết kế kém khi các phương thức bắt buộc phải được gọi theo một thứ tự thời gian nghiêm ngặt mới hoạt động đúng.",
+    "example": "Requiring init() before start() without enforcement is a fragile temporal coupling smell.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-255",
+    "deckId": "deck-clean-code",
+    "term": "method chaining",
+    "ipa": "/ˈmɛθəd ˈtʃeɪnɪŋ/",
+    "definition": "Kỹ thuật thiết kế API cho phép gọi liên tiếp nhiều phương thức trên cùng một đối tượng bằng cách trả về this.",
+    "example": "Query builders support fluent method chaining by returning the builder instance on each call.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-256",
+    "deckId": "deck-clean-code",
+    "term": "code lineage",
+    "ipa": "/koʊd ˈlɪniɪdʒ/",
+    "definition": "Lịch sử tiến hóa và vết tích thay đổi của các dòng mã nguồn qua các lần commit trên hệ thống quản lý phiên bản.",
+    "example": "Git blame reveals the full code lineage behind tricky historical bug fixes.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-257",
+    "deckId": "deck-clean-code",
+    "term": "accidental coupling",
+    "ipa": "/ˌæksɪˈdɛntəl ˈkʌpəlɪŋ/",
+    "definition": "Sự phụ thuộc ngẫu nhiên không cần thiết giữa các module, làm giảm tính độc lập và khó khăn khi thực hiện unit test.",
+    "example": "Sharing mutable global helpers creates accidental coupling between unrelated microservices.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-258",
+    "deckId": "deck-clean-code",
+    "term": "defensive copying",
+    "ipa": "/dɪˈfɛnsɪv ˈkɑːpiɪŋ/",
+    "definition": "Kỹ thuật tạo bản sao của các đối tượng dữ liệu nhạy cảm để ngăn chặn việc sửa đổi ngầm trạng thái bên trong.",
+    "example": "Use defensive copying before returning internal arrays so callers cannot mutate private state.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-259",
+    "deckId": "deck-clean-code",
+    "term": "semantic clash",
+    "ipa": "/sɪˈmæntɪk klæʃ/",
+    "definition": "Xung đột về ngữ nghĩa xảy ra khi hai thành phần phần mềm dùng chung một khái niệm nhưng hiểu theo các ý nghĩa khác nhau.",
+    "example": "Bounded contexts prevent a semantic clash when Account means different things in Auth and Billing.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-260",
+    "deckId": "deck-clean-code",
+    "term": "interface pollution",
+    "ipa": "/ˈɪntərfeɪs pəˈluːʃn/",
+    "definition": "Hiện tượng một giao diện lập trình bị nhồi nhét quá nhiều phương thức không liên quan, vi phạm nguyên tắc tách biệt.",
+    "example": "Adding print methods to a storage trait causes interface pollution and violates ISP.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-261",
+    "deckId": "deck-clean-code",
+    "term": "extract sub-package",
+    "ipa": "/ɪkˈstrækt sʌb-ˈpækɪdʒ/",
+    "definition": "Kỹ thuật tái cấu trúc mã nguồn bằng cách di chuyển một nhóm các lớp hoặc mô-đun có liên quan chặt chẽ từ một gói hiện tại sang một gói con mới nhằm cải thiện tính đóng gói và phân chia trách nhiệm.",
+    "example": "Use extract sub-package to group cohesive authentication classes into their own dedicated module.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-262",
+    "deckId": "deck-clean-code",
+    "term": "internalize constant",
+    "ipa": "/ɪnˈtɜːrnəlaɪz ˈkɒnstənt/",
+    "definition": "Thao tác dời một hằng số được sử dụng nội bộ từ phạm vi rộng hơn (như lớp công khai hoặc gói khác) về lại ngay bên trong lớp hoặc phương thức sử dụng nó để giảm thiểu độ lộ diện và sự phụ thuộc không cần thiết.",
+    "example": "Apply internalize constant when a configuration value is only referenced inside a single class.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-263",
+    "deckId": "deck-clean-code",
+    "term": "introduce parameter validation",
+    "ipa": "/ˌɪntrəˈduːs pəˈræmɪtər ˌvælɪˈdeɪʃn/",
+    "definition": "Kỹ thuật viết mã sạch nhằm kiểm tra tính hợp lệ của các tham số đầu vào ngay tại điểm khởi đầu của phương thức, giúp phát hiện sớm lỗi và ngăn chặn dữ liệu bẩn lan truyền vào sâu bên trong hệ thống.",
+    "example": "Always introduce parameter validation at public API boundaries to reject invalid payloads early.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-264",
+    "deckId": "deck-clean-code",
+    "term": "collapse conditional",
+    "ipa": "/kəˈlæps kənˈdɪʃənl/",
+    "definition": "Quá trình đơn giản hóa nhiều câu lệnh điều kiện lồng nhau hoặc các nhánh rẽ có kết quả trả về giống nhau thành một biểu thức logic duy nhất, giúp tăng cao độ dễ đọc và giảm độ phức tạp của mã.",
+    "example": "You can collapse conditional branches that return the exact same boolean result into one expression.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-265",
+    "deckId": "deck-clean-code",
+    "term": "decompose conditional expression",
+    "ipa": "/ˌdiːkəmˈpəʊz kənˈdɪʃənl ɪkˈspreʃn/",
+    "definition": "Kỹ thuật bóc tách một biểu thức điều kiện phức tạp thành các phương thức hoặc biến có tên mang ý nghĩa biểu đạt cao, giúp người đọc dễ dàng thấu hiểu bản chất nghiệp vụ thay vì phải tư duy logic toán học.",
+    "example": "Use decompose conditional expression to turn complex date math into readable helper predicates.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-266",
+    "deckId": "deck-clean-code",
+    "term": "extract exception handler",
+    "ipa": "/ɪkˈstrækt ɪkˈsepʃn ˈhændlər/",
+    "definition": "Thao tác tách biệt phần xử lý ngoại lệ (try-catch block) ra khỏi logic nghiệp vụ chính bằng cách đưa nó vào một phương thức riêng biệt, giúp mã nguồn chính trở nên gọn gàng và tập trung hoàn toàn vào luồng xử lý thành công.",
+    "example": "Apply extract exception handler so retry and logging noise does not obscure core business flow.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-267",
+    "deckId": "deck-clean-code",
+    "term": "generalize type hierarchy",
+    "ipa": "/ˈdʒenərəlaɪz taɪp ˈhaɪərɑːrki/",
+    "definition": "Hành động tái cấu trúc nhằm nâng cao tính linh hoạt bằng cách tạo ra hoặc tinh chỉnh cấu trúc cha-con (superclass/interface) cho các kiểu dữ liệu, giúp mã nguồn dễ mở rộng theo nguyên lý đóng-mở.",
+    "example": "We decided to generalize type hierarchy so both PDF and CSV exporters share a clean base contract.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-268",
+    "deckId": "deck-clean-code",
+    "term": "replace magic array index",
+    "ipa": "/rɪˈpleɪs ˈmædʒɪk əˈreɪ ˈɪndeks/",
+    "definition": "Kỹ thuật thay thế các chỉ số mảng mang giá trị cố định và khó hiểu bằng các hằng số có tên định danh rõ ràng hoặc chuyển chúng thành các thuộc tính của đối tượng nhằm tránh lỗi ngầm.",
+    "example": "Use named tuple destructuring to replace magic array index lookups like row[3].",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-269",
+    "deckId": "deck-clean-code",
+    "term": "isolate side effect",
+    "ipa": "/ˈaɪsəleɪt saɪd ɪˈfekt/",
+    "definition": "Nguyên tắc và kỹ thuật gom nhóm, tách biệt các đoạn mã gây ra thay đổi trạng thái bên ngoài (tác dụng phụ) khỏi các hàm thuần túy (pure functions), giúp việc kiểm thử và suy luận về mã nguồn trở nên dễ dàng hơn.",
+    "example": "Functional architectures isolate side effect calls at the edges while keeping domain logic pure.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-270",
+    "deckId": "deck-clean-code",
+    "term": "unify validation logic",
+    "ipa": "/ˈjuːnɪfaɪ ˌvælɪˈdeɪʃn ˈlɒdʒɪk/",
+    "definition": "Quá trình tập trung hóa các quy tắc kiểm tra dữ liệu trùng lặp ở nhiều nơi thành một thành phần hoặc lớp kiểm tra duy nhất để tuân thủ nguyên tắc DRY và đảm bảo tính nhất quán của dữ liệu.",
+    "example": "Shared schema rules unify validation logic across both client forms and backend endpoints.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-271",
+    "deckId": "deck-clean-code",
+    "term": "extract sub-component",
+    "ipa": "/ɪkˈstrækt sʌb kəmˈpoʊnənt/",
+    "definition": "Kỹ thuật refactoring tách một phần logic hoặc UI phức tạp trong một module lớn thành một component nhỏ hơn, độc lập và dễ tái sử dụng.",
+    "example": "When a React view grows too large, extract sub-component pieces with focused props.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-272",
+    "deckId": "deck-clean-code",
+    "term": "hoist state",
+    "ipa": "/hɔɪst steɪt/",
+    "definition": "Kỹ thuật di chuyển trạng thái (state) từ một component con lên một component cha ở cấp cao hơn để chia sẻ dữ liệu hoặc kiểm soát tốt hơn.",
+    "example": "In React, hoist state to the closest common parent when sibling panels must stay synchronized.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-273",
+    "deckId": "deck-clean-code",
+    "term": "strip out redundancy",
+    "ipa": "/strɪp aʊt rɪˈdʌndənsi/",
+    "definition": "Hành động loại bỏ hoàn toàn các đoạn code lặp lại, mã thừa thãi hoặc các biến không bao giờ được sử dụng để làm sạch codebase.",
+    "example": "Code reviews help strip out redundancy before duplicate helpers spread across the repo.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-274",
+    "deckId": "deck-clean-code",
+    "term": "decouple business logic",
+    "ipa": "/diːˈkʌpəl ˈbɪznəs ˈlɑdʒɪk/",
+    "definition": "Quá trình tách biệt hoàn toàn phần xử lý nghiệp vụ cốt lõi khỏi các tầng giao diện người dùng, cơ sở dữ liệu hoặc thư viện bên thứ ba.",
+    "example": "Clean architecture aims to decouple business logic from UI frameworks and database drivers.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-275",
+    "deckId": "deck-clean-code",
+    "term": "refactor in place",
+    "ipa": "/ˌriːˈfæktər ɪn pleɪs/",
+    "definition": "Việc cải thiện cấu trúc nội bộ của một hàm hoặc lớp ngay tại vị trí hiện tại mà không làm thay đổi chữ ký (signature) hay hành vi bên ngoài.",
+    "example": "Small modules are easy to refactor in place without breaking external function signatures.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-276",
+    "deckId": "deck-clean-code",
+    "term": "sanitize data flow",
+    "ipa": "/ˈsænəˌtaɪz ˈdeɪtə floʊ/",
+    "definition": "Thiết kế lại luồng truyền dữ liệu để đảm bảo mọi dữ liệu đầu vào đều được kiểm tra, làm sạch và chuẩn hóa trước khi xử lý.",
+    "example": "Input schemas sanitize data flow before untrusted query parameters reach the SQL layer.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-277",
+    "deckId": "deck-clean-code",
+    "term": "flatten conditional logic",
+    "ipa": "/ˈflætən kənˈdɪʃənl ˈlɑdʒɪk/",
+    "definition": "Kỹ thuật làm phẳng các câu lệnh điều kiện lồng nhau quá sâu (nested if-else) bằng cách sử dụng guard clauses hoặc early return.",
+    "example": "Early guard returns flatten conditional logic and make edge cases effortless to trace.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-278",
+    "deckId": "deck-clean-code",
+    "term": "abstract away complexity",
+    "ipa": "/ˈæbstrækt əˈweɪ kəmˈplɛsəti/",
+    "definition": "Ẩn đi các chi tiết cài đặt phức tạp bên dưới một giao diện đơn giản hoặc một lớp trừu tượng để code dễ đọc và dễ bảo trì hơn.",
+    "example": "Well-designed hooks abstract away complexity so UI components remain clean and declarative.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-279",
+    "deckId": "deck-clean-code",
+    "term": "centralize configuration",
+    "ipa": "/ˈsɛntrəˌlaɪz ˌkɑnfəɡjəˈreɪʃən/",
+    "definition": "Gom tất cả các tham số cấu hình, hằng số hệ thống hoặc biến môi trường vào một nơi duy nhất thay vì rải rác khắp codebase.",
+    "example": "Always centralize configuration variables in one typed module instead of scattering process.env calls.",
+    "partOfSpeech": "phrase",
+    "status": "new",
+    "reviewCount": 0
+  },
+  {
+    "id": "cc-nov-280",
+    "deckId": "deck-clean-code",
+    "term": "simplify boolean expression",
+    "ipa": "/ˈsɪmpləˌfaɪ ˈbuljən ɪkˈsprɛʃən/",
+    "definition": "Rút gọn các biểu thức logic phức tạp thành dạng ngắn gọn, dễ hiểu hơn mà vẫn giữ nguyên tính đúng đắn của logic.",
+    "example": "De Morgan laws help simplify boolean expression checks into clear positive conditions.",
     "partOfSpeech": "phrase",
     "status": "new",
     "reviewCount": 0

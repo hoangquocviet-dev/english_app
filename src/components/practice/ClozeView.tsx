@@ -2,7 +2,7 @@ import { ArrowLeft, Check, FileText, Sparkles, Volume2, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { StudySessionStats, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
-import { storageService } from '../../utils/storage'
+import { GLOBAL_SRS_DECK_ID, storageService } from '../../utils/storage'
 import { StudySummary } from './StudySummary'
 
 interface ClozeViewProps {
@@ -457,9 +457,7 @@ export function ClozeView({
       reviewCount: stats.review,
       mode: 'cloze',
       deckName,
-      remainingWords: storageService
-        .getWords(deckId)
-        .filter((w) => w.status !== 'mastered'),
+      remainingWords: storageService.getRemainingWordsForSession(deckId, words),
     }
 
     return (
@@ -473,16 +471,20 @@ export function ClozeView({
           setIsCompleted(false)
           setStats({ mastered: 0, review: 0 })
         }}
-        onResetDeck={() => {
-          void storageService.resetDeckProgress(deckId).then(() => {
-            setQuestions(buildClozeQuestions(storageService.getWords(deckId), allDeckWords))
-            setCurrentIndex(0)
-            setSelectedOption(null)
-            setIsLocked(false)
-            setIsCompleted(false)
-            setStats({ mastered: 0, review: 0 })
-          })
-        }}
+        onResetDeck={
+          deckId === GLOBAL_SRS_DECK_ID
+            ? undefined
+            : () => {
+                void storageService.resetDeckProgress(deckId).then(() => {
+                  setQuestions(buildClozeQuestions(storageService.getWords(deckId), allDeckWords))
+                  setCurrentIndex(0)
+                  setSelectedOption(null)
+                  setIsLocked(false)
+                  setIsCompleted(false)
+                  setStats({ mastered: 0, review: 0 })
+                })
+              }
+        }
         onBackToHome={onBack}
       />
     )

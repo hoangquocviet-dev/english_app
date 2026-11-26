@@ -2,7 +2,7 @@ import { ArrowLeft, Check, HelpCircle, Lightbulb, RotateCcw, Volume2 } from 'luc
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { SpellingTile, StudySessionStats, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
-import { storageService } from '../../utils/storage'
+import { GLOBAL_SRS_DECK_ID, storageService } from '../../utils/storage'
 import { StudySummary } from './StudySummary'
 
 interface SpellingViewProps {
@@ -374,9 +374,7 @@ export function SpellingView({ words, deckId, deckName, onBack }: SpellingViewPr
   }
 
   if (isCompleted) {
-    const remainingList = storageService
-      .getWords(deckId)
-      .filter((w) => w.status !== 'mastered')
+    const remainingList = storageService.getRemainingWordsForSession(deckId, words)
     const sessionStats: StudySessionStats = {
       totalWords: words.length,
       masteredCount: stats.mastered,
@@ -389,11 +387,15 @@ export function SpellingView({ words, deckId, deckName, onBack }: SpellingViewPr
       <StudySummary
         stats={sessionStats}
         onContinueRemaining={(rem) => startSessionWithWords(rem)}
-        onResetDeck={() => {
-          void storageService.resetDeckProgress(deckId).then(() => {
-            startSessionWithWords(storageService.getWords(deckId))
-          })
-        }}
+        onResetDeck={
+          deckId === GLOBAL_SRS_DECK_ID
+            ? undefined
+            : () => {
+                void storageService.resetDeckProgress(deckId).then(() => {
+                  startSessionWithWords(storageService.getWords(deckId))
+                })
+              }
+        }
         onBackToHome={onBack}
       />
     )

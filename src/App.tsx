@@ -10,7 +10,7 @@ import type { ActiveTab, ArcadeGameId, Deck, StudyMode, WordItem } from './types
 import { audioService } from './utils/audio'
 import { cloudSyncService } from './utils/cloudSync'
 import { forceReloadApp } from './utils/reload'
-import { storageService } from './utils/storage'
+import { GLOBAL_SRS_DECK_ID, storageService } from './utils/storage'
 
 function lazyWithRetry<T extends ComponentType<any>>(
   importer: () => Promise<{ default: T }>
@@ -246,6 +246,7 @@ export function App() {
   }
 
   const activeDeck = decks.find((d) => d.id === activeDeckId) || decks[0] || null
+  const studyDeckId = isGlobalSrsSession ? GLOBAL_SRS_DECK_ID : activeDeck?.id || ''
   const studyDeckName = isGlobalSrsSession
     ? 'Ôn tập SRS Toàn kho'
     : activeDeck?.name || 'Kho từ vựng'
@@ -316,7 +317,7 @@ export function App() {
               {activeStudyMode === 'flashcard' && activeDeck && (
                 <FlashcardView
                   words={sessionWords}
-                  deckId={activeDeck.id}
+                  deckId={studyDeckId}
                   deckName={studyDeckName}
                   onBack={handleExitStudy}
                 />
@@ -326,7 +327,7 @@ export function App() {
                 <QuizView
                   words={sessionWords}
                   allDeckWords={studyPoolWords}
-                  deckId={activeDeck.id}
+                  deckId={studyDeckId}
                   deckName={studyDeckName}
                   onBack={handleExitStudy}
                 />
@@ -335,7 +336,7 @@ export function App() {
               {activeStudyMode === 'spelling' && activeDeck && (
                 <SpellingView
                   words={sessionWords}
-                  deckId={activeDeck.id}
+                  deckId={studyDeckId}
                   deckName={studyDeckName}
                   onBack={handleExitStudy}
                 />
@@ -345,7 +346,7 @@ export function App() {
                 <ListeningView
                   words={sessionWords}
                   allDeckWords={studyPoolWords}
-                  deckId={activeDeck.id}
+                  deckId={studyDeckId}
                   deckName={studyDeckName}
                   onBack={handleExitStudy}
                 />
@@ -355,7 +356,7 @@ export function App() {
                 <ClozeView
                   words={sessionWords}
                   allDeckWords={studyPoolWords}
-                  deckId={activeDeck.id}
+                  deckId={studyDeckId}
                   deckName={studyDeckName}
                   onBack={handleExitStudy}
                 />

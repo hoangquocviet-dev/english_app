@@ -69,6 +69,17 @@ export function PracticeHome({
   const learningCount = words.filter((w) => w.status === 'learning').length
   const unmasteredCount = words.length - masteredCount
 
+  const srsLevels = (() => {
+    const counts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+    for (const w of words) {
+      if (w.status === 'mastered') {
+        const lvl = w.srsLevel && w.srsLevel >= 1 && w.srsLevel <= 5 ? w.srsLevel : 1
+        counts[lvl] = (counts[lvl] || 0) + 1
+      }
+    }
+    return counts
+  })()
+
   // eslint-disable-next-line react-hooks/purity
   const now = Date.now()
   const dueReviewCount = words.filter(
@@ -293,6 +304,41 @@ export function PracticeHome({
             <div className="text-[11px] text-slate-400 font-medium">Cần học</div>
           </div>
         </div>
+
+        {/* 5-Stage SRS Memory Maturity Breakdown */}
+        {masteredCount > 0 && (
+          <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-700/50">
+            <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
+              <span>Tháp trí nhớ SRS (5 chu kỳ)</span>
+              <span>{masteredCount} thẻ đã ghi nhớ</span>
+            </div>
+            <div className="grid grid-cols-5 gap-1 text-center">
+              {[
+                { lvl: 1, tag: '1d' },
+                { lvl: 2, tag: '3d' },
+                { lvl: 3, tag: '7d' },
+                { lvl: 4, tag: '14d' },
+                { lvl: 5, tag: '30d' },
+              ].map(({ lvl, tag }) => {
+                const count = srsLevels[lvl] || 0
+                return (
+                  <div
+                    key={lvl}
+                    className={`py-1 px-1 rounded-lg border text-[10px] transition-colors ${
+                      count > 0
+                        ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-700 dark:text-emerald-300 font-bold'
+                        : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200/60 dark:border-slate-800 text-slate-400'
+                    }`}
+                    title={`Cấp SRS ${lvl} (chu kỳ ${tag}): ${count} thẻ`}
+                  >
+                    <div className="leading-tight">{count}</div>
+                    <div className="text-[9px] opacity-75 font-medium">Lv.{lvl}•{tag}</div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Purposeful Quick Actions: View Deck Words + Reset (or Add Word) */}
         <div className="grid grid-cols-2 gap-2 mt-3">

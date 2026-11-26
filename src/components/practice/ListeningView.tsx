@@ -2,7 +2,7 @@ import { ArrowLeft, Check, Headphones, Volume2, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { StudySessionStats, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
-import { storageService } from '../../utils/storage'
+import { GLOBAL_SRS_DECK_ID, storageService } from '../../utils/storage'
 import { StudySummary } from './StudySummary'
 
 interface ListeningViewProps {
@@ -257,9 +257,7 @@ export function ListeningView({
   }
 
   if (isCompleted) {
-    const remainingList = storageService
-      .getWords(deckId)
-      .filter((w) => w.status !== 'mastered')
+    const remainingList = storageService.getRemainingWordsForSession(deckId, words)
     const sessionStats: StudySessionStats = {
       totalWords: words.length,
       masteredCount: stats.mastered,
@@ -272,11 +270,15 @@ export function ListeningView({
       <StudySummary
         stats={sessionStats}
         onContinueRemaining={(rem) => resetListening(rem)}
-        onResetDeck={() => {
-          void storageService.resetDeckProgress(deckId).then(() => {
-            resetListening(storageService.getWords(deckId))
-          })
-        }}
+        onResetDeck={
+          deckId === GLOBAL_SRS_DECK_ID
+            ? undefined
+            : () => {
+                void storageService.resetDeckProgress(deckId).then(() => {
+                  resetListening(storageService.getWords(deckId))
+                })
+              }
+        }
         onBackToHome={onBack}
       />
     )
