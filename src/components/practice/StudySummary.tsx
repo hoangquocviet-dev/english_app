@@ -10,7 +10,7 @@ import {
   Volume2,
   X,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { StudySessionStats, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
 
@@ -30,7 +30,7 @@ export function StudySummary({
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [showRemainingList, setShowRemainingList] = useState(false)
 
-  const remainingWords = stats.remainingWords || []
+  const remainingWords = useMemo(() => stats.remainingWords || [], [stats.remainingWords])
   const isAllDeckMastered = remainingWords.length === 0
   const totalAttempts = stats.masteredCount + stats.reviewCount
   const percent =

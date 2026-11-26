@@ -75,68 +75,76 @@ function buildBlitzPool(words: WordItem[]): WordItem[] {
   return unique
 }
 
+function createBlitzPrompt(
+  pool: WordItem[],
+  roundNum: number,
+  prevWordId?: string,
+  forcedMatch?: boolean
+): BlitzPrompt {
+  const candidates = pool.filter((w) => w.id !== prevWordId)
+  const sourceList = candidates.length > 0 ? candidates : pool
+  const word = sourceList[Math.floor(Math.random() * sourceList.length)]
+  const isMatch = typeof forcedMatch === 'boolean' ? forcedMatch : Math.random() < 0.5
+  let shownDefinition = word.definition
+
+  if (!isMatch) {
+    const traps = pool.filter(
+      (w) =>
+        w.term.trim().toLowerCase() !== word.term.trim().toLowerCase() &&
+        w.definition.trim().toLowerCase() !== word.definition.trim().toLowerCase()
+    )
+    if (traps.length > 0) {
+      const samePos = word.partOfSpeech
+        ? traps.filter((t) => t.partOfSpeech === word.partOfSpeech)
+        : []
+      const trapCandidates = samePos.length >= 2 ? samePos : traps
+      const sortedByLen = [...trapCandidates].sort(
+        (a, b) =>
+          Math.abs(a.definition.length - word.definition.length) -
+          Math.abs(b.definition.length - word.definition.length)
+      )
+      const topSlice = sortedByLen.slice(0, Math.min(5, sortedByLen.length))
+      const trapWord = topSlice[Math.floor(Math.random() * topSlice.length)]
+      shownDefinition = trapWord.definition
+    } else {
+      return {
+        word,
+        shownDefinition: word.definition,
+        isMatch: true,
+        durationMs: getDurationForRound(roundNum, word.definition.length),
+      }
+    }
+  }
+
+  return {
+    word,
+    shownDefinition,
+    isMatch,
+    durationMs: getDurationForRound(roundNum, shownDefinition.length),
+  }
+}
+
 export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
   const getPool = useCallback(() => buildBlitzPool(words), [words])
   const recentPolarityRef = useRef<boolean[]>([])
 
   const generatePrompt = useCallback(
     (roundNum: number, prevWordId?: string): BlitzPrompt => {
-      const pool = getPool()
-      const candidates = pool.filter((w) => w.id !== prevWordId)
-      const sourceList = candidates.length > 0 ? candidates : pool
-      const word = sourceList[Math.floor(Math.random() * sourceList.length)]
-
-      // Prevent >3 identical True/False answers in a row so rhythm stays sharp
       const hist = recentPolarityRef.current
       let isMatch = Math.random() < 0.5
       if (hist.length >= 3 && hist.slice(-3).every((v) => v === isMatch)) {
         isMatch = !isMatch
       }
-      recentPolarityRef.current = [...hist.slice(-4), isMatch]
-
-      let shownDefinition = word.definition
-
-      if (!isMatch) {
-        const traps = pool.filter(
-          (w) =>
-            w.term.trim().toLowerCase() !== word.term.trim().toLowerCase() &&
-            w.definition.trim().toLowerCase() !== word.definition.trim().toLowerCase()
-        )
-        if (traps.length > 0) {
-          // Prefer smart traps with matching partOfSpeech & similar definition length
-          const samePos = word.partOfSpeech
-            ? traps.filter((t) => t.partOfSpeech === word.partOfSpeech)
-            : []
-          const trapCandidates = samePos.length >= 2 ? samePos : traps
-          const sortedByLen = [...trapCandidates].sort(
-            (a, b) =>
-              Math.abs(a.definition.length - word.definition.length) -
-              Math.abs(b.definition.length - word.definition.length)
-          )
-          const topSlice = sortedByLen.slice(0, Math.min(5, sortedByLen.length))
-          const trapWord = topSlice[Math.floor(Math.random() * topSlice.length)]
-          shownDefinition = trapWord.definition
-        } else {
-          return {
-            word,
-            shownDefinition: word.definition,
-            isMatch: true,
-            durationMs: getDurationForRound(roundNum, word.definition.length),
-          }
-        }
-      }
-
-      return {
-        word,
-        shownDefinition,
-        isMatch,
-        durationMs: getDurationForRound(roundNum, shownDefinition.length),
-      }
+      const next = createBlitzPrompt(getPool(), roundNum, prevWordId, isMatch)
+      recentPolarityRef.current = [...hist.slice(-4), next.isMatch]
+      return next
     },
     [getPool]
   )
 
-  const [prompt, setPrompt] = useState<BlitzPrompt>(() => generatePrompt(1))
+  const [prompt, setPrompt] = useState<BlitzPrompt>(() =>
+    createBlitzPrompt(buildBlitzPool(words), 1)
+  )
   const [round, setRound] = useState(1)
   const [score, setScore] = useState(0)
   const [streak, setStreak] = useState(0)
@@ -265,7 +273,7 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
         advanceNextRound(round + 1, prompt.word.id)
       }
     }, 680)
-  }, [isGameOver, round, prompt.word.id, applyBarVisual, clearFeedbackTimeout, endGame, advanceNextRound])
+  }, [isGameOver, round, prompt.word, applyBarVisual, clearFeedbackTimeout, endGame, advanceNextRound])
 
   useEffect(() => {
     const onVisibility = () => {

@@ -161,7 +161,9 @@ export function WordBombGame({ words, deckName, onBack }: WordBombGameProps) {
     [getPool]
   )
 
-  const [bomb, setBomb] = useState<BombState>(() => createBombForWord(pullNextWord(), 1))
+  const [bomb, setBomb] = useState<BombState>(() =>
+    createBombForWord(shuffle(buildBombPool(words))[0], 1)
+  )
   const bombRef = useRef<BombState>(bomb)
   const commitBomb = useCallback((next: BombState) => {
     bombRef.current = next
