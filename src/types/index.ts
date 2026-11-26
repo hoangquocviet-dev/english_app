@@ -1,4 +1,10 @@
-export type StudyMode = 'flashcard' | 'quiz' | 'spelling' | 'listening' | 'cloze'
+export type StudyMode =
+  | 'smart-mix'
+  | 'flashcard'
+  | 'quiz'
+  | 'spelling'
+  | 'listening'
+  | 'cloze'
 
 export type StudyFilterMode =
   | 'all'

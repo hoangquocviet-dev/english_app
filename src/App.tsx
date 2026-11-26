@@ -52,6 +52,9 @@ const ListeningView = lazyWithRetry(() =>
 const ClozeView = lazyWithRetry(() =>
   import('./components/practice/ClozeView').then((m) => ({ default: m.ClozeView }))
 )
+const SmartMixView = lazyWithRetry(() =>
+  import('./components/practice/SmartMixView').then((m) => ({ default: m.SmartMixView }))
+)
 const SkyDefenderGame = lazyWithRetry(() =>
   import('./components/games/SkyDefenderGame').then((m) => ({ default: m.SkyDefenderGame }))
 )
@@ -328,6 +331,13 @@ export function App() {
     refreshData()
   }
 
+  const handleStudyMissedFromGame = (missed: WordItem[]) => {
+    audioService.stopSpeech()
+    setActiveGame(null)
+    refreshData()
+    handleStartCustomSession(missed, 'smart-mix', 'Ôn từ vừa sai (Đấu Trường)', true)
+  }
+
   const activeDeck = decks.find((d) => d.id === activeDeckId) || decks[0] || null
   const studyDeckId = isGlobalSrsSession ? GLOBAL_SRS_DECK_ID : activeDeck?.id || ''
   const studyDeckName =
@@ -517,6 +527,19 @@ export function App() {
                 />
               )}
 
+              {activeStudyMode === 'smart-mix' && activeDeck && (
+                <SmartMixView
+                  key={`sm-${sessionFilterMode}-${sessionWords.length}-${sessionWords[0]?.id || '0'}`}
+                  words={sessionWords}
+                  allDeckWords={studyPoolWords}
+                  deckId={studyDeckId}
+                  deckName={studyDeckName}
+                  filterMode={sessionFilterMode}
+                  onSwitchStudyMode={handleSwitchStudyMode}
+                  onBack={handleExitStudy}
+                />
+              )}
+
               {/* Active Arcade Mini-Game Screens */}
               {activeGame && isSeedLoading && allWords.length === 0 && <ViewLoader />}
 
@@ -524,6 +547,7 @@ export function App() {
                 <SkyDefenderGame
                   words={arcadeWords}
                   deckName={arcadeDeckLabel}
+                  onStudyMissedWords={handleStudyMissedFromGame}
                   onBack={handleExitGame}
                 />
               )}
@@ -532,6 +556,7 @@ export function App() {
                 <SpeedMatchGame
                   words={arcadeWords}
                   deckName={arcadeDeckLabel}
+                  onStudyMissedWords={handleStudyMissedFromGame}
                   onBack={handleExitGame}
                 />
               )}
@@ -540,6 +565,7 @@ export function App() {
                 <BlitzGame
                   words={arcadeWords}
                   deckName={arcadeDeckLabel}
+                  onStudyMissedWords={handleStudyMissedFromGame}
                   onBack={handleExitGame}
                 />
               )}
@@ -548,6 +574,7 @@ export function App() {
                 <WordBombGame
                   words={arcadeWords}
                   deckName={arcadeDeckLabel}
+                  onStudyMissedWords={handleStudyMissedFromGame}
                   onBack={handleExitGame}
                 />
               )}

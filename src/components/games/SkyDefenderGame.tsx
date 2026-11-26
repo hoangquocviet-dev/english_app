@@ -9,6 +9,7 @@ import {
   RotateCcw,
   Shield,
   Skull,
+  Sparkles,
   Star as StarIcon,
   Trophy,
   Volume2,
@@ -22,6 +23,7 @@ import { storageService } from '../../utils/storage'
 interface SkyDefenderGameProps {
   words: WordItem[]
   deckName: string
+  onStudyMissedWords?: (words: WordItem[]) => void
   onBack: () => void
 }
 
@@ -121,7 +123,12 @@ function drawRoundedRect(
   ctx.closePath()
 }
 
-export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProps) {
+export function SkyDefenderGame({
+  words,
+  deckName,
+  onStudyMissedWords,
+  onBack,
+}: SkyDefenderGameProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
 
@@ -540,6 +547,9 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
         setMissedWords((prev) =>
           prev.some((w) => w.id === missed.id) ? prev : [...prev.slice(-2), missed]
         )
+        if (missed.status === 'new') {
+          storageService.updateWordStatus(missed.id, 'learning', false)
+        }
       }
 
       st.floatingTexts.push({
@@ -1472,6 +1482,19 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
             )}
 
             <div className="w-full max-w-xs space-y-2">
+              {missedWords.length > 0 && onStudyMissedWords && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    audioService.playClick()
+                    onStudyMissedWords(missedWords)
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-transform"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Ôn kỹ {missedWords.length} mục tiêu vừa sẩy chân</span>
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => {

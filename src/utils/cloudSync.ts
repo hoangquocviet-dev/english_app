@@ -84,6 +84,7 @@ class CloudSyncManager {
   private listeners = new Set<() => void>()
   private initialized = false
   private lastDailyFeedCheckAt = 0
+  private lastRemotePullAt = 0
 
   public subscribe(listener: () => void): () => void {
     this.listeners.add(listener)
@@ -205,6 +206,12 @@ class CloudSyncManager {
         if (document.hidden) {
           flushOnHide()
           return
+        }
+        // When returning to an open tab after ≥60s, pull newer remote progress from other devices!
+        if (this.getLastSyncedAt() && Date.now() - this.lastRemotePullAt >= 60_000) {
+          void this.pullAndMerge().then((merged) => {
+            if (merged) onRemoteHydrated()
+          })
         }
         // When user switches back to an already-open tab after ≥3 mins, silently check Daily-English feed!
         if (Date.now() - this.lastDailyFeedCheckAt >= 180_000) {
@@ -371,6 +378,11 @@ class CloudSyncManager {
   public async pushNow(force = false, keepalive = false): Promise<boolean> {
     if (typeof navigator !== 'undefined' && !navigator.onLine) return false
 
+    // Prevent stale background tabs from overwriting newer progress made on another device!
+    if (!keepalive && this.getLastSyncedAt() && Date.now() - this.lastRemotePullAt >= 120_000) {
+      await this.pullAndMerge().catch(() => false)
+    }
+
     const payload = this.buildProfilePayload()
     if (!force && !payload.hasMeaningfulActivity && !this.getLastSyncedAt()) {
       this.pendingPush = false
@@ -454,6 +466,7 @@ class CloudSyncManager {
   // Pull & merge updates from Cloud for the current Sync ID
   public async pullAndMerge(): Promise<boolean> {
     if (typeof navigator !== 'undefined' && !navigator.onLine) return false
+    this.lastRemotePullAt = Date.now()
     const syncCode = this.getSyncCode()
 
     try {

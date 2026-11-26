@@ -726,6 +726,33 @@ export function PracticeHome({
             </div>
           )}
 
+          {/* Hero Mode 0: Smart Mixed 4-Skill Workout */}
+          <button
+            type="button"
+            onClick={() => handleStart('smart-mix')}
+            className="w-full bg-gradient-to-r from-indigo-600/10 via-violet-600/10 to-sky-500/10 dark:from-indigo-500/15 dark:via-violet-500/15 dark:to-sky-500/15 rounded-2xl p-4 border border-indigo-500/35 hover:border-indigo-500 text-left transition-all flex items-center justify-between group shadow-xs active:scale-98"
+          >
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <h4 className="text-sm font-extrabold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors truncate">
+                    Luyện Tổng Hợp 4 Kỹ Năng
+                  </h4>
+                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-indigo-600 text-white shrink-0">
+                    THÔNG MINH
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 line-clamp-2">
+                  Xoay vòng Nhớ nghĩa • Phản xạ nghe • Việt→Anh • Điền câu Cloze trong 1 lượt
+                </p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-indigo-500 shrink-0 ml-2 group-hover:translate-x-1 transition-transform" />
+          </button>
+
           {/* Mode 1: Flashcard 3D */}
           <button
             onClick={() => handleStart('flashcard')}

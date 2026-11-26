@@ -22,6 +22,7 @@ import { storageService } from '../../utils/storage'
 interface SpeedMatchGameProps {
   words: WordItem[]
   deckName: string
+  onStudyMissedWords?: (words: WordItem[]) => void
   onBack: () => void
 }
 
@@ -135,7 +136,12 @@ function createInitialBoard(pool: WordItem[]): BoardState {
   return { left, right }
 }
 
-export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps) {
+export function SpeedMatchGame({
+  words,
+  deckName,
+  onStudyMissedWords,
+  onBack,
+}: SpeedMatchGameProps) {
   const getPool = useCallback(() => buildPlayablePool(words), [words])
 
   const drawQueueRef = useRef<WordItem[]>([])
@@ -504,6 +510,9 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
         setMissedWords((prev) =>
           prev.some((w) => w.id === lCard.word.id) ? prev : [...prev.slice(-3), lCard.word]
         )
+        if (lCard.word.status === 'new') {
+          storageService.updateWordStatus(lCard.word.id, 'learning', false)
+        }
         updateSelectedLeft(null)
         updateSelectedRight(null)
 
@@ -946,6 +955,19 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
           )}
 
           <div className="w-full max-w-xs space-y-2.5">
+            {missedWords.length > 0 && onStudyMissedWords && (
+              <button
+                type="button"
+                onClick={() => {
+                  audioService.playClick()
+                  onStudyMissedWords(missedWords)
+                }}
+                className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-transform"
+              >
+                <Zap className="w-3.5 h-3.5" />
+                <span>Ôn kỹ {missedWords.length} từ vừa nối nhầm ngay</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={restartGame}

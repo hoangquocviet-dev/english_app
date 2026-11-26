@@ -27,6 +27,7 @@ interface StudySummaryProps {
 }
 
 const MODE_LABELS: Array<{ mode: StudyMode; label: string }> = [
+  { mode: 'smart-mix', label: 'Tổng hợp ⚡' },
   { mode: 'flashcard', label: 'Flashcard' },
   { mode: 'quiz', label: 'Trắc nghiệm' },
   { mode: 'spelling', label: 'Ghép chữ' },

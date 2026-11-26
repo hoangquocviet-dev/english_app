@@ -7,6 +7,7 @@ import {
   Pause,
   Play,
   RotateCcw,
+  Sparkles,
   Star,
   Trophy,
   Volume2,
@@ -21,6 +22,7 @@ import { storageService } from '../../utils/storage'
 interface BlitzGameProps {
   words: WordItem[]
   deckName: string
+  onStudyMissedWords?: (words: WordItem[]) => void
   onBack: () => void
 }
 
@@ -125,7 +127,7 @@ function createBlitzPrompt(
   }
 }
 
-export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
+export function BlitzGame({ words, deckName, onStudyMissedWords, onBack }: BlitzGameProps) {
   const getPool = useCallback(() => buildBlitzPool(words), [words])
   const recentPolarityRef = useRef<boolean[]>([])
 
@@ -260,6 +262,9 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
     setMissedWords((prev) =>
       prev.some((w) => w.id === prompt.word.id) ? prev : [...prev.slice(-3), prompt.word]
     )
+    if (prompt.word.status === 'new') {
+      storageService.updateWordStatus(prompt.word.id, 'learning', false)
+    }
 
     const nextLives = livesRef.current - 1
     livesRef.current = nextLives
@@ -392,6 +397,9 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
         setMissedWords((prev) =>
           prev.some((w) => w.id === prompt.word.id) ? prev : [...prev.slice(-3), prompt.word]
         )
+        if (prompt.word.status === 'new') {
+          storageService.updateWordStatus(prompt.word.id, 'learning', false)
+        }
 
         const nextLives = livesRef.current - 1
         livesRef.current = nextLives
@@ -829,6 +837,19 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
           )}
 
           <div className="w-full max-w-xs space-y-2.5">
+            {missedWords.length > 0 && onStudyMissedWords && (
+              <button
+                type="button"
+                onClick={() => {
+                  audioService.playClick()
+                  onStudyMissedWords(missedWords)
+                }}
+                className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-transform"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Ôn kỹ {missedWords.length} từ vừa mắc bẫy ngay</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={restartBlitz}

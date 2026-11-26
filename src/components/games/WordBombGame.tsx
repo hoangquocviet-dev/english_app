@@ -23,6 +23,7 @@ import { storageService } from '../../utils/storage'
 interface WordBombGameProps {
   words: WordItem[]
   deckName: string
+  onStudyMissedWords?: (words: WordItem[]) => void
   onBack: () => void
 }
 
@@ -144,7 +145,7 @@ function createBombForWord(word: WordItem, waveNum: number): BombState {
   }
 }
 
-export function WordBombGame({ words, deckName, onBack }: WordBombGameProps) {
+export function WordBombGame({ words, deckName, onStudyMissedWords, onBack }: WordBombGameProps) {
   const getPool = useCallback(() => buildBombPool(words), [words])
   const queueRef = useRef<WordItem[]>([])
 
@@ -928,6 +929,19 @@ export function WordBombGame({ words, deckName, onBack }: WordBombGameProps) {
           )}
 
           <div className="w-full max-w-xs space-y-2">
+            {missedWords.length > 0 && onStudyMissedWords && (
+              <button
+                type="button"
+                onClick={() => {
+                  audioService.playClick()
+                  onStudyMissedWords(missedWords)
+                }}
+                className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-transform"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Ôn kỹ {missedWords.length} từ vừa nổ bom ngay</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={restartGame}
