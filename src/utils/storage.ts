@@ -381,8 +381,8 @@ class SafeStorageService {
 
   public deleteWord(id: string): void {
     const words = this.getWords()
-    // Custom/imported words always start with 'w-'; built-in IDs use deck prefixes
-    if (!id.startsWith('w-')) {
+    // Custom/imported ('w-') and community ('commword-') words are not built-ins
+    if (!id.startsWith('w-') && !id.startsWith('commword-')) {
       const deleted = this.get<string[]>(STORAGE_KEYS.DELETED_BUILTINS, [])
       if (!deleted.includes(id)) {
         this.set(STORAGE_KEYS.DELETED_BUILTINS, [...deleted, id])
@@ -780,7 +780,9 @@ class SafeStorageService {
   }
 
   public getDeletedBuiltIns(): string[] {
-    return this.get<string[]>(STORAGE_KEYS.DELETED_BUILTINS, [])
+    return this.get<string[]>(STORAGE_KEYS.DELETED_BUILTINS, []).filter(
+      (id) => !id.startsWith('w-') && !id.startsWith('commword-')
+    )
   }
 
   public getLastActiveDate(): string {
@@ -805,7 +807,9 @@ class SafeStorageService {
     this.suppressMutationNotify = true
     try {
       const { INITIAL_WORDS } = await import('../data/initialDecks')
-      const cloudDeleted = Array.isArray(cloud.deleted_builtins) ? cloud.deleted_builtins : []
+      const cloudDeleted = Array.isArray(cloud.deleted_builtins)
+        ? cloud.deleted_builtins.filter((id) => !id.startsWith('w-') && !id.startsWith('commword-'))
+        : []
       const localDeleted = mode === 'merge' ? this.getDeletedBuiltIns() : []
       const deletedSet = new Set([...cloudDeleted, ...localDeleted])
       this.set(STORAGE_KEYS.DELETED_BUILTINS, [...deletedSet])
@@ -882,56 +886,71 @@ class SafeStorageService {
       this.decksCache = mergedDecks
       this.set(STORAGE_KEYS.DECKS, mergedDecks)
 
-      // 3. Merge custom words + community words (preserving newer local SRS/star progress!)
+      // 3. Merge custom words + community words (deduplicating same-deck terms & preserving best SRS/star progress!)
       const validCustomDeckIds = new Set(Array.from(customDeckMap.keys()))
       const cloudWords = Array.isArray(cloud.custom_words) ? cloud.custom_words : []
       const customWordMap = new Map<string, WordItem>()
+      const deckTermKeyToId = new Map<string, string>()
+
+      const upsertMergedCustomWord = (incoming: WordItem, allowMergeWithExisting: boolean) => {
+        if (!validCustomDeckIds.has(incoming.deckId)) return
+        const dtKey = `${incoming.deckId}::${incoming.term.trim().toLowerCase()}`
+        const matchedId = customWordMap.has(incoming.id)
+          ? incoming.id
+          : deckTermKeyToId.get(dtKey)
+        const existingLocal =
+          allowMergeWithExisting && matchedId ? customWordMap.get(matchedId) : undefined
+
+        if (!existingLocal) {
+          const targetId = matchedId || incoming.id
+          customWordMap.set(targetId, { ...incoming, id: targetId })
+          deckTermKeyToId.set(dtKey, targetId)
+          return
+        }
+
+        const cs = incoming.status || 'new'
+        const ls = existingLocal.status || 'new'
+        const bestStatus = rankStatus(cs) >= rankStatus(ls) ? cs : ls
+        const bestReviews = Math.max(incoming.reviewCount || 0, existingLocal.reviewCount || 0)
+        const cloudTime = incoming.lastReviewed || 0
+        const localTime = existingLocal.lastReviewed || 0
+        const latestTime = Math.max(cloudTime, localTime) || undefined
+        const bestLevel = Math.max(incoming.srsLevel || 0, existingLocal.srsLevel || 0) || undefined
+        const nextReview =
+          (cloudTime >= localTime
+            ? incoming.nextReview || existingLocal.nextReview
+            : existingLocal.nextReview || incoming.nextReview) || undefined
+        const newerBase = cloudTime >= localTime ? incoming : existingLocal
+        customWordMap.set(existingLocal.id, {
+          ...newerBase,
+          id: existingLocal.id,
+          status: bestStatus,
+          reviewCount: bestReviews,
+          lastReviewed: latestTime,
+          srsLevel: bestLevel,
+          nextReview,
+          starred: Boolean(incoming.starred || existingLocal.starred) || undefined,
+        })
+      }
 
       if (mode === 'merge') {
         for (const lw of this.getWords()) {
-          if (
-            (lw.id.startsWith('w-') || lw.id.startsWith('commword-')) &&
-            validCustomDeckIds.has(lw.deckId)
-          ) {
-            customWordMap.set(lw.id, lw)
+          if (lw.id.startsWith('w-') || lw.id.startsWith('commword-')) {
+            upsertMergedCustomWord(lw, true)
           }
         }
       } else {
         for (const lw of this.getWords()) {
-          if (lw.id.startsWith('commword-') && validCustomDeckIds.has(lw.deckId)) {
-            customWordMap.set(lw.id, lw)
+          if (lw.id.startsWith('commword-')) {
+            upsertMergedCustomWord(lw, true)
           }
         }
       }
       for (const cw of cloudWords) {
-        if (!validCustomDeckIds.has(cw.deckId)) continue
-        const existingLocal = mode === 'merge' ? customWordMap.get(cw.id) : undefined
-        if (!existingLocal) {
-          customWordMap.set(cw.id, cw)
-        } else {
-          const cs = cw.status || 'new'
-          const ls = existingLocal.status || 'new'
-          const bestStatus = rankStatus(cs) >= rankStatus(ls) ? cs : ls
-          const bestReviews = Math.max(cw.reviewCount || 0, existingLocal.reviewCount || 0)
-          const cloudTime = cw.lastReviewed || 0
-          const localTime = existingLocal.lastReviewed || 0
-          const latestTime = Math.max(cloudTime, localTime) || undefined
-          const bestLevel = Math.max(cw.srsLevel || 0, existingLocal.srsLevel || 0) || undefined
-          const nextReview =
-            (cloudTime >= localTime
-              ? cw.nextReview || existingLocal.nextReview
-              : existingLocal.nextReview || cw.nextReview) || undefined
-          const newerBase = cloudTime >= localTime ? cw : existingLocal
-          customWordMap.set(cw.id, {
-            ...newerBase,
-            status: bestStatus,
-            reviewCount: bestReviews,
-            lastReviewed: latestTime,
-            srsLevel: bestLevel,
-            nextReview,
-            starred: Boolean(cw.starred || existingLocal.starred) || undefined,
-          })
-        }
+        upsertMergedCustomWord(
+          cw,
+          mode === 'merge' || cw.id.startsWith('commword-')
+        )
       }
 
       const finalWords = [...customWordMap.values(), ...hydratedBuiltIns]
@@ -1118,9 +1137,9 @@ class SafeStorageService {
       if (existingTerms.has(key)) continue
       existingTerms.add(key)
 
-      const slug = key.replace(/[^a-z0-9]+/g, '-').slice(0, 28)
+      const slug = key.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 36) || `item-${i}`
       freshItems.push({
-        id: `commword-daily-${slug}-${i}`,
+        id: `commword-daily-${slug}`,
         deckId: LIVE_DECK_ID,
         term: cleanTerm,
         ipa: cw.ipa?.trim() || undefined,

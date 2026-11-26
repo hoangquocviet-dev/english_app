@@ -45,11 +45,25 @@ export function StudySummary({
 }: StudySummaryProps) {
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [showRemainingList, setShowRemainingList] = useState(false)
-  const [starredIds, setStarredIds] = useState<Set<string>>(
-    () => new Set((stats.remainingWords || []).filter((w) => w.starred).map((w) => w.id))
-  )
+  const [starredIds, setStarredIds] = useState<Set<string>>(() => {
+    const combined = [...(stats.remainingWords || []), ...(sessionWords || [])]
+    const liveIds = new Set(
+      storageService
+        .getWords()
+        .filter((w) => w.starred)
+        .map((w) => w.id)
+    )
+    for (const w of combined) {
+      if (w.starred) liveIds.add(w.id)
+    }
+    return liveIds
+  })
 
   const remainingWords = useMemo(() => stats.remainingWords || [], [stats.remainingWords])
+  const reviewableList = useMemo(
+    () => (remainingWords.length > 0 ? remainingWords : sessionWords || []),
+    [remainingWords, sessionWords]
+  )
   const isAllDeckMastered = remainingWords.length === 0
   const totalAttempts = stats.masteredCount + stats.reviewCount
   const percent =
@@ -162,8 +176,8 @@ export function StudySummary({
           </div>
         </div>
 
-        {/* Expandable Remaining Words Accordion */}
-        {remainingWords.length > 0 && (
+        {/* Expandable Remaining / Conquered Words Accordion */}
+        {reviewableList.length > 0 && (
           <div className="pt-1 border-t border-slate-100 dark:border-slate-700/60">
             <button
               type="button"
@@ -173,7 +187,13 @@ export function StudySummary({
               }}
               className="w-full py-1.5 px-2 rounded-lg text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center justify-center gap-1.5 transition-colors"
             >
-              <span>{showRemainingList ? 'Thu gọn danh sách' : `Xem ${remainingWords.length} từ cần ôn lại`}</span>
+              <span>
+                {showRemainingList
+                  ? 'Thu gọn danh sách'
+                  : remainingWords.length > 0
+                  ? `Xem ${remainingWords.length} từ cần ôn lại`
+                  : `Xem lại ${reviewableList.length} từ vừa chinh phục`}
+              </span>
               {showRemainingList ? (
                 <ChevronUp className="w-3.5 h-3.5" />
               ) : (
@@ -183,7 +203,7 @@ export function StudySummary({
 
             {showRemainingList && (
               <div className="mt-2.5 max-h-48 overflow-y-auto space-y-1.5 pr-1 text-left animate-fadeIn">
-                {remainingWords.map((w) => (
+                {reviewableList.map((w) => (
                   <div
                     key={w.id}
                     className="p-2 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-700/60 flex items-center justify-between gap-2"

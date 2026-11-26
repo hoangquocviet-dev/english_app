@@ -320,12 +320,12 @@ class CloudSyncManager {
     for (const w of allWords) {
       if (w.status === 'mastered') masteredCount++
 
-      if (w.id.startsWith('w-')) {
+      if (w.id.startsWith('w-') || w.id.startsWith('commword-')) {
         customWords.push(w)
-      } else if (
-        !w.id.startsWith('commword-') &&
-        (w.status !== 'new' || w.reviewCount > 0 || w.starred)
-      ) {
+        if (w.status !== 'new' || w.reviewCount > 0 || w.starred) {
+          activeProgressCount++
+        }
+      } else if (w.status !== 'new' || w.reviewCount > 0 || w.starred) {
         activeProgressCount++
         builtInProgress[w.id] = {
           s: w.status,
@@ -338,7 +338,8 @@ class CloudSyncManager {
       }
     }
 
-    const customDecks = allDecks.filter((d) => !d.isBuiltIn && !d.id.startsWith('commdeck-'))
+    const customDecks = allDecks.filter((d) => !d.isBuiltIn)
+    const ownCustomDecksCount = customDecks.filter((d) => !d.id.startsWith('commdeck-')).length
     const totalScore =
       (highScores['sky-defender'] || 0) +
       (highScores['speed-match'] || 0) +
@@ -347,8 +348,7 @@ class CloudSyncManager {
 
     const hasMeaningfulActivity =
       activeProgressCount > 0 ||
-      customDecks.length > 0 ||
-      customWords.length > 0 ||
+      ownCustomDecksCount > 0 ||
       totalScore > 0 ||
       nickname.trim().length > 0
 
@@ -441,7 +441,7 @@ class CloudSyncManager {
       const sharedIds = this.getSharedDeckIds()
       if (sharedIds.size > 0 && !keepalive) {
         for (const deck of payload.row.custom_decks) {
-          if (sharedIds.has(deck.id)) {
+          if (!deck.id.startsWith('commdeck-') && sharedIds.has(deck.id)) {
             const deckWords = storageService.getWords(deck.id)
             if (deckWords.length > 0) {
               await this.publishCommunityDeck(deck, deckWords).catch(() => {})

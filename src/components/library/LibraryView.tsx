@@ -21,6 +21,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CommunityDeck, Deck, StudyMode, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
 import { cloudSyncService, OFFICIAL_DAILY_DECK_ID } from '../../utils/cloudSync'
+import { normalizeImportedTerm, normalizePartOfSpeech } from '../../utils/parser'
 import { storageService } from '../../utils/storage'
 import { ImportExportModal } from './ImportExportModal'
 
@@ -344,7 +345,7 @@ export function LibraryView({
     setEditingWord(word)
     setEditTerm(word.term)
     setEditIpa(word.ipa || '')
-    setEditPos(word.partOfSpeech || 'noun')
+    setEditPos(normalizePartOfSpeech(word.partOfSpeech) || 'noun')
     setEditDef(word.definition)
     setEditExample(word.example || '')
   }
@@ -353,11 +354,17 @@ export function LibraryView({
     e.preventDefault()
     if (!editingWord || !editTerm.trim() || !editDef.trim()) return
 
+    const { term: cleanTerm, partOfSpeech: normalizedPos } = normalizeImportedTerm(
+      editTerm,
+      editPos
+    )
+    if (!cleanTerm) return
+
     storageService.updateWord({
       ...editingWord,
-      term: editTerm.trim(),
+      term: cleanTerm,
       ipa: editIpa.trim() || undefined,
-      partOfSpeech: editPos.trim() || undefined,
+      partOfSpeech: normalizedPos || normalizePartOfSpeech(editPos) || undefined,
       definition: editDef.trim(),
       example: editExample.trim() || undefined,
     })
