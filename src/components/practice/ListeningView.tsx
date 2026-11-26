@@ -409,14 +409,23 @@ export function ListeningView({
       <StudySummary
         stats={sessionStats}
         sessionWords={words}
-        onContinueRemaining={(rem) => resetListening(rem)}
+        onContinueRemaining={(rem) =>
+          onSwitchStudyMode
+            ? onSwitchStudyMode('listening', rem)
+            : resetListening(storageService.prepareStudyBatch(rem, filterMode))
+        }
         onSwitchMode={onSwitchStudyMode}
         onResetDeck={
           deckId === GLOBAL_SRS_DECK_ID || filterMode !== 'all'
             ? undefined
             : () => {
                 void storageService.resetDeckProgress(deckId).then(() => {
-                  resetListening(storageService.getWords(deckId))
+                  const resetPool = storageService.getWords(deckId)
+                  if (onSwitchStudyMode) {
+                    onSwitchStudyMode('listening', resetPool)
+                  } else {
+                    resetListening(storageService.prepareStudyBatch(resetPool, filterMode))
+                  }
                 })
               }
         }

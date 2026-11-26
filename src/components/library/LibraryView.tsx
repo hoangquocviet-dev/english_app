@@ -63,7 +63,9 @@ export function LibraryView({
 }: LibraryViewProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchAllDecks, setSearchAllDecks] = useState(false)
-  const [statusFilter, setStatusFilter] = useState<'all' | 'mastered' | 'review' | 'due' | 'starred'>('all')
+  const [statusFilter, setStatusFilter] = useState<
+    'all' | 'mastered' | 'learning' | 'review' | 'due' | 'starred'
+  >('all')
   const [visibleLimit, setVisibleLimit] = useState(PAGE_SIZE)
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false)
   const [isCreatingDeck, setIsCreatingDeck] = useState(false)
@@ -91,6 +93,7 @@ export function LibraryView({
   const [editPos, setEditPos] = useState('noun')
   const [editDef, setEditDef] = useState('')
   const [editExample, setEditExample] = useState('')
+  const [editError, setEditError] = useState('')
 
   // Custom Confirm Dialog State
   const [confirmAction, setConfirmAction] = useState<{
@@ -129,6 +132,7 @@ export function LibraryView({
 
       if (statusFilter === 'starred') return Boolean(w.starred)
       if (statusFilter === 'mastered') return w.status === 'mastered'
+      if (statusFilter === 'learning') return w.status === 'learning'
       if (statusFilter === 'due') {
         return w.status === 'mastered' && (!w.nextReview || w.nextReview <= nowMs)
       }
@@ -297,9 +301,10 @@ export function LibraryView({
   }
 
   const handleDeleteWord = (word: WordItem) => {
+    const ownerDeckName = deckNameMap[word.deckId] || activeDeck.name
     setConfirmAction({
       title: 'Xóa thẻ từ vựng',
-      message: `Xóa thẻ "${word.term}" khỏi bộ từ "${activeDeck.name}"?`,
+      message: `Xóa thẻ "${word.term}" khỏi bộ từ "${ownerDeckName}"?`,
       confirmLabel: 'Xóa thẻ',
       isDanger: true,
       onConfirm: () => {
@@ -348,7 +353,22 @@ export function LibraryView({
     setEditPos(normalizePartOfSpeech(word.partOfSpeech) || 'noun')
     setEditDef(word.definition)
     setEditExample(word.example || '')
+    setEditError('')
   }
+
+  const editDuplicateWord = useMemo(() => {
+    if (!editingWord) return null
+    const cleanCandidate = normalizeImportedTerm(editTerm).term.trim().toLowerCase()
+    if (!cleanCandidate) return null
+    return (
+      allWords.find(
+        (w) =>
+          w.deckId === editingWord.deckId &&
+          w.id !== editingWord.id &&
+          w.term.trim().toLowerCase() === cleanCandidate
+      ) || null
+    )
+  }, [allWords, editTerm, editingWord])
 
   const handleSaveEdit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -359,6 +379,18 @@ export function LibraryView({
       editPos
     )
     if (!cleanTerm) return
+
+    const duplicate = allWords.find(
+      (w) =>
+        w.deckId === editingWord.deckId &&
+        w.id !== editingWord.id &&
+        w.term.trim().toLowerCase() === cleanTerm.toLowerCase()
+    )
+    if (duplicate) {
+      setEditError(`Từ "${cleanTerm}" đã có sẵn trong bộ từ này rồi!`)
+      audioService.playErrorBuzz()
+      return
+    }
 
     storageService.updateWord({
       ...editingWord,
@@ -371,6 +403,7 @@ export function LibraryView({
 
     audioService.playSuccessChime()
     setEditingWord(null)
+    setEditError('')
     onDataChanged()
   }
 
@@ -380,6 +413,10 @@ export function LibraryView({
   )
   const masteredTotal = useMemo(
     () => sourceWords.filter((w) => w.status === 'mastered').length,
+    [sourceWords]
+  )
+  const learningTotal = useMemo(
+    () => sourceWords.filter((w) => w.status === 'learning').length,
     [sourceWords]
   )
   const dueTotal = useMemo(
@@ -398,13 +435,8 @@ export function LibraryView({
       }, {}),
     [allWords]
   )
-  const deckNameMap = useMemo(
-    () =>
-      decks.reduce<Record<string, string>>((acc, d) => {
-        acc[d.id] = d.name
-        return acc
-      }, {}),
-    [decks]
+  const deckNameMap: Record<string, string> = Object.fromEntries(
+    decks.map((d) => [d.id, d.name])
   )
 
   const isOwnCustomDeck =
@@ -872,6 +904,22 @@ export function LibraryView({
             >
               Cần ôn ({sourceWords.length - masteredTotal})
             </button>
+            {learningTotal > 0 && (
+              <button
+                onClick={() => {
+                  setStatusFilter((prev) => (prev === 'learning' ? 'all' : 'learning'))
+                  setVisibleLimit(PAGE_SIZE)
+                }}
+                title="Chỉ lọc riêng các từ bạn từng trả lời sai hoặc đánh dấu Chưa nhớ"
+                className={`py-1.5 px-2.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all ${
+                  statusFilter === 'learning'
+                    ? 'bg-rose-600 text-white'
+                    : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                }`}
+              >
+                Hay nhầm ({learningTotal})
+              </button>
+            )}
             {dueTotal > 0 && (
               <button
                 onClick={() => {
@@ -1146,9 +1194,17 @@ export function LibraryView({
                 type="text"
                 required
                 value={editTerm}
-                onChange={(e) => setEditTerm(e.target.value)}
+                onChange={(e) => {
+                  setEditTerm(e.target.value)
+                  if (editError) setEditError('')
+                }}
                 className="w-full py-2 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
+              {editDuplicateWord && (
+                <p className="mt-1.5 text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+                  Đã trùng với thẻ "{editDuplicateWord.term}" ({editDuplicateWord.definition}) trong bộ này!
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-2.5">
@@ -1202,6 +1258,12 @@ export function LibraryView({
               />
             </div>
 
+            {editError && (
+              <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/25 text-xs font-semibold text-rose-600 dark:text-rose-400">
+                {editError}
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-2.5 pt-1">
               <button
                 type="button"
@@ -1212,7 +1274,8 @@ export function LibraryView({
               </button>
               <button
                 type="submit"
-                className="py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs flex items-center justify-center gap-1.5"
+                disabled={Boolean(editDuplicateWord)}
+                className="py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold text-xs flex items-center justify-center gap-1.5"
               >
                 <Check className="w-4 h-4" />
                 <span>Lưu thay đổi</span>
@@ -1274,10 +1337,11 @@ export function LibraryView({
           filteredWords={
             (Boolean(searchQuery.trim()) || statusFilter !== 'all' || searchAllDecks) &&
             filteredWords.length > 0 &&
-            filteredWords.length !== words.length
+            (searchAllDecks || filteredWords.length !== words.length)
               ? filteredWords
               : undefined
           }
+          exportLabel={searchAllDecks ? 'VocabFlow_Toan_Kho' : undefined}
           onSelectDeck={onSelectDeck}
           onDataChanged={onDataChanged}
         />

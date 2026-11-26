@@ -64,6 +64,9 @@ export function StudySummary({
     () => (remainingWords.length > 0 ? remainingWords : sessionWords || []),
     [remainingWords, sessionWords]
   )
+  const batchSize = storageService.getStudyPreferences().batchSize
+  const nextBatchCount =
+    batchSize > 0 && remainingWords.length > batchSize ? batchSize : remainingWords.length
   const isAllDeckMastered = remainingWords.length === 0
   const totalAttempts = stats.masteredCount + stats.reviewCount
   const percent =
@@ -270,7 +273,11 @@ export function StudySummary({
             className="w-full py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-sm transition-transform active:scale-95"
           >
             <Target className="w-4 h-4" />
-            <span>Học tiếp {remainingWords.length} thẻ chưa thuộc</span>
+            <span>
+              {nextBatchCount < remainingWords.length
+                ? `Học tiếp lượt kế (${nextBatchCount} / ${remainingWords.length} thẻ)`
+                : `Học tiếp ${remainingWords.length} thẻ chưa thuộc`}
+            </span>
           </button>
         )}
 
@@ -282,7 +289,9 @@ export function StudySummary({
                 <Sparkles className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
                 <span>
                   {remainingWords.length > 0
-                    ? `Đổi chế độ ôn ${remainingWords.length} thẻ chưa thuộc:`
+                    ? nextBatchCount < remainingWords.length
+                      ? `Đổi chế độ ôn lượt kế (${nextBatchCount}/${remainingWords.length} thẻ):`
+                      : `Đổi chế độ ôn ${remainingWords.length} thẻ chưa thuộc:`
                     : `Luyện sâu lại ${sessionWords?.length || stats.totalWords} thẻ vừa học qua:`}
                 </span>
               </div>

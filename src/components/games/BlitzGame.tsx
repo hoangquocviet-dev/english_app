@@ -430,7 +430,10 @@ export function BlitzGame({ words, deckName, onStudyMissedWords, onBack }: Blitz
         return
       }
       if (isPaused || lockedRef.current) return
-      if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a' || e.key === '1') {
+      if (e.code === 'Space' || e.key === ' ') {
+        e.preventDefault()
+        void audioService.speak(prompt.word.term, 0.95)
+      } else if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a' || e.key === '1') {
         e.preventDefault()
         handleAnswer(false)
       } else if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd' || e.key === '2') {
@@ -440,7 +443,7 @@ export function BlitzGame({ words, deckName, onStudyMissedWords, onBack }: Blitz
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [isGameOver, isPaused, handleAnswer])
+  }, [isGameOver, isPaused, handleAnswer, prompt.word.term])
 
   const restartBlitz = () => {
     audioService.playClick()
@@ -652,7 +655,7 @@ export function BlitzGame({ words, deckName, onStudyMissedWords, onBack }: Blitz
               onMouseDown={(e) => e.stopPropagation()}
               onTouchStart={(e) => e.stopPropagation()}
               onClick={() => audioService.speak(prompt.word.term, 0.95)}
-              title="Nghe phát âm"
+              title="Nghe phát âm (Space)"
               className="absolute top-3.5 right-3.5 p-2 rounded-xl bg-slate-100 dark:bg-slate-700/70 text-slate-500 dark:text-slate-300 hover:text-indigo-500 transition-colors"
             >
               <Volume2 className="w-4 h-4" />

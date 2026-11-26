@@ -514,7 +514,7 @@ export function PracticeHome({
                 <p className="text-xs text-indigo-700 dark:text-indigo-300 leading-snug">
                   {effectiveFilterMode === 'global-due' ? (
                     <>
-                      Đang chọn <strong>Ôn gộp SRS toàn kho ({totalGlobalDue} thẻ)</strong> xuyên suốt mọi bộ từ. Hãy bấm 1 trong 5 chế độ bên dưới để bắt đầu!
+                      Đang chọn <strong>Ôn gộp SRS toàn kho ({totalGlobalDue} thẻ)</strong> xuyên suốt mọi bộ từ. Hãy bấm 1 trong 6 chế độ bên dưới để bắt đầu!
                     </>
                   ) : effectiveFilterMode === 'global-learning' ? (
                     <>

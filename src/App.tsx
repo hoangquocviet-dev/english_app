@@ -80,17 +80,6 @@ const StatsModal = lazyWithRetry(() =>
   import('./components/common/StatsModal').then((m) => ({ default: m.StatsModal }))
 )
 
-function shuffleWords(list: WordItem[]): WordItem[] {
-  const arr = [...list]
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    const temp = arr[i]
-    arr[i] = arr[j]
-    arr[j] = temp
-  }
-  return arr
-}
-
 function dedupeCrossDeckTerms(list: WordItem[]): WordItem[] {
   const seen = new Set<string>()
   const out: WordItem[] = []
@@ -118,6 +107,7 @@ export function App() {
   const [activeGame, setActiveGame] = useState<ArcadeGameId | null>(null)
   const [arcadePoolId, setArcadePoolId] = useState<string>('')
   const [sessionWords, setSessionWords] = useState<WordItem[]>([])
+  const [sessionSeq, setSessionSeq] = useState(0)
   const [sessionFilterMode, setSessionFilterMode] = useState<StudyFilterMode>('all')
   const [isGlobalSrsSession, setIsGlobalSrsSession] = useState(false)
   const [customSessionLabel, setCustomSessionLabel] = useState<string | null>(null)
@@ -211,15 +201,12 @@ export function App() {
                 .getWords(dailyDeckId)
                 .filter((w) => w.status !== 'mastered')
               if (unmasteredDaily.length > 0) {
-                const prefs = storageService.getStudyPreferences()
-                const batch =
-                  prefs.batchSize > 0
-                    ? unmasteredDaily.slice(0, prefs.batchSize)
-                    : unmasteredDaily.slice(0, 20)
+                const batch = storageService.prepareStudyBatch(unmasteredDaily, 'all')
                 setCustomSessionLabel('📅 Bài Mới Daily-English')
                 setSessionFilterMode('all')
                 setIsGlobalSrsSession(false)
                 setSessionWords(batch)
+                setSessionSeq((s) => s + 1)
                 setActiveStudyMode('smart-mix')
               } else {
                 setActiveTab('practice')
@@ -325,17 +312,13 @@ export function App() {
 
     if (targetList.length === 0) return
 
-    if (studyPrefs.shuffle && filterMode !== 'global-learning') {
-      targetList = shuffleWords(targetList)
-    }
-    if (studyPrefs.batchSize > 0 && targetList.length > studyPrefs.batchSize) {
-      targetList = targetList.slice(0, studyPrefs.batchSize)
-    }
+    targetList = storageService.prepareStudyBatch(targetList, filterMode)
 
     setCustomSessionLabel(filterMode === 'global-learning' ? 'Ôn tập Từ khó Toàn kho' : null)
     setSessionFilterMode(filterMode)
     setIsGlobalSrsSession(filterMode === 'global-due' || filterMode === 'global-learning')
     setSessionWords(targetList)
+    setSessionSeq((s) => s + 1)
     setActiveStudyMode(mode)
   }
 
@@ -346,24 +329,23 @@ export function App() {
     isCrossDeck: boolean
   ) => {
     if (customList.length === 0) return
-    let targetList = isCrossDeck ? dedupeCrossDeckTerms(customList) : [...customList]
-    if (studyPrefs.shuffle) {
-      targetList = shuffleWords(targetList)
-    }
-    if (studyPrefs.batchSize > 0 && targetList.length > studyPrefs.batchSize) {
-      targetList = targetList.slice(0, studyPrefs.batchSize)
-    }
+    const deduped = isCrossDeck ? dedupeCrossDeckTerms(customList) : [...customList]
+    const targetList = storageService.prepareStudyBatch(deduped, 'custom')
     setCustomSessionLabel(label)
     setSessionFilterMode('custom')
     setIsGlobalSrsSession(isCrossDeck)
     setSessionWords(targetList)
+    setSessionSeq((s) => s + 1)
     setActiveStudyMode(mode)
   }
 
   const handleSwitchStudyMode = (nextMode: StudyMode, targetWords: WordItem[]) => {
     if (targetWords.length === 0) return
     audioService.stopSpeech()
-    setSessionWords(targetWords)
+    refreshData()
+    const nextBatch = storageService.prepareStudyBatch(targetWords, sessionFilterMode)
+    setSessionWords(nextBatch)
+    setSessionSeq((s) => s + 1)
     setActiveStudyMode(nextMode)
   }
 
@@ -517,7 +499,7 @@ export function App() {
               {/* Active Study Mode Screens */}
               {activeStudyMode === 'flashcard' && activeDeck && (
                 <FlashcardView
-                  key={`fc-${sessionFilterMode}-${sessionWords.length}-${sessionWords[0]?.id || '0'}`}
+                  key={`fc-${sessionSeq}`}
                   words={sessionWords}
                   deckId={studyDeckId}
                   deckName={studyDeckName}
@@ -529,7 +511,7 @@ export function App() {
 
               {activeStudyMode === 'quiz' && activeDeck && (
                 <QuizView
-                  key={`qz-${sessionFilterMode}-${sessionWords.length}-${sessionWords[0]?.id || '0'}`}
+                  key={`qz-${sessionSeq}`}
                   words={sessionWords}
                   allDeckWords={studyPoolWords}
                   deckId={studyDeckId}
@@ -542,7 +524,7 @@ export function App() {
 
               {activeStudyMode === 'spelling' && activeDeck && (
                 <SpellingView
-                  key={`sp-${sessionFilterMode}-${sessionWords.length}-${sessionWords[0]?.id || '0'}`}
+                  key={`sp-${sessionSeq}`}
                   words={sessionWords}
                   deckId={studyDeckId}
                   deckName={studyDeckName}
@@ -554,7 +536,7 @@ export function App() {
 
               {activeStudyMode === 'listening' && activeDeck && (
                 <ListeningView
-                  key={`ls-${sessionFilterMode}-${sessionWords.length}-${sessionWords[0]?.id || '0'}`}
+                  key={`ls-${sessionSeq}`}
                   words={sessionWords}
                   allDeckWords={studyPoolWords}
                   deckId={studyDeckId}
@@ -567,7 +549,7 @@ export function App() {
 
               {activeStudyMode === 'cloze' && activeDeck && (
                 <ClozeView
-                  key={`cl-${sessionFilterMode}-${sessionWords.length}-${sessionWords[0]?.id || '0'}`}
+                  key={`cl-${sessionSeq}`}
                   words={sessionWords}
                   allDeckWords={studyPoolWords}
                   deckId={studyDeckId}
@@ -580,7 +562,7 @@ export function App() {
 
               {activeStudyMode === 'smart-mix' && activeDeck && (
                 <SmartMixView
-                  key={`sm-${sessionFilterMode}-${sessionWords.length}-${sessionWords[0]?.id || '0'}`}
+                  key={`sm-${sessionSeq}`}
                   words={sessionWords}
                   allDeckWords={studyPoolWords}
                   deckId={studyDeckId}

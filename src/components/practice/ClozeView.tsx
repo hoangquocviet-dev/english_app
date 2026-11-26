@@ -432,14 +432,23 @@ export function ClozeView({
         stats={sessionStats}
         sessionWords={words}
         onBackToHome={onBack}
-        onContinueRemaining={(remaining) => resetClozeSession(remaining)}
+        onContinueRemaining={(remaining) =>
+          onSwitchStudyMode
+            ? onSwitchStudyMode('cloze', remaining)
+            : resetClozeSession(storageService.prepareStudyBatch(remaining, filterMode))
+        }
         onSwitchMode={onSwitchStudyMode}
         onResetDeck={
           deckId === GLOBAL_SRS_DECK_ID || filterMode !== 'all'
             ? undefined
             : () => {
                 void storageService.resetDeckProgress(deckId).then(() => {
-                  resetClozeSession(storageService.getWords(deckId))
+                  const resetPool = storageService.getWords(deckId)
+                  if (onSwitchStudyMode) {
+                    onSwitchStudyMode('cloze', resetPool)
+                  } else {
+                    resetClozeSession(storageService.prepareStudyBatch(resetPool, filterMode))
+                  }
                 })
               }
         }

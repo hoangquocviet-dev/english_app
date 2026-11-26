@@ -409,14 +409,23 @@ export function SmartMixView({
       <StudySummary
         stats={sessionStats}
         sessionWords={words}
-        onContinueRemaining={(rem) => resetMix(rem)}
+        onContinueRemaining={(rem) =>
+          onSwitchStudyMode
+            ? onSwitchStudyMode('smart-mix', rem)
+            : resetMix(storageService.prepareStudyBatch(rem, filterMode))
+        }
         onSwitchMode={onSwitchStudyMode}
         onResetDeck={
           deckId === GLOBAL_SRS_DECK_ID || filterMode !== 'all'
             ? undefined
             : () => {
                 void storageService.resetDeckProgress(deckId).then(() => {
-                  resetMix(storageService.getWords(deckId))
+                  const resetPool = storageService.getWords(deckId)
+                  if (onSwitchStudyMode) {
+                    onSwitchStudyMode('smart-mix', resetPool)
+                  } else {
+                    resetMix(storageService.prepareStudyBatch(resetPool, filterMode))
+                  }
                 })
               }
         }

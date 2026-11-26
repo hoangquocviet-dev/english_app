@@ -494,6 +494,26 @@ class SafeStorageService {
     return deckWords.filter((w) => w.status !== 'mastered')
   }
 
+  public prepareStudyBatch(
+    sourceWords: WordItem[],
+    filterMode: StudyFilterMode = 'all'
+  ): WordItem[] {
+    const prefs = this.getStudyPreferences()
+    let ordered = [...sourceWords]
+    if (prefs.shuffle && filterMode !== 'global-learning') {
+      for (let i = ordered.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        const tmp = ordered[i]
+        ordered[i] = ordered[j]
+        ordered[j] = tmp
+      }
+    }
+    if (prefs.batchSize > 0 && ordered.length > prefs.batchSize) {
+      ordered = ordered.slice(0, prefs.batchSize)
+    }
+    return ordered
+  }
+
   public getSrsStats(deckId?: string): {
     dueCount: number
     masteredCount: number

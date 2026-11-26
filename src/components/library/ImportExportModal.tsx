@@ -19,6 +19,7 @@ interface ImportExportModalProps {
   decks: Deck[]
   words: WordItem[]
   filteredWords?: WordItem[]
+  exportLabel?: string
   onSelectDeck: (deckId: string) => void
   onDataChanged: () => void
 }
@@ -30,6 +31,7 @@ export function ImportExportModal({
   decks,
   words,
   filteredWords,
+  exportLabel,
   onSelectDeck,
   onDataChanged,
 }: ImportExportModalProps) {
@@ -104,7 +106,9 @@ export function ImportExportModal({
 
   const handleDownload = () => {
     audioService.playClick()
-    const baseName = activeDeck.name.replace(/[^a-zA-Z0-9_\u00C0-\u024F\u1E00-\u1EFF]/g, '_')
+    const rawTitle =
+      exportOnlyFiltered && filteredWords && exportLabel ? exportLabel : activeDeck.name
+    const baseName = rawTitle.replace(/[^a-zA-Z0-9_\u00C0-\u024F\u1E00-\u1EFF]/g, '_')
     const ext = exportFormat
     const mime =
       exportFormat === 'csv'

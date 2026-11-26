@@ -448,14 +448,23 @@ export function SpellingView({
       <StudySummary
         stats={sessionStats}
         sessionWords={words}
-        onContinueRemaining={(rem) => startSessionWithWords(rem)}
+        onContinueRemaining={(rem) =>
+          onSwitchStudyMode
+            ? onSwitchStudyMode('spelling', rem)
+            : startSessionWithWords(storageService.prepareStudyBatch(rem, filterMode))
+        }
         onSwitchMode={onSwitchStudyMode}
         onResetDeck={
           deckId === GLOBAL_SRS_DECK_ID || filterMode !== 'all'
             ? undefined
             : () => {
                 void storageService.resetDeckProgress(deckId).then(() => {
-                  startSessionWithWords(storageService.getWords(deckId))
+                  const resetPool = storageService.getWords(deckId)
+                  if (onSwitchStudyMode) {
+                    onSwitchStudyMode('spelling', resetPool)
+                  } else {
+                    startSessionWithWords(storageService.prepareStudyBatch(resetPool, filterMode))
+                  }
                 })
               }
         }

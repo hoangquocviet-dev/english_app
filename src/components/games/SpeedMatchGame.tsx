@@ -918,8 +918,12 @@ export function SpeedMatchGame({
               {missedWords.map((mw) => (
                 <div key={mw.id} className="flex items-center justify-between gap-2 py-1 text-xs">
                   <div className="min-w-0">
-                    <span className="font-bold text-slate-900 dark:text-slate-100">{mw.term}</span>
-                    <span className="text-slate-500 dark:text-slate-400"> — {mw.definition}</span>
+                    <span className="font-extrabold text-slate-900 dark:text-slate-100">
+                      {mw.term}
+                    </span>
+                    <span className="text-slate-500 dark:text-slate-400 block truncate text-[11px]">
+                      {formatArcadeMeaning(mw.definition, 60)}
+                    </span>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     <button
