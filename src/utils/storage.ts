@@ -598,11 +598,13 @@ class SafeStorageService {
 
   // ARCADE HIGH SCORES
   public getHighScores(): GameHighScores {
-    return this.get<GameHighScores>(STORAGE_KEYS.HIGH_SCORES, {
-      'sky-defender': 0,
-      'speed-match': 0,
-      'blitz-2s': 0,
-    })
+    const raw = this.get<Partial<GameHighScores>>(STORAGE_KEYS.HIGH_SCORES, {})
+    return {
+      'sky-defender': raw['sky-defender'] || 0,
+      'speed-match': raw['speed-match'] || 0,
+      'blitz-2s': raw['blitz-2s'] || 0,
+      'word-bomb': raw['word-bomb'] || 0,
+    }
   }
 
   public saveHighScore(gameId: ArcadeGameId, score: number): boolean {
@@ -753,11 +755,13 @@ class SafeStorageService {
               'sky-defender': cs['sky-defender'] || 0,
               'speed-match': cs['speed-match'] || 0,
               'blitz-2s': cs['blitz-2s'] || 0,
+              'word-bomb': cs['word-bomb'] || 0,
             }
           : {
               'sky-defender': Math.max(localScores['sky-defender'] || 0, cs['sky-defender'] || 0),
               'speed-match': Math.max(localScores['speed-match'] || 0, cs['speed-match'] || 0),
               'blitz-2s': Math.max(localScores['blitz-2s'] || 0, cs['blitz-2s'] || 0),
+              'word-bomb': Math.max(localScores['word-bomb'] || 0, cs['word-bomb'] || 0),
             }
       this.set(STORAGE_KEYS.HIGH_SCORES, nextScores)
 

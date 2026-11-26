@@ -144,6 +144,7 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
   const [correctTotal, setCorrectTotal] = useState(0)
   const [lives, setLives] = useState(3)
   const [feedback, setFeedback] = useState<'none' | 'correct' | 'wrong' | 'timeout'>('none')
+  const [missedWords, setMissedWords] = useState<WordItem[]>([])
   const [lastPointsPop, setLastPointsPop] = useState<string | null>(null)
   const [secondsLeft, setSecondsLeft] = useState(() =>
     Number((prompt.durationMs / 1000).toFixed(1))
@@ -247,6 +248,9 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
     audioService.playErrorBuzz()
     setFeedback('timeout')
     setStreak(0)
+    setMissedWords((prev) =>
+      prev.some((w) => w.id === prompt.word.id) ? prev : [...prev.slice(-3), prompt.word]
+    )
 
     const nextLives = livesRef.current - 1
     livesRef.current = nextLives
@@ -376,6 +380,9 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
         audioService.playErrorBuzz()
         setFeedback('wrong')
         setStreak(0)
+        setMissedWords((prev) =>
+          prev.some((w) => w.id === prompt.word.id) ? prev : [...prev.slice(-3), prompt.word]
+        )
 
         const nextLives = livesRef.current - 1
         livesRef.current = nextLives
@@ -436,6 +443,7 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
     setStreak(0)
     setMaxStreak(0)
     setCorrectTotal(0)
+    setMissedWords([])
     setIsNewRecord(false)
     setIsPaused(false)
     setIsGameOver(false)
@@ -705,6 +713,7 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
               <p className="text-xs text-slate-400 mb-5">
                 Câu {round} • Điểm hiện tại: <strong>{score.toLocaleString()}</strong>
               </p>
+
               <div className="w-full max-w-xs space-y-2.5">
                 <button
                   type="button"
@@ -763,6 +772,31 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
               <div className="text-xs text-slate-400">Kỷ lục cao nhất</div>
             </div>
           </div>
+
+          {missedWords.length > 0 && (
+            <div className="w-full max-w-xs mb-4 text-left bg-slate-50 dark:bg-slate-900/70 rounded-2xl p-3 border border-slate-200 dark:border-slate-800 space-y-1.5">
+              <div className="text-[11px] font-extrabold uppercase tracking-wider text-rose-500">
+                Từ vừa mắc bẫy (Chạm 🔊 để nhớ ngay)
+              </div>
+              {missedWords.map((mw) => (
+                <div key={mw.id} className="flex items-center justify-between gap-2 text-xs py-1">
+                  <div className="min-w-0">
+                    <span className="font-extrabold text-slate-900 dark:text-white">{mw.term}</span>
+                    <span className="text-slate-500 dark:text-slate-400 block truncate text-[11px]">
+                      {mw.definition}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => audioService.speak(mw.term, 0.9)}
+                    className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-500 shrink-0"
+                  >
+                    <Volume2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="w-full max-w-xs space-y-2.5">
             <button

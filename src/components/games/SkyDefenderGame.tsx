@@ -136,6 +136,7 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
   const [activeLane, setActiveLane] = useState<number>(1)
   const [laneOptions, setLaneOptions] = useState<LaneOptionUI[]>([])
   const [targetWord, setTargetWord] = useState<WordItem | null>(null)
+  const [missedWords, setMissedWords] = useState<WordItem[]>([])
   const [isPaused, setIsPaused] = useState(false)
   const [isGameOver, setIsGameOver] = useState(false)
   const [isNewRecord, setIsNewRecord] = useState(false)
@@ -177,6 +178,7 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
     paused: false,
     armedForWave: false,
     nextPlaneId: 1,
+    currentTarget: null as WordItem | null,
     wordDeckQueue: [] as WordItem[],
   })
 
@@ -245,6 +247,7 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
       }
 
       const chosenTarget = st.wordDeckQueue.pop()!
+      st.currentTarget = chosenTarget
       setTargetWord(chosenTarget)
 
       const bossMode = waveNum > 0 && waveNum % 5 === 0
@@ -394,6 +397,7 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
     setIsBossWave(false)
     setBossStagesLeft(0)
     setActiveLane(1)
+    setMissedWords([])
     setIsPaused(false)
     setIsNewRecord(false)
     setIsGameOver(false)
@@ -529,6 +533,13 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
       st.shieldCharge = 0
       st.lives -= 1
       triggerShake(7, 0.2)
+
+      const missed = st.currentTarget
+      if (missed) {
+        setMissedWords((prev) =>
+          prev.some((w) => w.id === missed.id) ? prev : [...prev.slice(-2), missed]
+        )
+      }
 
       st.floatingTexts.push({
         x: Math.min(st.width - 75, Math.max(75, textX)),
@@ -1333,7 +1344,9 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
       <div
         ref={containerRef}
         data-no-pull="true"
-        className="w-full h-[310px] sm:h-[380px] rounded-3xl overflow-hidden relative border-2 border-slate-800 shadow-xl touch-none"
+        className={`w-full ${
+          isGameOver ? 'min-h-[380px] sm:min-h-[420px]' : 'h-[310px] sm:h-[380px]'
+        } rounded-3xl overflow-hidden relative border-2 border-slate-800 shadow-xl touch-none`}
         onTouchStart={(e) => handleCanvasTapOrDrag(e.touches[0].clientX, true)}
         onTouchMove={(e) => handleCanvasTapOrDrag(e.touches[0].clientX, false)}
         onMouseDown={(e) => handleCanvasTapOrDrag(e.clientX, true)}
@@ -1391,20 +1404,48 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
               Đã bắn hạ chuẩn <strong>{kills}</strong> mục tiêu • Đạt tới Đợt <strong>{wave}</strong>
             </p>
 
-            <div className="w-full max-w-xs grid grid-cols-2 gap-2.5 mb-4">
-              <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800">
+            <div className="w-full max-w-xs grid grid-cols-2 gap-2.5 mb-3">
+              <div className="p-2.5 rounded-2xl bg-slate-900 border border-slate-800">
                 <div className="text-lg font-extrabold text-cyan-400">
                   {score.toLocaleString()}
                 </div>
                 <div className="text-[11px] text-slate-400">Điểm đạt được</div>
               </div>
-              <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800">
+              <div className="p-2.5 rounded-2xl bg-slate-900 border border-slate-800">
                 <div className="text-lg font-extrabold text-amber-400">
                   {bestScore.toLocaleString()}
                 </div>
                 <div className="text-[11px] text-slate-400">Kỷ lục cao nhất</div>
               </div>
             </div>
+
+            {missedWords.length > 0 && (
+              <div className="w-full max-w-xs mb-3 text-left bg-slate-900/95 rounded-2xl p-2.5 border border-slate-800 space-y-1">
+                <div className="text-[10px] font-extrabold uppercase tracking-wider text-rose-400">
+                  Mục tiêu vừa sẩy chân (Chạm 🔊 để nhớ)
+                </div>
+                {missedWords.map((mw) => (
+                  <div key={mw.id} className="flex items-center justify-between gap-2 text-xs py-0.5">
+                    <div className="min-w-0">
+                      <span className="font-extrabold text-white">{mw.term}</span>
+                      <span className="text-slate-400 block truncate text-[11px]">
+                        {formatArcadeMeaning(mw.definition, 54)}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        void audioService.speak(mw.term, 0.9)
+                      }}
+                      className="p-1.5 rounded-lg bg-indigo-500/20 text-cyan-300 shrink-0"
+                    >
+                      <Volume2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div className="w-full max-w-xs space-y-2">
               <button

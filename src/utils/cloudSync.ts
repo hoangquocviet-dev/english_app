@@ -275,7 +275,8 @@ class CloudSyncManager {
     const totalScore =
       (highScores['sky-defender'] || 0) +
       (highScores['speed-match'] || 0) +
-      (highScores['blitz-2s'] || 0)
+      (highScores['blitz-2s'] || 0) +
+      (highScores['word-bomb'] || 0)
 
     const hasMeaningfulActivity =
       activeProgressCount > 0 ||

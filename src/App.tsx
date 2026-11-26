@@ -56,6 +56,9 @@ const SpeedMatchGame = lazyWithRetry(() =>
 const BlitzGame = lazyWithRetry(() =>
   import('./components/games/BlitzGame').then((m) => ({ default: m.BlitzGame }))
 )
+const WordBombGame = lazyWithRetry(() =>
+  import('./components/games/WordBombGame').then((m) => ({ default: m.WordBombGame }))
+)
 const AddWordView = lazyWithRetry(() =>
   import('./components/add/AddWordView').then((m) => ({ default: m.AddWordView }))
 )
@@ -366,6 +369,14 @@ export function App() {
 
               {activeGame === 'blitz-2s' && activeDeck && (!isSeedLoading || allWords.length > 0) && (
                 <BlitzGame
+                  words={arcadeWords}
+                  deckName={arcadeDeckLabel}
+                  onBack={handleExitGame}
+                />
+              )}
+
+              {activeGame === 'word-bomb' && activeDeck && (!isSeedLoading || allWords.length > 0) && (
+                <WordBombGame
                   words={arcadeWords}
                   deckName={arcadeDeckLabel}
                   onBack={handleExitGame}

@@ -1,6 +1,6 @@
 export type StudyMode = 'flashcard' | 'quiz' | 'spelling' | 'listening' | 'cloze'
 
-export type ArcadeGameId = 'sky-defender' | 'speed-match' | 'blitz-2s'
+export type ArcadeGameId = 'sky-defender' | 'speed-match' | 'blitz-2s' | 'word-bomb'
 
 export type GameHighScores = Record<ArcadeGameId, number>
 

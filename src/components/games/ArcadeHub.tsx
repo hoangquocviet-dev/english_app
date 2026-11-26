@@ -1,4 +1,6 @@
 import {
+  Bomb,
+  Check,
   ChevronRight,
   Crown,
   Crosshair,
@@ -9,6 +11,7 @@ import {
   Rocket,
   Trophy,
   UserPen,
+  X,
   Zap,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -37,16 +40,19 @@ export function ArcadeHub({
   highScores,
   onSelectArcadeDeck,
   onStartGame,
-  onOpenCloudSync,
 }: ArcadeHubProps) {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [isLoadingBoard, setIsLoadingBoard] = useState(true)
   const [myTag, setMyTag] = useState('')
+  const [isEditingNick, setIsEditingNick] = useState(false)
+  const [nickDraft, setNickDraft] = useState(() => cloudSyncService.getNickname())
+  const [isSavingNick, setIsSavingNick] = useState(false)
 
   const totalBestScore =
     (highScores['sky-defender'] || 0) +
     (highScores['speed-match'] || 0) +
-    (highScores['blitz-2s'] || 0)
+    (highScores['blitz-2s'] || 0) +
+    (highScores['word-bomb'] || 0)
 
   const deckCounts = useMemo(() => {
     const map: Record<string, number> = {}
@@ -102,10 +108,24 @@ export function ArcadeHub({
     void loadLeaderboard()
   }
 
+  const handleSaveInlineNick = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const clean = nickDraft.trim()
+    if (!clean) return
+    audioService.playClick()
+    setIsSavingNick(true)
+    cloudSyncService.setNickname(clean)
+    await cloudSyncService.pushNow(true)
+    await loadLeaderboard()
+    setIsSavingNick(false)
+    setIsEditingNick(false)
+    audioService.playSuccessChime()
+  }
+
   return (
-    <div className="w-full max-w-md mx-auto px-3.5 py-4 space-y-4 animate-fadeIn">
+    <div className="w-full max-w-md sm:max-w-xl mx-auto px-3.5 py-4 space-y-4 animate-fadeIn">
       {/* Header Banner */}
-      <div className="rounded-3xl p-4 bg-gradient-to-br from-indigo-600 via-violet-600 to-sky-600 text-white shadow-lg relative overflow-hidden">
+      <div className="rounded-3xl p-4 sm:p-5 bg-gradient-to-br from-indigo-600 via-violet-600 to-sky-600 text-white shadow-lg relative overflow-hidden">
         <div className="flex items-center justify-between gap-2 relative z-10">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-white/15 backdrop-blur-xs flex items-center justify-center border border-white/20 shrink-0">
@@ -116,7 +136,7 @@ export function ArcadeHub({
                 Đấu Trường Từ Vựng
               </h2>
               <p className="text-[11px] sm:text-xs text-indigo-100 mt-0.5 leading-snug">
-                Vừa chơi vừa rèn phản xạ tốc độ cao
+                4 chế độ thực chiến rèn phản xạ & trí nhớ
               </p>
             </div>
           </div>
@@ -125,7 +145,7 @@ export function ArcadeHub({
             <div className="text-[10px] uppercase tracking-wider text-indigo-100 font-semibold">
               Tổng kỷ lục
             </div>
-            <div className="text-sm font-extrabold flex items-center justify-end gap-1 text-amber-300">
+            <div className="text-sm font-extrabold flex items-center justify-end gap-1 text-amber-300 tabular-nums">
               <Trophy className="w-3.5 h-3.5" />
               <span>{totalBestScore.toLocaleString()}</span>
             </div>
@@ -164,8 +184,8 @@ export function ArcadeHub({
         </div>
       </div>
 
-      {/* 3 Arcade Mini-Games */}
-      <div className="space-y-3">
+      {/* 4 Arcade Mini-Games Grid (1 col on Mobile, 2x2 on Desktop!) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {/* Game 1: Sky Defender */}
         <button
           type="button"
@@ -187,11 +207,11 @@ export function ArcadeHub({
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                Điều khiển chiến cơ Valkyrie khai hỏa plasma, tích Khiên Aegis và công phá Tàu Mẹ Boss mỗi 5 đợt!
+                Lái chiến cơ Valkyrie bắn hạ mục tiêu, tích Khiên Aegis và công phá Tàu Mẹ Boss mỗi 5 đợt!
               </p>
             </div>
           </div>
-          <ChevronRight className="w-4 h-4 text-slate-400 shrink-0 ml-2 group-hover:translate-x-1 transition-transform" />
+          <ChevronRight className="w-4 h-4 text-slate-400 shrink-0 ml-1.5 group-hover:translate-x-1 transition-transform" />
         </button>
 
         {/* Game 2: Speed Match 60s */}
@@ -214,11 +234,11 @@ export function ArcadeHub({
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                Chạm nối nhanh cặp Từ Anh — Nghĩa Việt trong 60 giây. Ghép liên hoàn tích Combo nhận thêm giây thưởng!
+                Nối nhanh Từ Anh — Nghĩa Việt với phím tắt & Radar gợi ý. Tích 5 Combo nhận thêm +3 giây!
               </p>
             </div>
           </div>
-          <ChevronRight className="w-4 h-4 text-slate-400 shrink-0 ml-2 group-hover:translate-x-1 transition-transform" />
+          <ChevronRight className="w-4 h-4 text-slate-400 shrink-0 ml-1.5 group-hover:translate-x-1 transition-transform" />
         </button>
 
         {/* Game 3: 2-Second Blitz */}
@@ -241,15 +261,45 @@ export function ArcadeHub({
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                Phán đoán chớp nhoáng cặp Từ — Nghĩa là thật hay bẫy trước khi thanh thời gian chạm đáy!
+                Vuốt Trái / Phải hoặc bấm nút phán đoán chớp nhoáng bẫy nghĩa. Chuỗi 10 đúng hồi +1 ❤️!
               </p>
             </div>
           </div>
-          <ChevronRight className="w-4 h-4 text-slate-400 shrink-0 ml-2 group-hover:translate-x-1 transition-transform" />
+          <ChevronRight className="w-4 h-4 text-slate-400 shrink-0 ml-1.5 group-hover:translate-x-1 transition-transform" />
+        </button>
+
+        {/* Game 4: Word Bomb Defusal (NEW Active Recall Game!) */}
+        <button
+          type="button"
+          onClick={() => handleLaunch('word-bomb')}
+          className="w-full bg-white dark:bg-slate-800 rounded-2xl p-4 border border-amber-500/30 dark:border-amber-500/25 hover:border-amber-500 text-left transition-all flex items-center justify-between group shadow-xs active:scale-98 relative overflow-hidden"
+        >
+          <div className="flex items-start gap-3.5 min-w-0 flex-1">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-amber-500/20">
+              <Bomb className="w-6 h-6" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h3 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                  4. Gỡ Bom Từ Vựng
+                </h3>
+                <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md bg-amber-500 text-slate-950">
+                  MỚI
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                  Kỷ lục: {(highScores['word-bomb'] || 0).toLocaleString()}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                Gõ phím hoặc chạm chữ cái cắt dây tháo ngòi nổ trước khi hết giờ. Rèn nhớ chính tả cực nhạy!
+              </p>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-slate-400 shrink-0 ml-1.5 group-hover:translate-x-1 transition-transform" />
         </button>
       </div>
 
-      {/* Live Cloud Leaderboard Card */}
+      {/* Live Cloud Leaderboard Card with 1-Tap Inline Nickname */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
@@ -261,25 +311,25 @@ export function ArcadeHub({
                 Bảng Xếp Hạng Cao Thủ
               </h3>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                Top 10 tổng điểm 3 trò chơi
+                Top 10 điểm thi đấu Đấu Trường Cloud
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
-            {onOpenCloudSync && (
-              <button
-                type="button"
-                onClick={() => {
-                  audioService.playClick()
-                  onOpenCloudSync()
-                }}
-                className="py-1.5 px-2.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-[11px] font-bold flex items-center gap-1 whitespace-nowrap shrink-0 transition-colors"
-              >
-                <UserPen className="w-3 h-3 shrink-0" />
-                <span>Đặt tên</span>
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => {
+                audioService.playClick()
+                setNickDraft(cloudSyncService.getNickname())
+                setIsEditingNick((prev) => !prev)
+              }}
+              className="py-1.5 px-2.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-[11px] font-bold flex items-center gap-1 whitespace-nowrap shrink-0 transition-colors"
+            >
+              <UserPen className="w-3 h-3 shrink-0" />
+              <span>{cloudSyncService.getNickname() ? 'Đổi tên' : 'Đặt tên'}</span>
+            </button>
+
             <button
               type="button"
               onClick={handleRefreshBoard}
@@ -290,6 +340,39 @@ export function ArcadeHub({
             </button>
           </div>
         </div>
+
+        {/* Inline 1-Tap Nickname Editor */}
+        {isEditingNick && (
+          <form
+            onSubmit={(e) => void handleSaveInlineNick(e)}
+            className="flex items-center gap-2 p-2.5 rounded-2xl bg-indigo-500/8 dark:bg-slate-900/80 border border-indigo-500/25 animate-fadeIn"
+          >
+            <input
+              type="text"
+              autoFocus
+              maxLength={28}
+              value={nickDraft}
+              onChange={(e) => setNickDraft(e.target.value)}
+              placeholder="Nhập tên hiển thị trên BXH..."
+              className="flex-1 min-w-0 py-1.5 px-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+            <button
+              type="submit"
+              disabled={isSavingNick || !nickDraft.trim()}
+              className="py-1.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-bold flex items-center gap-1 shrink-0"
+            >
+              <Check className="w-3.5 h-3.5" />
+              <span>{isSavingNick ? 'Lưu...' : 'Lưu'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsEditingNick(false)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </form>
+        )}
 
         {isLoadingBoard ? (
           <div className="py-6 text-center text-xs text-slate-400 font-medium">

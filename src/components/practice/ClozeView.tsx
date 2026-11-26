@@ -346,7 +346,7 @@ export function ClozeView({
   const isCorrectAnswer = selectedOption === currentQ.correctOptionIndex
 
   return (
-    <div className="w-full max-w-md mx-auto min-h-[calc(100dvh-5rem)] flex flex-col px-3.5 py-3 animate-fadeIn">
+    <div className="w-full max-w-md sm:max-w-lg mx-auto my-auto flex flex-col px-3.5 py-3 animate-fadeIn">
       {/* Top Header */}
       <div className="flex items-center justify-between gap-2 mb-3">
         <button
@@ -451,7 +451,7 @@ export function ClozeView({
       </div>
 
       {/* 4 Options Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 flex-1">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         {currentQ.options.map((opt, idx) => {
           let btnStyle =
             'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:border-indigo-500/50 hover:bg-slate-50 dark:hover:bg-slate-750'
