@@ -1,6 +1,6 @@
 import { ArrowLeft, ArrowLeftRight, Check, Star, Volume2, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { StudySessionStats, WordItem } from '../../types'
+import type { StudyFilterMode, StudySessionStats, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
 import { GLOBAL_SRS_DECK_ID, storageService } from '../../utils/storage'
 import { StudySummary } from './StudySummary'
@@ -14,6 +14,7 @@ interface QuizViewProps {
   allDeckWords: WordItem[]
   deckId: string
   deckName: string
+  filterMode?: StudyFilterMode
   onBack: () => void
 }
 
@@ -165,7 +166,14 @@ function buildQuestions(
   return shuffleArray(generated)
 }
 
-export function QuizView({ words, allDeckWords, deckId, deckName, onBack }: QuizViewProps) {
+export function QuizView({
+  words,
+  allDeckWords,
+  deckId,
+  deckName,
+  filterMode = 'all',
+  onBack,
+}: QuizViewProps) {
   const [direction, setDirection] = useState<QuizDirection>(() => {
     if (typeof window !== 'undefined') {
       const saved = window.localStorage.getItem(QUIZ_DIR_STORAGE_KEY)
@@ -339,7 +347,7 @@ export function QuizView({ words, allDeckWords, deckId, deckName, onBack }: Quiz
   }
 
   if (isCompleted) {
-    const remainingList = storageService.getRemainingWordsForSession(deckId, words)
+    const remainingList = storageService.getRemainingWordsForSession(deckId, words, filterMode)
     const sessionStats: StudySessionStats = {
       totalWords: words.length,
       masteredCount: stats.mastered,
@@ -353,7 +361,7 @@ export function QuizView({ words, allDeckWords, deckId, deckName, onBack }: Quiz
         stats={sessionStats}
         onContinueRemaining={(rem) => resetQuiz(rem)}
         onResetDeck={
-          deckId === GLOBAL_SRS_DECK_ID
+          deckId === GLOBAL_SRS_DECK_ID || filterMode !== 'all'
             ? undefined
             : () => {
                 void storageService.resetDeckProgress(deckId).then(() => {

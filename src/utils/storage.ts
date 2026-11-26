@@ -5,6 +5,7 @@ import type {
   CommunityDeck,
   Deck,
   GameHighScores,
+  StudyFilterMode,
   WordItem,
 } from '../types'
 
@@ -38,6 +39,7 @@ export interface DailyProgress {
   dateKey: string
   count: number
   goal: number
+  history?: Record<string, number>
 }
 
 export interface StudyPreferences {
@@ -441,17 +443,41 @@ class SafeStorageService {
     return words.filter((w) => w.status === 'mastered' && (!w.nextReview || w.nextReview <= now))
   }
 
-  public getRemainingWordsForSession(deckId: string, sessionWords: WordItem[]): WordItem[] {
-    if (deckId === GLOBAL_SRS_DECK_ID) {
-      const now = Date.now()
-      const sessionIdSet = new Set(sessionWords.map((w) => w.id))
+  public getRemainingWordsForSession(
+    deckId: string,
+    sessionWords: WordItem[],
+    filterMode: StudyFilterMode = 'all'
+  ): WordItem[] {
+    const now = Date.now()
+    const sessionIdSet = new Set(sessionWords.map((w) => w.id))
+
+    if (deckId === GLOBAL_SRS_DECK_ID || filterMode === 'global-due') {
       return this.getWords().filter(
         (w) =>
           (w.status === 'mastered' && (!w.nextReview || w.nextReview <= now)) ||
           (sessionIdSet.has(w.id) && w.status !== 'mastered')
       )
     }
-    return this.getWords(deckId).filter((w) => w.status !== 'mastered')
+
+    const deckWords = this.getWords(deckId)
+
+    if (filterMode === 'due') {
+      return deckWords.filter(
+        (w) =>
+          (w.status === 'mastered' && (!w.nextReview || w.nextReview <= now)) ||
+          (sessionIdSet.has(w.id) && w.status !== 'mastered')
+      )
+    }
+
+    if (filterMode === 'learning') {
+      return deckWords.filter((w) => w.status === 'learning')
+    }
+
+    if (filterMode === 'starred') {
+      return deckWords.filter((w) => sessionIdSet.has(w.id) && w.status === 'learning')
+    }
+
+    return deckWords.filter((w) => w.status !== 'mastered')
   }
 
   public getSrsStats(deckId?: string): {
@@ -570,18 +596,74 @@ class SafeStorageService {
     this.set(STORAGE_KEYS.STUDY_PREFS, prefs)
   }
 
-  // DAILY GOAL & STREAK (4 AM reset boundary)
+  // DAILY GOAL & STREAK (4 AM reset boundary + 14-day rolling activity history)
+  private getDateKeyForOffset(daysAgo: number): string {
+    const now = new Date()
+    const adjusted = new Date(now.getTime() - 4 * 60 * 60 * 1000 - daysAgo * 86400000)
+    return `${adjusted.getFullYear()}-${adjusted.getMonth() + 1}-${adjusted.getDate()}`
+  }
+
+  private pruneHistory(raw?: Record<string, number>): Record<string, number> {
+    if (!raw) return {}
+    const validKeys = new Set<string>()
+    for (let i = 0; i < 14; i++) {
+      validKeys.add(this.getDateKeyForOffset(i))
+    }
+    const next: Record<string, number> = {}
+    for (const [k, v] of Object.entries(raw)) {
+      if (validKeys.has(k) && typeof v === 'number' && v > 0) {
+        next[k] = v
+      }
+    }
+    return next
+  }
+
   public getDailyProgress(): DailyProgress {
     const todayKey = this.getTodayKey()
     const saved = this.get<DailyProgress>(STORAGE_KEYS.DAILY_PROGRESS, {
       dateKey: todayKey,
       count: 0,
       goal: 20,
+      history: {},
+    })
+    const mergedHistory = this.pruneHistory({
+      ...(saved.history || {}),
+      ...(saved.dateKey && saved.count > 0 ? { [saved.dateKey]: saved.count } : {}),
     })
     if (saved.dateKey !== todayKey) {
-      return { dateKey: todayKey, count: 0, goal: saved.goal || 20 }
+      return {
+        dateKey: todayKey,
+        count: mergedHistory[todayKey] || 0,
+        goal: saved.goal || 20,
+        history: mergedHistory,
+      }
     }
-    return saved
+    return {
+      ...saved,
+      history: mergedHistory,
+    }
+  }
+
+  public getRecentDailySeries(days = 7): Array<{ dateKey: string; label: string; count: number; isToday: boolean }> {
+    const prog = this.getDailyProgress()
+    const hist = prog.history || {}
+    const weekdayLabels = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
+    const now = new Date()
+    const baseAdjusted = new Date(now.getTime() - 4 * 60 * 60 * 1000)
+    const series: Array<{ dateKey: string; label: string; count: number; isToday: boolean }> = []
+
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(baseAdjusted.getTime() - i * 86400000)
+      const key = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`
+      const count = i === 0 ? prog.count : hist[key] || 0
+      series.push({
+        dateKey: key,
+        label: i === 0 ? 'Nay' : weekdayLabels[d.getDay()],
+        count,
+        isToday: i === 0,
+      })
+    }
+    return series
   }
 
   public setDailyGoal(goal: number): DailyProgress {
@@ -619,10 +701,16 @@ class SafeStorageService {
 
     if (incrementWordCount) {
       const currentDaily = this.getDailyProgress()
+      const nextCount = currentDaily.count + 1
+      const nextHistory = this.pruneHistory({
+        ...(currentDaily.history || {}),
+        [todayKey]: nextCount,
+      })
       this.set(STORAGE_KEYS.DAILY_PROGRESS, {
         ...currentDaily,
         dateKey: todayKey,
-        count: currentDaily.count + 1,
+        count: nextCount,
+        history: nextHistory,
       })
     }
 
@@ -841,15 +929,40 @@ class SafeStorageService {
           ...cloud.study_prefs,
         })
       }
-      if (cloud.daily_progress && cloud.daily_progress.dateKey === this.getTodayKey()) {
+      if (cloud.daily_progress && typeof cloud.daily_progress === 'object') {
         const curDaily = this.getDailyProgress()
-        this.set(STORAGE_KEYS.DAILY_PROGRESS, {
-          dateKey: curDaily.dateKey,
-          goal: cloud.daily_progress.goal || curDaily.goal,
-          count:
+        const cloudHist = cloud.daily_progress.history || {}
+        const combinedHist: Record<string, number> = {}
+        const allKeys = new Set([
+          ...Object.keys(curDaily.history || {}),
+          ...Object.keys(cloudHist),
+        ])
+        for (const k of allKeys) {
+          const lv = curDaily.history?.[k] || 0
+          const cv = cloudHist[k] || 0
+          combinedHist[k] = mode === 'replace' ? cv : Math.max(lv, cv)
+        }
+        if (cloud.daily_progress.dateKey && (cloud.daily_progress.count || 0) > 0) {
+          const dk = cloud.daily_progress.dateKey
+          combinedHist[dk] =
             mode === 'replace'
               ? cloud.daily_progress.count || 0
-              : Math.max(curDaily.count, cloud.daily_progress.count || 0),
+              : Math.max(combinedHist[dk] || 0, cloud.daily_progress.count || 0)
+        }
+        const todayKey = this.getTodayKey()
+        const isCloudToday = cloud.daily_progress.dateKey === todayKey
+        const nextTodayCount = isCloudToday
+          ? mode === 'replace'
+            ? cloud.daily_progress.count || 0
+            : Math.max(curDaily.count, cloud.daily_progress.count || 0)
+          : combinedHist[todayKey] || curDaily.count
+        combinedHist[todayKey] = nextTodayCount
+
+        this.set(STORAGE_KEYS.DAILY_PROGRESS, {
+          dateKey: todayKey,
+          goal: cloud.daily_progress.goal || curDaily.goal,
+          count: nextTodayCount,
+          history: this.pruneHistory(combinedHist),
         })
       }
     } finally {

@@ -1,6 +1,6 @@
-import { ArrowLeft, Check, FileText, Sparkles, Volume2, X } from 'lucide-react'
+import { ArrowLeft, Check, FileText, Sparkles, Star, Volume2, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { StudySessionStats, WordItem } from '../../types'
+import type { StudyFilterMode, StudySessionStats, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
 import { GLOBAL_SRS_DECK_ID, storageService } from '../../utils/storage'
 import { StudySummary } from './StudySummary'
@@ -10,6 +10,7 @@ interface ClozeViewProps {
   allDeckWords: WordItem[]
   deckId: string
   deckName: string
+  filterMode?: StudyFilterMode
   onBack: () => void
 }
 
@@ -303,6 +304,7 @@ export function ClozeView({
   allDeckWords,
   deckId,
   deckName,
+  filterMode = 'all',
   onBack,
 }: ClozeViewProps) {
   const [questions, setQuestions] = useState<ClozeQuestion[]>(() =>
@@ -315,6 +317,9 @@ export function ClozeView({
   const [stats, setStats] = useState({ mastered: 0, review: 0 })
   const [isCompleted, setIsCompleted] = useState(false)
   const [showHint, setShowHint] = useState(false)
+  const [starredIds, setStarredIds] = useState<Set<string>>(
+    () => new Set(words.filter((w) => w.starred).map((w) => w.id))
+  )
 
   const transitionTimerRef = useRef<number | null>(null)
   const mountedRef = useRef(true)
@@ -457,7 +462,7 @@ export function ClozeView({
       reviewCount: stats.review,
       mode: 'cloze',
       deckName,
-      remainingWords: storageService.getRemainingWordsForSession(deckId, words),
+      remainingWords: storageService.getRemainingWordsForSession(deckId, words, filterMode),
     }
 
     return (
@@ -472,7 +477,7 @@ export function ClozeView({
           setStats({ mastered: 0, review: 0 })
         }}
         onResetDeck={
-          deckId === GLOBAL_SRS_DECK_ID
+          deckId === GLOBAL_SRS_DECK_ID || filterMode !== 'all'
             ? undefined
             : () => {
                 void storageService.resetDeckProgress(deckId).then(() => {
@@ -517,18 +522,44 @@ export function ClozeView({
           </span>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setShowHint((prev) => !prev)}
-          className={`p-2 rounded-xl text-xs font-bold border transition-colors ${
-            showHint
-              ? 'bg-amber-500/15 border-amber-500/30 text-amber-600 dark:text-amber-400'
-              : 'border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-600'
-          }`}
-          title="Xem gợi ý nghĩa (Phím H)"
-        >
-          <Sparkles className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => {
+              audioService.playClick()
+              const next = storageService.toggleWordStar(currentQ.targetWord.id)
+              setStarredIds((prev) => {
+                const copy = new Set(prev)
+                if (next) copy.add(currentQ.targetWord.id)
+                else copy.delete(currentQ.targetWord.id)
+                return copy
+              })
+            }}
+            className={`p-2 rounded-xl border transition-colors ${
+              starredIds.has(currentQ.targetWord.id)
+                ? 'bg-amber-500/15 border-amber-500/30 text-amber-500'
+                : 'border-slate-200 dark:border-slate-700 text-slate-400 hover:text-amber-500'
+            }`}
+            title="Đánh dấu sao từ này"
+          >
+            <Star
+              className={`w-4 h-4 ${starredIds.has(currentQ.targetWord.id) ? 'fill-amber-400' : ''}`}
+            />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowHint((prev) => !prev)}
+            className={`p-2 rounded-xl text-xs font-bold border transition-colors ${
+              showHint
+                ? 'bg-amber-500/15 border-amber-500/30 text-amber-600 dark:text-amber-400'
+                : 'border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-600'
+            }`}
+            title="Xem gợi ý nghĩa (Phím H)"
+          >
+            <Sparkles className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Progress Bar */}

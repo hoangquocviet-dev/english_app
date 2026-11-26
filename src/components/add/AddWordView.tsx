@@ -1,4 +1,15 @@
-import { AlertCircle, ArrowRight, Check, Loader2, Plus, Search, Sparkles, Volume2 } from 'lucide-react'
+import {
+  AlertCircle,
+  ArrowRight,
+  Check,
+  Loader2,
+  Plus,
+  Search,
+  Sparkles,
+  Star,
+  Trash2,
+  Volume2,
+} from 'lucide-react'
 import { useState } from 'react'
 import type { Deck, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
@@ -30,6 +41,12 @@ export function AddWordView({
   const [isLoading, setIsLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
+  const [, setListTick] = useState(0)
+
+  const recentCustomWords = storageService
+    .getWords(selectedDeckId)
+    .filter((w) => w.id.startsWith('w-'))
+    .slice(0, 5)
 
   const handleLookup = async () => {
     const cleanTerm = term.trim().toLowerCase()
@@ -390,6 +407,89 @@ export function AddWordView({
           <span>Lưu thẻ từ vựng</span>
         </button>
       </form>
+
+      {/* Live Recently Added Custom Words in Selected Deck */}
+      {recentCustomWords.length > 0 && (
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-xs space-y-2.5 animate-fadeIn">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              Từ bạn tự thêm gần đây ({recentCustomWords.length})
+            </span>
+            <button
+              type="button"
+              onClick={() => onGoToPractice(selectedDeckId)}
+              className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+            >
+              <span>Học ngay</span>
+              <ArrowRight className="w-3 h-3" />
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            {recentCustomWords.map((rw) => (
+              <div
+                key={rw.id}
+                className="p-2.5 px-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-700/70 flex items-center justify-between gap-2"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                      {rw.term}
+                    </span>
+                    {rw.ipa && (
+                      <span className="text-[11px] text-slate-400 font-sans">{rw.ipa}</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                    {rw.definition}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-0.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      storageService.toggleWordStar(rw.id)
+                      audioService.playClick()
+                      setListTick((t) => t + 1)
+                      onWordAdded(selectedDeckId)
+                    }}
+                    className={`p-1.5 rounded-lg transition-colors ${
+                      rw.starred
+                        ? 'text-amber-500'
+                        : 'text-slate-300 dark:text-slate-600 hover:text-amber-500'
+                    }`}
+                    title="Đánh dấu sao"
+                  >
+                    <Star className={`w-3.5 h-3.5 ${rw.starred ? 'fill-amber-400' : ''}`} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void audioService.speak(rw.term)}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400"
+                    title="Nghe phát âm"
+                  >
+                    <Volume2 className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      storageService.deleteWord(rw.id)
+                      audioService.playClick()
+                      setListTick((t) => t + 1)
+                      onWordAdded(selectedDeckId)
+                    }}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500"
+                    title="Xóa thẻ vừa thêm"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -19,7 +19,7 @@ import {
 import { useState } from 'react'
 import type { Deck, StudyMode, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
-import type { DailyProgress } from '../../utils/storage'
+import { type DailyProgress, storageService } from '../../utils/storage'
 
 const DAILY_GOAL_PRESETS = [10, 20, 30, 50]
 
@@ -151,6 +151,9 @@ export function PracticeHome({
     Math.round((dailyProgress.count / Math.max(1, dailyProgress.goal)) * 100)
   )
   const isGoalReached = dailyProgress.count >= dailyProgress.goal
+  const weeklySeries = storageService.getRecentDailySeries(7)
+  const maxWeeklyCount = Math.max(dailyProgress.goal, ...weeklySeries.map((d) => d.count), 1)
+  const hasAnyWeeklyActivity = weeklySeries.some((d) => d.count > 0)
 
   const handleCycleGoal = () => {
     audioService.playClick()
@@ -249,6 +252,47 @@ export function PracticeHome({
             style={{ width: `${dailyPercent}%` }}
           />
         </div>
+
+        {/* 7-Day Study Activity Spark-Bars */}
+        {hasAnyWeeklyActivity && (
+          <div className="grid grid-cols-7 gap-1.5 mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-700/50">
+            {weeklySeries.map((day) => {
+              const heightPct = day.count > 0 ? Math.max(20, Math.round((day.count / maxWeeklyCount) * 100)) : 8
+              const metGoal = day.count >= dailyProgress.goal
+              return (
+                <div
+                  key={day.dateKey}
+                  className="flex flex-col items-center gap-1"
+                  title={`${day.label} (${day.dateKey}): ${day.count} lượt`}
+                >
+                  <div className="w-full h-7 rounded-md bg-slate-100 dark:bg-slate-900/80 flex items-end p-0.5 overflow-hidden">
+                    <div
+                      style={{ height: `${heightPct}%` }}
+                      className={`w-full rounded-xs transition-all duration-300 ${
+                        day.count === 0
+                          ? 'bg-slate-200 dark:bg-slate-800'
+                          : metGoal
+                          ? 'bg-emerald-500'
+                          : day.isToday
+                          ? 'bg-indigo-500'
+                          : 'bg-indigo-400/70 dark:bg-indigo-500/60'
+                      }`}
+                    />
+                  </div>
+                  <span
+                    className={`text-[9.5px] leading-none ${
+                      day.isToday
+                        ? 'font-extrabold text-indigo-600 dark:text-indigo-400'
+                        : 'font-medium text-slate-400'
+                    }`}
+                  >
+                    {day.label}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* Deck Selector Header */}

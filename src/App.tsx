@@ -6,7 +6,7 @@ import { Navbar } from './components/common/Navbar'
 import { PullToRefresh } from './components/common/PullToRefresh'
 import { ALL_DECKS_ID, ArcadeHub } from './components/games/ArcadeHub'
 import { PracticeHome } from './components/practice/PracticeHome'
-import type { ActiveTab, ArcadeGameId, Deck, StudyMode, WordItem } from './types'
+import type { ActiveTab, ArcadeGameId, Deck, StudyFilterMode, StudyMode, WordItem } from './types'
 import { audioService } from './utils/audio'
 import { cloudSyncService } from './utils/cloudSync'
 import { forceReloadApp } from './utils/reload'
@@ -94,6 +94,7 @@ export function App() {
   const [activeGame, setActiveGame] = useState<ArcadeGameId | null>(null)
   const [arcadeUseAllDecks, setArcadeUseAllDecks] = useState<boolean>(false)
   const [sessionWords, setSessionWords] = useState<WordItem[]>([])
+  const [sessionFilterMode, setSessionFilterMode] = useState<StudyFilterMode>('all')
   const [isGlobalSrsSession, setIsGlobalSrsSession] = useState(false)
   const [isCloudModalOpen, setIsCloudModalOpen] = useState(false)
   const [syncToast, setSyncToast] = useState<{ ok: boolean; message: string } | null>(null)
@@ -196,7 +197,7 @@ export function App() {
 
   const handleStartMode = (
     mode: StudyMode,
-    filterMode: 'all' | 'learning' | 'due' | 'global-due' | 'starred' = 'all'
+    filterMode: StudyFilterMode = 'all'
   ) => {
     const now = Date.now()
     let targetList: WordItem[]
@@ -229,6 +230,7 @@ export function App() {
       targetList = targetList.slice(0, studyPrefs.batchSize)
     }
 
+    setSessionFilterMode(filterMode)
     setIsGlobalSrsSession(filterMode === 'global-due')
     setSessionWords(targetList)
     setActiveStudyMode(mode)
@@ -237,6 +239,7 @@ export function App() {
   const handleExitStudy = () => {
     audioService.stopSpeech()
     setActiveStudyMode(null)
+    setSessionFilterMode('all')
     setIsGlobalSrsSession(false)
     refreshData()
   }
@@ -321,6 +324,7 @@ export function App() {
                   words={sessionWords}
                   deckId={studyDeckId}
                   deckName={studyDeckName}
+                  filterMode={sessionFilterMode}
                   onBack={handleExitStudy}
                 />
               )}
@@ -331,6 +335,7 @@ export function App() {
                   allDeckWords={studyPoolWords}
                   deckId={studyDeckId}
                   deckName={studyDeckName}
+                  filterMode={sessionFilterMode}
                   onBack={handleExitStudy}
                 />
               )}
@@ -340,6 +345,7 @@ export function App() {
                   words={sessionWords}
                   deckId={studyDeckId}
                   deckName={studyDeckName}
+                  filterMode={sessionFilterMode}
                   onBack={handleExitStudy}
                 />
               )}
@@ -350,6 +356,7 @@ export function App() {
                   allDeckWords={studyPoolWords}
                   deckId={studyDeckId}
                   deckName={studyDeckName}
+                  filterMode={sessionFilterMode}
                   onBack={handleExitStudy}
                 />
               )}
@@ -360,6 +367,7 @@ export function App() {
                   allDeckWords={studyPoolWords}
                   deckId={studyDeckId}
                   deckName={studyDeckName}
+                  filterMode={sessionFilterMode}
                   onBack={handleExitStudy}
                 />
               )}

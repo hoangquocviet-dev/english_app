@@ -11,7 +11,7 @@ import {
   X,
 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { StudySessionStats, WordItem } from '../../types'
+import type { StudyFilterMode, StudySessionStats, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
 import { GLOBAL_SRS_DECK_ID, storageService } from '../../utils/storage'
 import { StudySummary } from './StudySummary'
@@ -20,6 +20,7 @@ interface FlashcardViewProps {
   words: WordItem[]
   deckId: string
   deckName: string
+  filterMode?: StudyFilterMode
   onBack: () => void
 }
 
@@ -116,7 +117,13 @@ function scorePronunciation(
   return { bestTranscript, accuracy: bestScore }
 }
 
-export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardViewProps) {
+export function FlashcardView({
+  words,
+  deckId,
+  deckName,
+  filterMode = 'all',
+  onBack,
+}: FlashcardViewProps) {
   const [queue, setQueue] = useState<QueuedWord[]>(() =>
     words.map((w) => ({ word: w, repetitionCount: 0 }))
   )
@@ -510,7 +517,7 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
   }
 
   if (isCompleted) {
-    const remainingList = storageService.getRemainingWordsForSession(deckId, words)
+    const remainingList = storageService.getRemainingWordsForSession(deckId, words, filterMode)
     const sessionStats: StudySessionStats = {
       totalWords: words.length,
       masteredCount: stats.mastered,
@@ -524,7 +531,7 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
         stats={sessionStats}
         onContinueRemaining={(rem) => startSessionWithWords(rem)}
         onResetDeck={
-          deckId === GLOBAL_SRS_DECK_ID
+          deckId === GLOBAL_SRS_DECK_ID || filterMode !== 'all'
             ? undefined
             : () => {
                 void storageService.resetDeckProgress(deckId).then(() => {

@@ -1,6 +1,6 @@
-import { ArrowLeft, Check, Headphones, Volume2, X } from 'lucide-react'
+import { ArrowLeft, Check, Headphones, Star, Volume2, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { StudySessionStats, WordItem } from '../../types'
+import type { StudyFilterMode, StudySessionStats, WordItem } from '../../types'
 import { formatArcadeMeaning } from '../../utils/arcadeText'
 import { audioService } from '../../utils/audio'
 import { GLOBAL_SRS_DECK_ID, storageService } from '../../utils/storage'
@@ -11,6 +11,7 @@ interface ListeningViewProps {
   allDeckWords: WordItem[]
   deckId: string
   deckName: string
+  filterMode?: StudyFilterMode
   onBack: () => void
 }
 
@@ -111,6 +112,7 @@ export function ListeningView({
   allDeckWords,
   deckId,
   deckName,
+  filterMode = 'all',
   onBack,
 }: ListeningViewProps) {
   const [questions, setQuestions] = useState<ListeningQuestion[]>(() =>
@@ -122,6 +124,9 @@ export function ListeningView({
   const [isPlaying, setIsPlaying] = useState(false)
   const [stats, setStats] = useState({ mastered: 0, review: 0 })
   const [isCompleted, setIsCompleted] = useState(false)
+  const [starredIds, setStarredIds] = useState<Set<string>>(
+    () => new Set(words.filter((w) => w.starred).map((w) => w.id))
+  )
   const transitionTimerRef = useRef<number | null>(null)
   const mountedRef = useRef(true)
 
@@ -258,7 +263,7 @@ export function ListeningView({
   }
 
   if (isCompleted) {
-    const remainingList = storageService.getRemainingWordsForSession(deckId, words)
+    const remainingList = storageService.getRemainingWordsForSession(deckId, words, filterMode)
     const sessionStats: StudySessionStats = {
       totalWords: words.length,
       masteredCount: stats.mastered,
@@ -272,7 +277,7 @@ export function ListeningView({
         stats={sessionStats}
         onContinueRemaining={(rem) => resetListening(rem)}
         onResetDeck={
-          deckId === GLOBAL_SRS_DECK_ID
+          deckId === GLOBAL_SRS_DECK_ID || filterMode !== 'all'
             ? undefined
             : () => {
                 void storageService.resetDeckProgress(deckId).then(() => {
@@ -311,7 +316,31 @@ export function ListeningView({
             />
           </div>
         </div>
-        <div className="w-9" />
+        <button
+          type="button"
+          onClick={() => {
+            audioService.playClick()
+            const next = storageService.toggleWordStar(currentQ.targetWord.id)
+            setStarredIds((prev) => {
+              const copy = new Set(prev)
+              if (next) copy.add(currentQ.targetWord.id)
+              else copy.delete(currentQ.targetWord.id)
+              return copy
+            })
+          }}
+          title="Đánh dấu sao từ này"
+          className={`p-2 rounded-lg transition-colors ${
+            starredIds.has(currentQ.targetWord.id)
+              ? 'text-amber-500'
+              : 'text-slate-400 hover:text-amber-500'
+          }`}
+        >
+          <Star
+            className={`w-4.5 h-4.5 ${
+              starredIds.has(currentQ.targetWord.id) ? 'fill-amber-400' : ''
+            }`}
+          />
+        </button>
       </div>
 
       {/* Audio Prompt Card */}

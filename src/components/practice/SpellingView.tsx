@@ -1,6 +1,6 @@
-import { ArrowLeft, Check, HelpCircle, Lightbulb, RotateCcw, Volume2 } from 'lucide-react'
+import { ArrowLeft, Check, HelpCircle, Lightbulb, RotateCcw, Star, Volume2 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { SpellingTile, StudySessionStats, WordItem } from '../../types'
+import type { SpellingTile, StudyFilterMode, StudySessionStats, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
 import { GLOBAL_SRS_DECK_ID, storageService } from '../../utils/storage'
 import { StudySummary } from './StudySummary'
@@ -9,6 +9,7 @@ interface SpellingViewProps {
   words: WordItem[]
   deckId: string
   deckName: string
+  filterMode?: StudyFilterMode
   onBack: () => void
 }
 
@@ -65,7 +66,13 @@ function createTilesForWord(term: string): {
   return { pool: shuffled, placed: newPlaced }
 }
 
-export function SpellingView({ words, deckId, deckName, onBack }: SpellingViewProps) {
+export function SpellingView({
+  words,
+  deckId,
+  deckName,
+  filterMode = 'all',
+  onBack,
+}: SpellingViewProps) {
   const initialQueue = words.map((w) => ({ word: w, repetitionCount: 0 }))
   const initialTiles = words[0] ? createTilesForWord(words[0].term) : { pool: [], placed: [] }
 
@@ -79,6 +86,9 @@ export function SpellingView({ words, deckId, deckName, onBack }: SpellingViewPr
   const [isWrong, setIsWrong] = useState(false)
   const [stats, setStats] = useState({ mastered: 0, review: 0 })
   const [isCompleted, setIsCompleted] = useState(false)
+  const [starredIds, setStarredIds] = useState<Set<string>>(
+    () => new Set(words.filter((w) => w.starred).map((w) => w.id))
+  )
 
   const queueRef = useRef<QueuedSpelling[]>(queue)
   const poolRef = useRef<SpellingTile[]>(poolTiles)
@@ -374,7 +384,7 @@ export function SpellingView({ words, deckId, deckName, onBack }: SpellingViewPr
   }
 
   if (isCompleted) {
-    const remainingList = storageService.getRemainingWordsForSession(deckId, words)
+    const remainingList = storageService.getRemainingWordsForSession(deckId, words, filterMode)
     const sessionStats: StudySessionStats = {
       totalWords: words.length,
       masteredCount: stats.mastered,
@@ -388,7 +398,7 @@ export function SpellingView({ words, deckId, deckName, onBack }: SpellingViewPr
         stats={sessionStats}
         onContinueRemaining={(rem) => startSessionWithWords(rem)}
         onResetDeck={
-          deckId === GLOBAL_SRS_DECK_ID
+          deckId === GLOBAL_SRS_DECK_ID || filterMode !== 'all'
             ? undefined
             : () => {
                 void storageService.resetDeckProgress(deckId).then(() => {
@@ -483,6 +493,29 @@ export function SpellingView({ words, deckId, deckName, onBack }: SpellingViewPr
             Ghép chữ cái tiếng Anh
           </span>
           <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                audioService.playClick()
+                const next = storageService.toggleWordStar(currentWord.id)
+                setStarredIds((prev) => {
+                  const copy = new Set(prev)
+                  if (next) copy.add(currentWord.id)
+                  else copy.delete(currentWord.id)
+                  return copy
+                })
+              }}
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                starredIds.has(currentWord.id)
+                  ? 'bg-amber-500/15 text-amber-500'
+                  : 'bg-slate-100 dark:bg-slate-700/70 text-slate-400 hover:text-amber-500'
+              }`}
+              title="Đánh dấu sao từ quan trọng"
+            >
+              <Star
+                className={`w-4 h-4 ${starredIds.has(currentWord.id) ? 'fill-amber-400' : ''}`}
+              />
+            </button>
             <button
               onClick={() => audioService.speak(currentWord.term, 0.6)}
               className="h-8 px-2.5 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
