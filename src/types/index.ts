@@ -22,6 +22,7 @@ export interface WordItem {
   lastReviewed?: number
   srsLevel?: number
   nextReview?: number
+  starred?: boolean
 }
 
 export interface Deck {
@@ -61,6 +62,7 @@ export interface BuiltInWordProgress {
   t?: number
   l?: number
   n?: number
+  b?: boolean
 }
 
 export interface LeaderboardEntry {

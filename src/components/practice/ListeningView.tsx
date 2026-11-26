@@ -1,6 +1,7 @@
 import { ArrowLeft, Check, Headphones, Volume2, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { StudySessionStats, WordItem } from '../../types'
+import { formatArcadeMeaning } from '../../utils/arcadeText'
 import { audioService } from '../../utils/audio'
 import { GLOBAL_SRS_DECK_ID, storageService } from '../../utils/storage'
 import { StudySummary } from './StudySummary'
@@ -402,7 +403,13 @@ export function ListeningView({
                     {option.term}
                   </div>
                   <div className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">
-                    {option.definition}
+                    {formatArcadeMeaning(
+                      option.definition.replace(
+                        /^Kỹ thuật (?:refactoring|tái cấu trúc(?: mã nguồn)?(?:\s+bằng cách)?)\s+/i,
+                        ''
+                      ),
+                      76
+                    )}
                   </div>
                 </div>
               </div>

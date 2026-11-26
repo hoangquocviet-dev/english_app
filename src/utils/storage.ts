@@ -301,6 +301,7 @@ class SafeStorageService {
               lastReviewed: w.lastReviewed,
               srsLevel: w.srsLevel,
               nextReview: w.nextReview,
+              starred: w.starred,
             }
           }
           return w
@@ -359,6 +360,20 @@ class SafeStorageService {
     const words = this.getWords()
     const updated = words.map((w) => (w.id === updatedWord.id ? updatedWord : w))
     this.commitWordsCache(updated, true)
+  }
+
+  public toggleWordStar(id: string): boolean {
+    const words = this.getWords()
+    let nextStarred = false
+    const updated = words.map((w) => {
+      if (w.id === id) {
+        nextStarred = !w.starred
+        return { ...w, starred: nextStarred }
+      }
+      return w
+    })
+    this.commitWordsCache(updated, true)
+    return nextStarred
   }
 
   public deleteWord(id: string): void {
@@ -716,6 +731,7 @@ class SafeStorageService {
                   lastReviewed: cp.t,
                   srsLevel: cp.l,
                   nextReview: cp.n,
+                  starred: cp.b || undefined,
                 }
               : bw
           )
@@ -738,6 +754,7 @@ class SafeStorageService {
             lastReviewed: latestTime,
             srsLevel: bestLevel,
             nextReview: nextReview,
+            starred: Boolean(cp?.b || lw?.starred) || undefined,
           })
         }
       }
@@ -888,6 +905,7 @@ class SafeStorageService {
         lastReviewed: prev?.lastReviewed,
         srsLevel: prev?.srsLevel,
         nextReview: prev?.nextReview,
+        starred: prev?.starred,
       }
     })
 

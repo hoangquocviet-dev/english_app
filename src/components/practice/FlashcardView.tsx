@@ -1,4 +1,15 @@
-import { ArrowLeft, Check, RotateCw, Undo2, Volume2, X } from 'lucide-react'
+import {
+  ArrowLeft,
+  Check,
+  Mic,
+  Pause,
+  Play,
+  RotateCw,
+  Star,
+  Undo2,
+  Volume2,
+  X,
+} from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { StudySessionStats, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
@@ -24,6 +35,87 @@ interface HistoryEntry {
   wasRequeued: boolean
 }
 
+interface SpeechRecognitionAlternativeLike {
+  transcript: string
+}
+
+interface SpeechRecognitionEventLike {
+  results: ArrayLike<ArrayLike<SpeechRecognitionAlternativeLike>>
+}
+
+interface SpeechRecognitionInstanceLike {
+  lang: string
+  interimResults: boolean
+  maxAlternatives: number
+  onresult: ((ev: SpeechRecognitionEventLike) => void) | null
+  onerror: (() => void) | null
+  onend: (() => void) | null
+  start: () => void
+  stop: () => void
+}
+
+type SpeechRecognitionCtor = new () => SpeechRecognitionInstanceLike
+
+function getSpeechRecognitionCtor(): SpeechRecognitionCtor | null {
+  if (typeof window === 'undefined') return null
+  const w = window as unknown as {
+    SpeechRecognition?: SpeechRecognitionCtor
+    webkitSpeechRecognition?: SpeechRecognitionCtor
+  }
+  return w.SpeechRecognition || w.webkitSpeechRecognition || null
+}
+
+function normalizeSpeechText(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/\([^)]*\)/g, ' ')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function levenshtein(a: string, b: string): number {
+  const m = a.length
+  const n = b.length
+  if (m === 0) return n
+  if (n === 0) return m
+  const dp = Array.from({ length: m + 1 }, () => new Array<number>(n + 1).fill(0))
+  for (let i = 0; i <= m; i++) dp[i][0] = i
+  for (let j = 0; j <= n; j++) dp[0][j] = j
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1
+      dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost)
+    }
+  }
+  return dp[m][n]
+}
+
+function scorePronunciation(
+  targetTerm: string,
+  candidates: string[]
+): { bestTranscript: string; accuracy: number } {
+  const normTarget = normalizeSpeechText(targetTerm)
+  let bestScore = 0
+  let bestTranscript = candidates[0] || ''
+
+  for (const raw of candidates) {
+    const normSpoken = normalizeSpeechText(raw)
+    if (!normSpoken) continue
+    if (normSpoken === normTarget || normSpoken.includes(normTarget)) {
+      return { bestTranscript: raw.trim(), accuracy: 100 }
+    }
+    const maxLen = Math.max(normTarget.length, normSpoken.length, 1)
+    const dist = levenshtein(normTarget, normSpoken)
+    const pct = Math.max(0, Math.round((1 - dist / maxLen) * 100))
+    if (pct > bestScore) {
+      bestScore = pct
+      bestTranscript = raw.trim()
+    }
+  }
+  return { bestTranscript, accuracy: bestScore }
+}
+
 export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardViewProps) {
   const [queue, setQueue] = useState<QueuedWord[]>(() =>
     words.map((w) => ({ word: w, repetitionCount: 0 }))
@@ -33,8 +125,21 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
   const [stats, setStats] = useState({ mastered: 0, review: 0 })
   const [history, setHistory] = useState<HistoryEntry[]>([])
   const [isCompleted, setIsCompleted] = useState(false)
+  const [isAutoPlaying, setIsAutoPlaying] = useState(false)
+  const [starredIds, setStarredIds] = useState<Set<string>>(
+    () => new Set(words.filter((w) => w.starred).map((w) => w.id))
+  )
 
-  // Touch gesture state
+  // Voice shadowing state
+  const [canUseSpeechRec] = useState(() => Boolean(getSpeechRecognitionCtor()))
+  const [isListeningMic, setIsListeningMic] = useState(false)
+  const [speechFeedback, setSpeechFeedback] = useState<{
+    ok: boolean
+    text: string
+  } | null>(null)
+  const recognitionRef = useRef<SpeechRecognitionInstanceLike | null>(null)
+
+  // Touch & mouse gesture state
   const touchStartRef = useRef<{ x: number; y: number } | null>(null)
   const ignoreClickUntilRef = useRef(0)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
@@ -42,19 +147,162 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
 
   const currentItem = queue[currentIndex]
   const currentWord = currentItem?.word
+  const isCurrentStarred = Boolean(currentWord && starredIds.has(currentWord.id))
+
+  const stopMic = useCallback(() => {
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop()
+      } catch {}
+      recognitionRef.current = null
+    }
+    setIsListeningMic(false)
+  }, [])
 
   useEffect(() => {
     return () => {
+      stopMic()
       audioService.stopSpeech()
     }
-  }, [])
+  }, [stopMic])
 
-  // Auto pronounce word on card appear (respects global mute)
+  // Auto pronounce word on card appear when NOT in hands-free loop (hands-free orchestrates its own timing)
   useEffect(() => {
-    if (currentWord && !isCompleted) {
-      audioService.speakAuto(currentWord.term)
+    if (currentWord && !isCompleted && !isAutoPlaying) {
+      void audioService.speakAuto(currentWord.term)
     }
-  }, [currentIndex, currentWord, isCompleted])
+  }, [currentIndex, currentWord, isCompleted, isAutoPlaying])
+
+  // Hands-Free Auto-Play Loop: Speak term -> Flip -> Speak example -> Next card
+  useEffect(() => {
+    if (!isAutoPlaying || isCompleted || !currentWord) return
+    let cancelled = false
+    const timers: number[] = []
+    const waitMs = (ms: number) =>
+      new Promise<void>((resolve) => {
+        const id = window.setTimeout(resolve, ms)
+        timers.push(id)
+      })
+
+    void (async () => {
+      setIsFlipped(false)
+      await waitMs(220)
+      if (cancelled) return
+      await audioService.speak(currentWord.term, 0.9)
+      if (cancelled) return
+      await waitMs(1200)
+      if (cancelled) return
+      setIsFlipped(true)
+      if (currentWord.example) {
+        await waitMs(350)
+        if (cancelled) return
+        await audioService.speak(currentWord.example, 0.95)
+      }
+      if (cancelled) return
+      await waitMs(1650)
+      if (cancelled) return
+
+      if (currentIndex + 1 < queue.length) {
+        setSpeechFeedback(null)
+        setIsFlipped(false)
+        setCurrentIndex((prev) => prev + 1)
+      } else {
+        setIsAutoPlaying(false)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+      for (const id of timers) window.clearTimeout(id)
+    }
+  }, [isAutoPlaying, isCompleted, currentIndex, currentWord, queue.length])
+
+  const handleToggleStar = useCallback(
+    (e?: React.MouseEvent) => {
+      e?.stopPropagation()
+      if (!currentWord) return
+      audioService.playClick()
+      const next = storageService.toggleWordStar(currentWord.id)
+      setStarredIds((prev) => {
+        const copy = new Set(prev)
+        if (next) copy.add(currentWord.id)
+        else copy.delete(currentWord.id)
+        return copy
+      })
+    },
+    [currentWord]
+  )
+
+  const handleStartPronunciationCheck = useCallback(
+    (e?: React.MouseEvent) => {
+      e?.stopPropagation()
+      if (!currentWord) return
+      const Ctor = getSpeechRecognitionCtor()
+      if (!Ctor) return
+
+      if (isListeningMic) {
+        stopMic()
+        return
+      }
+
+      setIsAutoPlaying(false)
+      audioService.stopSpeech()
+      setSpeechFeedback(null)
+
+      try {
+        const rec = new Ctor()
+        rec.lang = 'en-US'
+        rec.interimResults = false
+        rec.maxAlternatives = 3
+        recognitionRef.current = rec
+        setIsListeningMic(true)
+
+        rec.onresult = (ev) => {
+          const firstResult = ev.results?.[0]
+          const transcripts: string[] = []
+          if (firstResult) {
+            for (let i = 0; i < firstResult.length; i++) {
+              if (firstResult[i]?.transcript) transcripts.push(firstResult[i].transcript)
+            }
+          }
+          const { bestTranscript, accuracy } = scorePronunciation(currentWord.term, transcripts)
+          if (accuracy >= 82) {
+            audioService.playSuccessChime()
+            setSpeechFeedback({
+              ok: true,
+              text: `Chuẩn xác (${accuracy}%): "${bestTranscript}"`,
+            })
+          } else {
+            audioService.playClick()
+            setSpeechFeedback({
+              ok: false,
+              text: bestTranscript
+                ? `Nghe thấy "${bestTranscript}" (${accuracy}%) — Thử đọc lại nhé!`
+                : 'Chưa nghe rõ, hãy đọc gần mic hơn nhé!',
+            })
+          }
+        }
+
+        rec.onerror = () => {
+          setIsListeningMic(false)
+          setSpeechFeedback({
+            ok: false,
+            text: 'Không truy cập được Mic hoặc chưa nghe rõ âm thanh.',
+          })
+        }
+
+        rec.onend = () => {
+          setIsListeningMic(false)
+          recognitionRef.current = null
+        }
+
+        rec.start()
+      } catch {
+        setIsListeningMic(false)
+      }
+    },
+    [currentWord, isListeningMic, stopMic]
+  )
 
   const handleFlip = useCallback(() => {
     audioService.playClick()
@@ -64,6 +312,9 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
   const handleAction = useCallback(
     (action: 'mastered' | 'review') => {
       if (!currentWord || !currentItem || isCompleted) return
+      setIsAutoPlaying(false)
+      stopMic()
+      setSpeechFeedback(null)
 
       const prevStatus = currentWord.status
       let wasRequeued = false
@@ -87,7 +338,6 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
         storageService.updateWordStatus(currentWord.id, 'learning')
         setStats((prev) => ({ ...prev, review: prev.review + 1 }))
 
-        // Re-queue only if repetition count < 3
         if (currentItem.repetitionCount < 3) {
           wasRequeued = true
           setQueue((prev) => [
@@ -113,16 +363,18 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
         setIsFlipped(false)
       }
     },
-    [currentWord, currentItem, isCompleted, queue.length, currentIndex]
+    [currentWord, currentItem, isCompleted, queue.length, currentIndex, stopMic]
   )
 
   const handleUndo = useCallback(() => {
     if (history.length === 0 || currentIndex === 0 || isCompleted) return
+    setIsAutoPlaying(false)
+    stopMic()
+    setSpeechFeedback(null)
 
     const last = history[history.length - 1]
     audioService.playClick()
 
-    // Restore previous word status without incrementing daily count
     storageService.updateWordStatus(last.word.id, last.prevStatus, false)
 
     setStats((prev) => ({
@@ -137,7 +389,7 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
     setHistory((prev) => prev.slice(0, -1))
     setCurrentIndex((prev) => Math.max(0, prev - 1))
     setIsFlipped(false)
-  }, [history, currentIndex, isCompleted])
+  }, [history, currentIndex, isCompleted, stopMic])
 
   // Keyboard navigation
   useEffect(() => {
@@ -145,9 +397,11 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
       if (isCompleted) return
       if (e.key === 'Escape') {
         e.preventDefault()
+        setIsAutoPlaying(false)
         onBack()
       } else if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'ArrowDown') {
         e.preventDefault()
+        setIsAutoPlaying(false)
         handleFlip()
       } else if (e.code === 'ArrowRight' || e.key === '2') {
         e.preventDefault()
@@ -155,6 +409,16 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
       } else if (e.code === 'ArrowLeft' || e.key === '1') {
         e.preventDefault()
         handleAction('review')
+      } else if (e.key === 's' || e.key === 'S') {
+        e.preventDefault()
+        handleToggleStar()
+      } else if (e.key === 'a' || e.key === 'A') {
+        e.preventDefault()
+        audioService.playClick()
+        setIsAutoPlaying((prev) => !prev)
+      } else if ((e.key === 'm' || e.key === 'M') && canUseSpeechRec) {
+        e.preventDefault()
+        handleStartPronunciationCheck()
       } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
         e.preventDefault()
         handleUndo()
@@ -162,19 +426,30 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isCompleted, handleFlip, handleAction, handleUndo, onBack])
+  }, [
+    isCompleted,
+    canUseSpeechRec,
+    handleFlip,
+    handleAction,
+    handleToggleStar,
+    handleStartPronunciationCheck,
+    handleUndo,
+    onBack,
+  ])
 
   const handleSpeak = (e: React.MouseEvent, rate: number = 0.9) => {
     e.stopPropagation()
+    setIsAutoPlaying(false)
     if (currentWord) {
-      audioService.speak(currentWord.term, rate)
+      void audioService.speak(currentWord.term, rate)
     }
   }
 
   const handleSpeakExample = (e: React.MouseEvent) => {
     e.stopPropagation()
+    setIsAutoPlaying(false)
     if (currentWord?.example) {
-      audioService.speak(currentWord.example, 0.9)
+      void audioService.speak(currentWord.example, 0.9)
     }
   }
 
@@ -201,20 +476,15 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
     const threshold = 70
 
     if (absX > 12 || absY > 12) {
-      // Suppress synthetic click right after swipe/drag so card never double-flips
       ignoreClickUntilRef.current = performance.now() + 360
     }
 
-    // Swipe up or down to flip
     if (absY > threshold && absY > absX * 1.2) {
+      setIsAutoPlaying(false)
       handleFlip()
-    }
-    // Swipe right -> mastered
-    else if (x > threshold && absX > absY * 1.2) {
+    } else if (x > threshold && absX > absY * 1.2) {
       handleAction('mastered')
-    }
-    // Swipe left -> review
-    else if (x < -threshold && absX > absY * 1.2) {
+    } else if (x < -threshold && absX > absY * 1.2) {
       handleAction('review')
     }
 
@@ -225,10 +495,12 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
 
   const handleCardClick = () => {
     if (performance.now() < ignoreClickUntilRef.current) return
+    setIsAutoPlaying(false)
     handleFlip()
   }
 
   const startSessionWithWords = (targetWords: WordItem[]) => {
+    setIsAutoPlaying(false)
     setQueue(targetWords.map((w) => ({ word: w, repetitionCount: 0 })))
     setCurrentIndex(0)
     setStats({ mastered: 0, review: 0 })
@@ -274,11 +546,14 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
   return (
     <div className="w-full flex flex-col my-auto max-w-md mx-auto px-3.5 py-2 select-none">
       {/* Top Bar */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between gap-1 mb-3">
         <button
-          onClick={onBack}
-          title="Quay lại"
-          className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+          onClick={() => {
+            setIsAutoPlaying(false)
+            onBack()
+          }}
+          title="Quay lại (Esc)"
+          className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors shrink-0"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
@@ -287,7 +562,7 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
           <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
             Thẻ {currentIndex + 1} / {queue.length}
           </span>
-          <div className="w-28 bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full mt-1 overflow-hidden">
+          <div className="w-24 sm:w-28 bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full mt-1 overflow-hidden">
             <div
               className="bg-indigo-600 dark:bg-indigo-400 h-full transition-all duration-300"
               style={{ width: `${progressPercent}%` }}
@@ -295,21 +570,68 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
           </div>
         </div>
 
-        <div className="flex items-center gap-1 -mr-2">
+        <div className="flex items-center gap-0.5 -mr-1.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => {
+              audioService.playClick()
+              setIsAutoPlaying((prev) => !prev)
+            }}
+            title={
+              isAutoPlaying
+                ? 'Tạm dừng tự chạy (Phím A)'
+                : 'Tự chạy rảnh tay: Tự đọc & lật thẻ liên tục (Phím A)'
+            }
+            className={`py-1 px-2 rounded-xl text-[11px] font-bold flex items-center gap-1 transition-colors ${
+              isAutoPlaying
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20'
+            }`}
+          >
+            {isAutoPlaying ? (
+              <>
+                <Pause className="w-3 h-3 fill-current" />
+                <span>Dừng</span>
+              </>
+            ) : (
+              <>
+                <Play className="w-3 h-3 fill-current" />
+                <span>Tự chạy</span>
+              </>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={(e) => handleToggleStar(e)}
+            title={isCurrentStarred ? 'Bỏ đánh dấu sao (Phím S)' : 'Đánh dấu sao từ quan trọng (Phím S)'}
+            className={`p-2 rounded-lg transition-colors ${
+              isCurrentStarred
+                ? 'text-amber-500'
+                : 'text-slate-400 hover:text-amber-500'
+            }`}
+          >
+            <Star className={`w-4 h-4 ${isCurrentStarred ? 'fill-amber-400' : ''}`} />
+          </button>
+
           <button
             onClick={handleUndo}
             disabled={history.length === 0}
-            title="Hoàn tác thẻ trước"
-            className="p-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 disabled:opacity-30 transition-colors"
+            title="Hoàn tác thẻ trước (Ctrl+Z)"
+            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 disabled:opacity-30 transition-colors"
           >
             <Undo2 className="w-4 h-4" />
           </button>
+
           <button
-            onClick={handleFlip}
-            title="Lật thẻ"
-            className="p-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+            onClick={() => {
+              setIsAutoPlaying(false)
+              handleFlip()
+            }}
+            title="Lật thẻ (Space)"
+            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
           >
-            <RotateCw className="w-5 h-5" />
+            <RotateCw className="w-4.5 h-4.5" />
           </button>
         </div>
       </div>
@@ -375,7 +697,7 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
             }}
             className="absolute inset-0 rounded-3xl bg-white dark:bg-slate-800 p-6 flex flex-col justify-between items-center text-center shadow-xs select-none"
           >
-            <div className="w-full flex justify-between items-center gap-2">
+            <div className="w-full flex justify-between items-center gap-1.5">
               <div className="flex items-center gap-1.5 flex-wrap">
                 {currentWord.partOfSpeech && (
                   <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-400 uppercase tracking-wider">
@@ -393,17 +715,33 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
                 ) : null}
               </div>
 
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1 shrink-0">
+                {canUseSpeechRec && (
+                  <button
+                    type="button"
+                    onClick={handleStartPronunciationCheck}
+                    className={`h-8 px-2.5 rounded-full text-[11px] font-bold flex items-center gap-1 transition-transform active:scale-95 ${
+                      isListeningMic
+                        ? 'bg-rose-500 text-white animate-pulse'
+                        : 'bg-emerald-500/12 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20'
+                    }`}
+                    title="Luyện phát âm qua Mic (Phím M)"
+                  >
+                    <Mic className="w-3.5 h-3.5" />
+                    <span>{isListeningMic ? 'Nghe...' : 'Đọc thử'}</span>
+                  </button>
+                )}
+
                 <button
                   onClick={(e) => handleSpeak(e, 0.6)}
-                  className="h-9 px-2.5 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+                  className="h-8 px-2 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
                   title="Nghe chậm (0.6x)"
                 >
                   0.6x
                 </button>
                 <button
                   onClick={(e) => handleSpeak(e, 0.9)}
-                  className="w-9 h-9 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+                  className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
                   title="Phát âm chuẩn"
                 >
                   <Volume2 className="w-4 h-4" />
@@ -411,19 +749,36 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
               </div>
             </div>
 
-            <div className="my-auto px-2">
+            <div className="my-auto px-2 space-y-2">
               <h2 className="text-3xl font-extrabold text-slate-900 dark:text-slate-50 tracking-tight break-words">
                 {currentWord.term}
               </h2>
               {currentWord.ipa && (
-                <p className="text-sm font-sans font-medium tracking-wide text-slate-400 dark:text-slate-500 mt-2">
+                <p className="text-sm font-sans font-medium tracking-wide text-slate-400 dark:text-slate-500">
                   {currentWord.ipa}
                 </p>
+              )}
+
+              {speechFeedback && (
+                <div
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold animate-fadeIn ${
+                    speechFeedback.ok
+                      ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                      : 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
+                  }`}
+                >
+                  {speechFeedback.ok && <Check className="w-3.5 h-3.5 shrink-0" />}
+                  <span>{speechFeedback.text}</span>
+                </div>
               )}
             </div>
 
             <div className="text-xs text-slate-400 dark:text-slate-500 font-medium flex items-center gap-1.5">
-              <span>Vuốt LÊN / XUỐNG hoặc chạm để xem nghĩa</span>
+              <span>
+                {isAutoPlaying
+                  ? 'Đang tự động đọc & lật thẻ...'
+                  : 'Vuốt LÊN / XUỐNG hoặc chạm để xem nghĩa'}
+              </span>
             </div>
           </div>
 
@@ -444,14 +799,14 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={(e) => handleSpeak(e, 0.6)}
-                  className="h-9 px-2.5 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+                  className="h-8 px-2.5 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
                   title="Nghe chậm (0.6x)"
                 >
                   0.6x
                 </button>
                 <button
                   onClick={(e) => handleSpeak(e, 0.9)}
-                  className="w-9 h-9 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+                  className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
                   title="Phát âm chuẩn"
                 >
                   <Volume2 className="w-4 h-4" />

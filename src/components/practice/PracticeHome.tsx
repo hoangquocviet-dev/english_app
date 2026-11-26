@@ -13,6 +13,7 @@ import {
   RotateCcw,
   Shuffle,
   Sparkles,
+  Star,
   Trophy,
 } from 'lucide-react'
 import { useState } from 'react'
@@ -38,7 +39,7 @@ interface PracticeHomeProps {
   onResetDeck: (deckId: string) => void
   onStartMode: (
     mode: StudyMode,
-    filterMode?: 'all' | 'learning' | 'due' | 'global-due'
+    filterMode?: 'all' | 'learning' | 'due' | 'global-due' | 'starred'
   ) => void
   onGoToAddWord: () => void
   onGoToLibrary: () => void
@@ -63,10 +64,13 @@ export function PracticeHome({
   onGoToLibrary,
 }: PracticeHomeProps) {
   const [showResetConfirm, setShowResetConfirm] = useState(false)
-  const [filterMode, setFilterMode] = useState<'all' | 'learning' | 'due' | 'global-due'>('all')
+  const [filterMode, setFilterMode] = useState<
+    'all' | 'learning' | 'due' | 'global-due' | 'starred'
+  >('all')
 
   const masteredCount = words.filter((w) => w.status === 'mastered').length
   const learningCount = words.filter((w) => w.status === 'learning').length
+  const starredCount = words.filter((w) => Boolean(w.starred)).length
   const unmasteredCount = words.length - masteredCount
 
   const srsLevels = (() => {
@@ -114,10 +118,13 @@ export function PracticeHome({
 
   const totalGlobalDue = dueReviewCount + otherDueSummary.totalOtherDue
 
-  let effectiveFilterMode: 'all' | 'learning' | 'due' | 'global-due' = 'all'
+  let effectiveFilterMode: 'all' | 'learning' | 'due' | 'global-due' | 'starred' = 'all'
   let activePoolCount = unmasteredCount
 
-  if (filterMode === 'global-due' && totalGlobalDue > 0) {
+  if (filterMode === 'starred' && starredCount > 0) {
+    effectiveFilterMode = 'starred'
+    activePoolCount = starredCount
+  } else if (filterMode === 'global-due' && totalGlobalDue > 0) {
     effectiveFilterMode = 'global-due'
     activePoolCount = totalGlobalDue
   } else if (filterMode === 'due' && dueReviewCount > 0) {
@@ -406,7 +413,7 @@ export function PracticeHome({
             </button>
           </div>
         )
-      ) : unmasteredCount === 0 && totalGlobalDue === 0 ? (
+      ) : unmasteredCount === 0 && totalGlobalDue === 0 && starredCount === 0 ? (
         /* All Cards Mastered & None Due */
         <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 text-center border border-emerald-500/30 shadow-xs space-y-3 animate-fadeIn">
           <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 text-emerald-500 flex items-center justify-center mx-auto">
@@ -486,22 +493,43 @@ export function PracticeHome({
           </div>
 
           {/* Dedicated Filter Pills Row (Eliminates horizontal squishing on 360px) */}
-          {(totalGlobalDue > 0 || learningCount > 0) && (
+          {(totalGlobalDue > 0 || learningCount > 0 || starredCount > 0) && (
             <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
-              <button
-                type="button"
-                onClick={() => {
-                  audioService.playClick()
-                  setFilterMode('all')
-                }}
-                className={`py-1.5 px-3 rounded-xl text-xs font-semibold border whitespace-nowrap transition-all active:scale-95 ${
-                  effectiveFilterMode === 'all'
-                    ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-transparent shadow-2xs'
-                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300'
-                }`}
-              >
-                Tất cả ({unmasteredCount})
-              </button>
+              {unmasteredCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    audioService.playClick()
+                    setFilterMode('all')
+                  }}
+                  className={`py-1.5 px-3 rounded-xl text-xs font-semibold border whitespace-nowrap transition-all active:scale-95 ${
+                    effectiveFilterMode === 'all'
+                      ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-transparent shadow-2xs'
+                      : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  Tất cả ({unmasteredCount})
+                </button>
+              )}
+
+              {starredCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    audioService.playClick()
+                    setFilterMode((prev) => (prev === 'starred' ? 'all' : 'starred'))
+                  }}
+                  title="Luyện tập riêng các từ bạn đã đánh dấu sao quan trọng"
+                  className={`py-1.5 px-3 rounded-xl text-xs font-semibold border flex items-center gap-1.5 whitespace-nowrap transition-all active:scale-95 ${
+                    effectiveFilterMode === 'starred'
+                      ? 'bg-amber-500 text-white border-amber-500 shadow-2xs'
+                      : 'bg-white dark:bg-slate-800 border-amber-500/35 text-amber-600 dark:text-amber-400'
+                  }`}
+                >
+                  <Star className="w-3.5 h-3.5 shrink-0 fill-current" />
+                  <span>Đã lưu ({starredCount})</span>
+                </button>
+              )}
 
               {dueReviewCount > 0 && (
                 <button

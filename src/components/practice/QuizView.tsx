@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowLeftRight, Check, Volume2, X } from 'lucide-react'
+import { ArrowLeft, ArrowLeftRight, Check, Star, Volume2, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { StudySessionStats, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
@@ -94,33 +94,45 @@ function buildQuestions(
     const picked: string[] = []
     const pickedLower = new Set<string>([correctLower])
 
-    const tryPickFrom = (pool: Candidate[], maxAttempts: number) => {
-      const len = pool.length
-      if (len <= 1) return
-      for (let attempts = 0; attempts < maxAttempts && picked.length < 3; attempts++) {
-        const cand = pool[Math.floor(Math.random() * len)]
-        const val = direction === 'en-vi' ? cand.def : cand.term
+    const tryPickFrom = (pool: Candidate[]) => {
+      const eligible = pool.filter((cand) => {
         const valLower = direction === 'en-vi' ? cand.defLower : cand.termLower
-        if (
+        return (
           cand.termLower !== targetTermLower &&
           cand.defLower !== targetDefLower &&
           !pickedLower.has(valLower)
-        ) {
+        )
+      })
+      if (eligible.length === 0) return
+
+      // Sort by closest text length so long definitions never stand out among short ones, then sample from top 8
+      eligible.sort((a, b) => {
+        const lenA = direction === 'en-vi' ? a.def.length : a.term.length
+        const lenB = direction === 'en-vi' ? b.def.length : b.term.length
+        return Math.abs(lenA - correctText.length) - Math.abs(lenB - correctText.length)
+      })
+
+      const topSlice = shuffleArray(eligible.slice(0, Math.min(8, eligible.length)))
+      for (const cand of topSlice) {
+        if (picked.length >= 3) break
+        const val = direction === 'en-vi' ? cand.def : cand.term
+        const valLower = direction === 'en-vi' ? cand.defLower : cand.termLower
+        if (!pickedLower.has(valLower)) {
           pickedLower.add(valLower)
           picked.push(val)
         }
       }
     }
 
-    // 1. Prefer same part-of-speech distractors
+    // 1. Prefer same part-of-speech distractors with similar length
     const samePosPool = targetPos ? byPos.get(targetPos) : undefined
     if (samePosPool && samePosPool.length >= 4) {
-      tryPickFrom(samePosPool, 18)
+      tryPickFrom(samePosPool)
     }
 
-    // 2. Fill remaining from general pool
+    // 2. Fill remaining from general pool with similar length
     if (picked.length < 3) {
-      tryPickFrom(uniqueCandidates, 24)
+      tryPickFrom(uniqueCandidates)
     }
 
     if (picked.length < 3) {
@@ -169,6 +181,9 @@ export function QuizView({ words, allDeckWords, deckId, deckName, onBack }: Quiz
   const [isLocked, setIsLocked] = useState(false)
   const [stats, setStats] = useState({ mastered: 0, review: 0 })
   const [isCompleted, setIsCompleted] = useState(false)
+  const [starredIds, setStarredIds] = useState<Set<string>>(
+    () => new Set(words.filter((w) => w.starred).map((w) => w.id))
+  )
   const transitionTimerRef = useRef<number | null>(null)
 
   const clearTransitionTimer = useCallback(() => {
@@ -397,8 +412,33 @@ export function QuizView({ words, allDeckWords, deckId, deckName, onBack }: Quiz
             {direction === 'en-vi' ? 'Chọn nghĩa tiếng Việt đúng' : 'Chọn từ tiếng Anh đúng'}
           </span>
 
-          {direction === 'en-vi' || isLocked ? (
+            {direction === 'en-vi' || isLocked ? (
             <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  audioService.playClick()
+                  const next = storageService.toggleWordStar(currentQ.targetWord.id)
+                  setStarredIds((prev) => {
+                    const copy = new Set(prev)
+                    if (next) copy.add(currentQ.targetWord.id)
+                    else copy.delete(currentQ.targetWord.id)
+                    return copy
+                  })
+                }}
+                title="Đánh dấu sao từ quan trọng"
+                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                  starredIds.has(currentQ.targetWord.id)
+                    ? 'bg-amber-500/15 text-amber-500'
+                    : 'bg-slate-100 dark:bg-slate-700/70 text-slate-400 hover:text-amber-500'
+                }`}
+              >
+                <Star
+                  className={`w-4 h-4 ${
+                    starredIds.has(currentQ.targetWord.id) ? 'fill-amber-400' : ''
+                  }`}
+                />
+              </button>
               <button
                 onClick={() => void audioService.speak(currentQ.targetWord.term, 0.6)}
                 className="h-8 px-2.5 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"

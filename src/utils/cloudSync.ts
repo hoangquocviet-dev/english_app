@@ -263,7 +263,10 @@ class CloudSyncManager {
 
       if (w.id.startsWith('w-')) {
         customWords.push(w)
-      } else if (!w.id.startsWith('commword-') && (w.status !== 'new' || w.reviewCount > 0)) {
+      } else if (
+        !w.id.startsWith('commword-') &&
+        (w.status !== 'new' || w.reviewCount > 0 || w.starred)
+      ) {
         activeProgressCount++
         builtInProgress[w.id] = {
           s: w.status,
@@ -271,6 +274,7 @@ class CloudSyncManager {
           ...(w.lastReviewed ? { t: w.lastReviewed } : {}),
           ...(typeof w.srsLevel === 'number' ? { l: w.srsLevel } : {}),
           ...(typeof w.nextReview === 'number' ? { n: w.nextReview } : {}),
+          ...(w.starred ? { b: true } : {}),
         }
       }
     }

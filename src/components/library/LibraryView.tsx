@@ -9,6 +9,7 @@ import {
   RotateCcw,
   Search,
   Share2,
+  Star,
   Trash2,
   Users,
   Volume2,
@@ -44,7 +45,7 @@ export function LibraryView({
 }: LibraryViewProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchAllDecks, setSearchAllDecks] = useState(false)
-  const [statusFilter, setStatusFilter] = useState<'all' | 'mastered' | 'review' | 'due'>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'mastered' | 'review' | 'due' | 'starred'>('all')
   const [visibleLimit, setVisibleLimit] = useState(PAGE_SIZE)
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false)
   const [isCreatingDeck, setIsCreatingDeck] = useState(false)
@@ -95,6 +96,7 @@ export function LibraryView({
         if (!matchesSearch) return false
       }
 
+      if (statusFilter === 'starred') return Boolean(w.starred)
       if (statusFilter === 'mastered') return w.status === 'mastered'
       if (statusFilter === 'due') {
         return w.status === 'mastered' && (!w.nextReview || w.nextReview <= nowMs)
@@ -277,6 +279,12 @@ export function LibraryView({
     })
   }
 
+  const handleToggleWordStar = (word: WordItem) => {
+    storageService.toggleWordStar(word.id)
+    audioService.playClick()
+    onDataChanged()
+  }
+
   const handleToggleWordStatus = (word: WordItem) => {
     const nextStatus = word.status === 'mastered' ? 'learning' : 'mastered'
     storageService.updateWordStatus(word.id, nextStatus, false)
@@ -312,6 +320,10 @@ export function LibraryView({
     onDataChanged()
   }
 
+  const starredTotal = useMemo(
+    () => sourceWords.filter((w) => Boolean(w.starred)).length,
+    [sourceWords]
+  )
   const masteredTotal = useMemo(
     () => sourceWords.filter((w) => w.status === 'mastered').length,
     [sourceWords]
@@ -804,6 +816,22 @@ export function LibraryView({
                 Đến hạn ({dueTotal})
               </button>
             )}
+            {starredTotal > 0 && (
+              <button
+                onClick={() => {
+                  setStatusFilter((prev) => (prev === 'starred' ? 'all' : 'starred'))
+                  setVisibleLimit(PAGE_SIZE)
+                }}
+                className={`py-1.5 px-2.5 rounded-xl text-xs font-semibold flex items-center gap-1 transition-all ${
+                  statusFilter === 'starred'
+                    ? 'bg-amber-500 text-white'
+                    : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                }`}
+              >
+                <Star className="w-3 h-3 fill-current" />
+                <span>Đã lưu ({starredTotal})</span>
+              </button>
+            )}
           </div>
 
           {!searchAllDecks && (
@@ -909,6 +937,18 @@ export function LibraryView({
                   </div>
 
                   <div className="flex items-center gap-0.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleToggleWordStar(word)}
+                      className={`p-1.5 rounded-lg transition-colors ${
+                        word.starred
+                          ? 'text-amber-500'
+                          : 'text-slate-300 dark:text-slate-600 hover:text-amber-500'
+                      }`}
+                      title={word.starred ? 'Bỏ đánh dấu sao' : 'Đánh dấu sao từ quan trọng'}
+                    >
+                      <Star className={`w-4 h-4 ${word.starred ? 'fill-amber-400' : ''}`} />
+                    </button>
                     <button
                       onClick={() => audioService.speak(word.term)}
                       className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"

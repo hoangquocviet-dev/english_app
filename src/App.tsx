@@ -196,7 +196,7 @@ export function App() {
 
   const handleStartMode = (
     mode: StudyMode,
-    filterMode: 'all' | 'learning' | 'due' | 'global-due' = 'all'
+    filterMode: 'all' | 'learning' | 'due' | 'global-due' | 'starred' = 'all'
   ) => {
     const now = Date.now()
     let targetList: WordItem[]
@@ -207,7 +207,9 @@ export function App() {
         .filter((w) => w.status === 'mastered' && (!w.nextReview || w.nextReview <= now))
     } else {
       const freshWords = storageService.getWords(activeDeckId)
-      if (filterMode === 'due') {
+      if (filterMode === 'starred') {
+        targetList = freshWords.filter((w) => Boolean(w.starred))
+      } else if (filterMode === 'due') {
         targetList = freshWords.filter(
           (w) => w.status === 'mastered' && (!w.nextReview || w.nextReview <= now)
         )
