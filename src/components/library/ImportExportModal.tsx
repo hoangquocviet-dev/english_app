@@ -1,5 +1,5 @@
-import { AlertCircle, Check, Copy, Download, FileText, FolderOpen, Upload, X } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { AlertCircle, Check, Copy, Download, FileText, FolderOpen, Sparkles, Upload, X } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Deck, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
 import {
@@ -52,6 +52,11 @@ export function ImportExportModal({
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [isOpen, onClose])
+
+  const livePreview = useMemo(() => {
+    if (!isOpen || activeTab !== 'import' || !importText.trim()) return null
+    return parseDailyEnglish(importText)
+  }, [isOpen, activeTab, importText])
 
   const targetDeckId =
     rawTargetDeckId === 'new' || decks.some((d) => d.id === rawTargetDeckId)
@@ -381,6 +386,33 @@ export function ImportExportModal({
                 placeholder={`resilient /rɪˈzɪl.i.ənt/: Kiên cường, bền bỉ\n- breakthrough: Bước đột phá\nhoặc dán từ Excel / Quizlet / CSV...`}
                 className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 font-mono text-xs text-slate-800 dark:text-slate-200 leading-relaxed resize-none focus:outline-none"
               />
+
+              {livePreview && livePreview.words.length > 0 && (
+                <div className="p-2.5 px-3 rounded-xl bg-indigo-500/8 dark:bg-indigo-500/12 border border-indigo-500/20 space-y-1.5 animate-fadeIn">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-indigo-700 dark:text-indigo-300">
+                    <span className="flex items-center gap-1">
+                      <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                      <span>Nhận diện {livePreview.words.length} thẻ hợp lệ</span>
+                    </span>
+                    <span className="uppercase text-[10px] px-1.5 py-0.5 rounded-md bg-indigo-500/15">
+                      {livePreview.detectedFormat || 'markdown'}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {livePreview.words.slice(0, 4).map((pw, idx) => (
+                      <span
+                        key={`${pw.term}-${idx}`}
+                        className="text-[10.5px] font-semibold px-2 py-0.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700 text-slate-700 dark:text-slate-200"
+                      >
+                        {pw.term}
+                        {pw.partOfSpeech ? (
+                          <span className="text-indigo-500 ml-1">• {pw.partOfSpeech}</span>
+                        ) : null}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {importReport && (
                 <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs flex items-center justify-between gap-2">

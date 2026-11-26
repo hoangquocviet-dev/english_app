@@ -39,7 +39,7 @@ interface PracticeHomeProps {
   onResetDeck: (deckId: string) => void
   onStartMode: (
     mode: StudyMode,
-    filterMode?: 'all' | 'learning' | 'due' | 'global-due' | 'starred'
+    filterMode?: 'all' | 'learning' | 'global-learning' | 'due' | 'global-due' | 'starred'
   ) => void
   onGoToAddWord: () => void
   onGoToLibrary: () => void
@@ -66,7 +66,7 @@ export function PracticeHome({
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [voiceAccent, setVoiceAccent] = useState(() => audioService.getVoiceAccent())
   const [filterMode, setFilterMode] = useState<
-    'all' | 'learning' | 'due' | 'global-due' | 'starred'
+    'all' | 'learning' | 'global-learning' | 'due' | 'global-due' | 'starred'
   >('all')
 
   const masteredCount = words.filter((w) => w.status === 'mastered').length
@@ -94,13 +94,14 @@ export function PracticeHome({
   // Cross-deck SRS radar: find if OTHER decks have mastered cards due for spaced repetition!
   const otherDueSummary = (() => {
     const countsByDeck = new Map<string, number>()
+    let otherLearning = 0
     for (const w of allWords) {
-      if (
-        w.deckId !== activeDeck.id &&
-        w.status === 'mastered' &&
-        (!w.nextReview || w.nextReview <= now)
-      ) {
-        countsByDeck.set(w.deckId, (countsByDeck.get(w.deckId) || 0) + 1)
+      if (w.deckId !== activeDeck.id) {
+        if (w.status === 'mastered' && (!w.nextReview || w.nextReview <= now)) {
+          countsByDeck.set(w.deckId, (countsByDeck.get(w.deckId) || 0) + 1)
+        } else if (w.status === 'learning') {
+          otherLearning += 1
+        }
       }
     }
     let topDeckId: string | null = null
@@ -114,12 +115,19 @@ export function PracticeHome({
       }
     }
     const topDeck = topDeckId ? decks.find((d) => d.id === topDeckId) || null : null
-    return { totalOtherDue, topDeck, topCount }
+    return { totalOtherDue, topDeck, topCount, otherLearning }
   })()
 
   const totalGlobalDue = dueReviewCount + otherDueSummary.totalOtherDue
+  const totalGlobalLearning = learningCount + otherDueSummary.otherLearning
 
-  let effectiveFilterMode: 'all' | 'learning' | 'due' | 'global-due' | 'starred' = 'all'
+  let effectiveFilterMode:
+    | 'all'
+    | 'learning'
+    | 'global-learning'
+    | 'due'
+    | 'global-due'
+    | 'starred' = 'all'
   let activePoolCount = unmasteredCount
 
   if (filterMode === 'starred' && starredCount > 0) {
@@ -128,6 +136,9 @@ export function PracticeHome({
   } else if (filterMode === 'global-due' && totalGlobalDue > 0) {
     effectiveFilterMode = 'global-due'
     activePoolCount = totalGlobalDue
+  } else if (filterMode === 'global-learning' && totalGlobalLearning > 0) {
+    effectiveFilterMode = 'global-learning'
+    activePoolCount = totalGlobalLearning
   } else if (filterMode === 'due' && dueReviewCount > 0) {
     effectiveFilterMode = 'due'
     activePoolCount = dueReviewCount
@@ -458,7 +469,10 @@ export function PracticeHome({
             </button>
           </div>
         )
-      ) : unmasteredCount === 0 && totalGlobalDue === 0 && starredCount === 0 ? (
+      ) : unmasteredCount === 0 &&
+        totalGlobalDue === 0 &&
+        totalGlobalLearning === 0 &&
+        starredCount === 0 ? (
         /* All Cards Mastered & None Due */
         <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 text-center border border-emerald-500/30 shadow-xs space-y-3 animate-fadeIn">
           <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 text-emerald-500 flex items-center justify-center mx-auto">
@@ -484,8 +498,10 @@ export function PracticeHome({
         </div>
       ) : (
         <div className="space-y-3">
-          {/* SRS Due Notification Banner */}
-          {(effectiveFilterMode === 'due' || effectiveFilterMode === 'global-due') && (
+          {/* SRS Due / Global Weak Words Notification Banner */}
+          {(effectiveFilterMode === 'due' ||
+            effectiveFilterMode === 'global-due' ||
+            effectiveFilterMode === 'global-learning') && (
             <div className="rounded-2xl p-3.5 bg-indigo-500/10 border border-indigo-500/25 flex items-center justify-between gap-2.5 animate-fadeIn">
               <div className="flex items-center gap-2.5 min-w-0">
                 <Clock className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
@@ -494,6 +510,10 @@ export function PracticeHome({
                     <>
                       Đang chọn <strong>Ôn gộp SRS toàn kho ({totalGlobalDue} thẻ)</strong> xuyên suốt mọi bộ từ. Hãy bấm 1 trong 5 chế độ bên dưới để bắt đầu!
                     </>
+                  ) : effectiveFilterMode === 'global-learning' ? (
+                    <>
+                      Đang chọn <strong>Ôn gộp Từ khó toàn kho ({totalGlobalLearning} thẻ)</strong> ưu tiên từ hay nhầm nhất lên đầu. Chọn chế độ học bên dưới!
+                    </>
                   ) : (
                     <>
                       Đang ôn tập ngắt quãng (SRS) cho <strong>{dueReviewCount} thẻ</strong> đã đến chu kỳ nhắc lại để củng cố trí nhớ dài hạn.
@@ -501,15 +521,16 @@ export function PracticeHome({
                   )}
                 </p>
               </div>
-              {effectiveFilterMode === 'global-due' && unmasteredCount > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setFilterMode('all')}
-                  className="py-1 px-2.5 rounded-lg bg-white/80 dark:bg-slate-800 text-[11px] font-bold text-slate-600 dark:text-slate-300 shrink-0"
-                >
-                  Về bộ hiện tại
-                </button>
-              )}
+              {(effectiveFilterMode === 'global-due' || effectiveFilterMode === 'global-learning') &&
+                unmasteredCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setFilterMode('all')}
+                    className="py-1 px-2.5 rounded-lg bg-white/80 dark:bg-slate-800 text-[11px] font-bold text-slate-600 dark:text-slate-300 shrink-0"
+                  >
+                    Về bộ hiện tại
+                  </button>
+                )}
             </div>
           )}
 
@@ -557,7 +578,7 @@ export function PracticeHome({
           </div>
 
           {/* Dedicated Filter Pills Row (Eliminates horizontal squishing on 360px) */}
-          {(totalGlobalDue > 0 || learningCount > 0 || starredCount > 0) && (
+          {(totalGlobalDue > 0 || totalGlobalLearning > 0 || starredCount > 0) && (
             <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
               {unmasteredCount > 0 && (
                 <button
@@ -649,6 +670,25 @@ export function PracticeHome({
                 >
                   <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                   <span>Từ khó ({learningCount})</span>
+                </button>
+              )}
+
+              {otherDueSummary.otherLearning > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    audioService.playClick()
+                    setFilterMode((prev) => (prev === 'global-learning' ? 'all' : 'global-learning'))
+                  }}
+                  title="Ôn gộp toàn bộ từ khó đang học trên tất cả các bộ từ, ưu tiên từ sai nhiều nhất"
+                  className={`py-1.5 px-3 rounded-xl text-xs font-semibold border flex items-center gap-1.5 whitespace-nowrap transition-all active:scale-95 ${
+                    effectiveFilterMode === 'global-learning'
+                      ? 'bg-rose-600 text-white border-rose-600 shadow-2xs'
+                      : 'bg-white dark:bg-slate-800 border-rose-500/35 text-rose-600 dark:text-rose-400'
+                  }`}
+                >
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                  <span>Từ khó toàn kho ({totalGlobalLearning})</span>
                 </button>
               )}
             </div>

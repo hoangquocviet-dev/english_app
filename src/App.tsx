@@ -164,14 +164,22 @@ export function App() {
         }
         setIsSeedLoading(false)
 
-        const magicOutcome = await cloudSyncService.init(() => {
-          if (active) refreshData()
-        })
-        if (active && magicOutcome) {
-          setSyncToast({ ok: magicOutcome.ok, message: magicOutcome.message })
+        const showNotice = (outcome: { ok: boolean; message: string }) => {
+          if (!active) return
+          setSyncToast(outcome)
           window.setTimeout(() => {
             if (active) setSyncToast(null)
           }, 5500)
+        }
+
+        const magicOutcome = await cloudSyncService.init(
+          () => {
+            if (active) refreshData()
+          },
+          showNotice
+        )
+        if (magicOutcome) {
+          showNotice(magicOutcome)
         }
       })
     return () => {
@@ -235,6 +243,17 @@ export function App() {
           .getWords()
           .filter((w) => w.status === 'mastered' && (!w.nextReview || w.nextReview <= now))
       )
+    } else if (filterMode === 'global-learning') {
+      targetList = dedupeCrossDeckTerms(
+        storageService
+          .getWords()
+          .filter((w) => w.status === 'learning')
+          .sort(
+            (a, b) =>
+              (b.reviewCount || 0) - (a.reviewCount || 0) ||
+              (b.lastReviewed || 0) - (a.lastReviewed || 0)
+          )
+      )
     } else {
       const freshWords = storageService.getWords(activeDeckId)
       if (filterMode === 'starred') {
@@ -252,16 +271,16 @@ export function App() {
 
     if (targetList.length === 0) return
 
-    if (studyPrefs.shuffle) {
+    if (studyPrefs.shuffle && filterMode !== 'global-learning') {
       targetList = shuffleWords(targetList)
     }
     if (studyPrefs.batchSize > 0 && targetList.length > studyPrefs.batchSize) {
       targetList = targetList.slice(0, studyPrefs.batchSize)
     }
 
-    setCustomSessionLabel(null)
+    setCustomSessionLabel(filterMode === 'global-learning' ? 'Ôn tập Từ khó Toàn kho' : null)
     setSessionFilterMode(filterMode)
-    setIsGlobalSrsSession(filterMode === 'global-due')
+    setIsGlobalSrsSession(filterMode === 'global-due' || filterMode === 'global-learning')
     setSessionWords(targetList)
     setActiveStudyMode(mode)
   }
@@ -614,6 +633,11 @@ export function App() {
                   handleSelectDeck(targetDeckId)
                   setActiveTab('practice')
                   refreshData()
+                }}
+                onStartGlobalWeakReview={(mode) => {
+                  setIsStatsModalOpen(false)
+                  setActiveTab('practice')
+                  handleStartMode(mode, 'global-learning')
                 }}
               />
             </Suspense>

@@ -80,6 +80,7 @@ export function LibraryView({
     cloudSyncService.getSharedDeckIds()
   )
   const [isPublishingDeck, setIsPublishingDeck] = useState(false)
+  const [isCheckingDailyFeed, setIsCheckingDailyFeed] = useState(false)
   const [communityFeedback, setCommunityFeedback] = useState<string | null>(null)
 
   // Edit Word Modal State
@@ -229,6 +230,23 @@ export function LibraryView({
     onSelectDeck(localDeckId)
     onDataChanged()
     setCommunityFeedback(`Đã tải bộ "${commDeck.name}" (${commDeck.word_count} từ) về máy!`)
+  }
+
+  const handleCheckDailyFeedNow = async () => {
+    if (isCheckingDailyFeed) return
+    audioService.playClick()
+    setIsCheckingDailyFeed(true)
+    const added = await cloudSyncService.pullOfficialDailyFeed()
+    await fetchCommunityList()
+    setIsCheckingDailyFeed(false)
+    if (added > 0) {
+      audioService.playSuccessChime()
+      onSelectDeck('commdeck-daily-auto')
+      onDataChanged()
+      setCommunityFeedback(`Đã đồng bộ thêm ${added} từ mới hôm nay từ sổ tay Daily-English!`)
+    } else {
+      setCommunityFeedback('Kho từ của bạn đã có đầy đủ 100% bài học Daily-English mới nhất!')
+    }
   }
 
   const handleCreateDeck = (e: React.FormEvent) => {
@@ -444,24 +462,36 @@ export function LibraryView({
       {/* Community Shared Decks Drawer */}
       {isCommunityOpen && (
         <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800 border border-indigo-500/30 shadow-sm space-y-3 animate-fadeIn">
-          <div className="flex items-center justify-between gap-2">
-            <div>
+          <div className="flex items-start sm:items-center justify-between gap-2 flex-wrap">
+            <div className="min-w-0 flex-1">
               <h3 className="text-xs font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-1.5">
-                <Users className="w-3.5 h-3.5 text-indigo-500" />
-                <span>Kho Bộ Từ Cộng Đồng Chia Sẻ</span>
+                <Users className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                <span className="truncate">Kho Bộ Từ Cộng Đồng</span>
               </h3>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                Tải miễn phí các bộ từ chuyên ngành do người học khác đóng góp
+                Tải miễn phí bộ từ chuyên ngành hoặc kéo bài Daily-English mới nhất
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => void fetchCommunityList()}
-              aria-label="Làm mới kho cộng đồng"
-              className="p-1.5 rounded-xl text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isLoadingCommunity ? 'animate-spin' : ''}`} />
-            </button>
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                disabled={isCheckingDailyFeed}
+                onClick={() => void handleCheckDailyFeedNow()}
+                className="py-1.5 px-2.5 rounded-xl bg-emerald-500/12 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25 text-[11px] font-bold flex items-center gap-1 whitespace-nowrap transition-all active:scale-95"
+                title="Kiểm tra và kéo ngay bài học Daily-English mới nhất hôm nay"
+              >
+                <Sparkles className={`w-3 h-3 ${isCheckingDailyFeed ? 'animate-spin' : ''}`} />
+                <span>{isCheckingDailyFeed ? 'Đang kiểm tra...' : 'Đồng bộ bài mới'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => void fetchCommunityList()}
+                aria-label="Làm mới kho cộng đồng"
+                className="p-1.5 rounded-xl text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isLoadingCommunity ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
           </div>
 
           {isLoadingCommunity ? (

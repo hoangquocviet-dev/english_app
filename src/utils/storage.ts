@@ -8,8 +8,9 @@ import type {
   StudyFilterMode,
   WordItem,
 } from '../types'
+import { normalizeImportedTerm } from './parser'
 
-const CURRENT_SEED_VERSION = 9
+const CURRENT_SEED_VERSION = 10
 
 export const GLOBAL_SRS_DECK_ID = '__global_srs__'
 
@@ -458,6 +459,10 @@ class SafeStorageService {
     if (filterMode === 'custom') {
       const source = deckId === GLOBAL_SRS_DECK_ID ? this.getWords() : this.getWords(deckId)
       return source.filter((w) => sessionIdSet.has(w.id) && w.status === 'learning')
+    }
+
+    if (filterMode === 'global-learning') {
+      return this.getWords().filter((w) => sessionIdSet.has(w.id) && w.status === 'learning')
     }
 
     if (deckId === GLOBAL_SRS_DECK_ID || filterMode === 'global-due') {
@@ -1090,17 +1095,26 @@ class SafeStorageService {
   // AUTO-INGEST OFFICIAL DAILY-ENGLISH CLOUD FEED (Only adds net-new daily words!)
   public ingestOfficialDailyFeed(commDeck: CommunityDeck): number {
     if (!Array.isArray(commDeck.words) || commDeck.words.length === 0) return 0
+    const canonKey = (s: string) => s.trim().toLowerCase().replace(/[-\s]+/g, ' ')
     const allWords = this.getWords()
-    const existingTerms = new Set(allWords.map((w) => w.term.trim().toLowerCase()))
+    const existingTerms = new Set<string>()
+    for (const w of allWords) {
+      const { term } = normalizeImportedTerm(w.term)
+      existingTerms.add(canonKey(term))
+      existingTerms.add(canonKey(w.term))
+    }
     const LIVE_DECK_ID = 'commdeck-daily-auto'
 
     const freshItems: WordItem[] = []
     for (let i = 0; i < commDeck.words.length; i++) {
       const cw = commDeck.words[i]
-      const cleanTerm = (cw.term || '').trim()
+      const { term: cleanTerm, partOfSpeech: inferredPos } = normalizeImportedTerm(
+        cw.term || '',
+        cw.partOfSpeech
+      )
       const cleanDef = (cw.definition || '').trim()
       if (!cleanTerm || !cleanDef) continue
-      const key = cleanTerm.toLowerCase()
+      const key = canonKey(cleanTerm)
       if (existingTerms.has(key)) continue
       existingTerms.add(key)
 
@@ -1112,7 +1126,7 @@ class SafeStorageService {
         ipa: cw.ipa?.trim() || undefined,
         definition: cleanDef,
         example: cw.example?.trim() || undefined,
-        partOfSpeech: cw.partOfSpeech || (cleanTerm.includes(' ') ? 'phrase' : 'noun'),
+        partOfSpeech: inferredPos || (cleanTerm.includes(' ') ? 'phrase' : 'noun'),
         status: 'new',
         reviewCount: 0,
       })

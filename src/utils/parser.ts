@@ -40,6 +40,93 @@ function normalizeIpa(raw?: string): string | undefined {
   return clean ? `/${clean}/` : undefined
 }
 
+const POS_TAG_MAP: Record<string, string> = {
+  n: 'noun',
+  noun: 'noun',
+  v: 'verb',
+  'v.t': 'verb',
+  'v.i': 'verb',
+  vt: 'verb',
+  vi: 'verb',
+  verb: 'verb',
+  a: 'adj',
+  adj: 'adj',
+  adjective: 'adj',
+  adv: 'adv',
+  adverb: 'adv',
+  prep: 'prep',
+  conj: 'conj',
+  pron: 'pron',
+  phr: 'phrase',
+  phrase: 'phrase',
+}
+
+const PREPOSITION_HINT_SET = new Set([
+  'of',
+  'on',
+  'in',
+  'to',
+  'for',
+  'with',
+  'from',
+  'at',
+  'into',
+  'about',
+  'over',
+  'under',
+  'between',
+  'up',
+  'out',
+])
+
+/**
+ * Cleans legacy POS suffixes like `Alloy (n)`, `Horizontal (a,n)`, preposition hints `Consist (of)`,
+ * acronym expansions `FAQ (Frequently Asked Questions)`, and accidental duplicate words `Convenience convenience`.
+ */
+export function normalizeImportedTerm(
+  rawTerm: string,
+  rawPos?: string
+): { term: string; partOfSpeech?: string } {
+  let t = rawTerm.replace(/^\*\*|\*\*$/g, '').replace(/\s+/g, ' ').trim()
+  let inferredPos = rawPos?.trim() || undefined
+
+  const parenMatch = /^(.+?)\s*\(([^()]+)\)\s*$/.exec(t)
+  if (parenMatch) {
+    const base = parenMatch[1].trim()
+    const inner = parenMatch[2].trim()
+    const innerLower = inner.toLowerCase()
+    const posTokens = innerLower
+      .split(/[,/&]+/)
+      .map((tok) => tok.trim().replace(/\.$/, ''))
+      .filter(Boolean)
+
+    if (posTokens.length > 0 && posTokens.every((tok) => tok in POS_TAG_MAP)) {
+      t = base
+      if (!inferredPos) {
+        inferredPos = POS_TAG_MAP[posTokens[0]]
+      }
+    } else if (PREPOSITION_HINT_SET.has(innerLower)) {
+      t = `${base} ${innerLower}`
+      if (!inferredPos) {
+        inferredPos = 'phrase'
+      }
+    } else if (/^[A-Z0-9-]{2,8}$/.test(base) && /^[A-Za-z][A-Za-z0-9\s-]{5,}$/.test(inner)) {
+      t = base
+      if (!inferredPos) {
+        inferredPos = 'noun'
+      }
+    }
+  }
+
+  // Collapse accidental repeated single-word typos like "Convenience convenience"
+  const dupMatch = /^([A-Za-z-]+)\s+([A-Za-z-]+)$/.exec(t)
+  if (dupMatch && dupMatch[1].toLowerCase() === dupMatch[2].toLowerCase()) {
+    t = dupMatch[1]
+  }
+
+  return { term: t, partOfSpeech: inferredPos }
+}
+
 function isHeaderRow(term: string, def: string): boolean {
   const t = term.trim().toLowerCase()
   const d = def.trim().toLowerCase()
@@ -91,19 +178,20 @@ export function parseDailyEnglish(text: string): ParseResult {
             continue
           }
           const rec = item as Record<string, unknown>
-          const term = String(rec.term ?? rec.word ?? rec.en ?? rec.front ?? '').trim()
+          const rawTerm = String(rec.term ?? rec.word ?? rec.en ?? rec.front ?? '').trim()
           const definition = String(
             rec.definition ?? rec.meaning ?? rec.vi ?? rec.back ?? ''
           ).trim()
+          const rawPos =
+            typeof rec.partOfSpeech === 'string' && rec.partOfSpeech.trim()
+              ? rec.partOfSpeech.trim()
+              : undefined
+          const { term, partOfSpeech } = normalizeImportedTerm(rawTerm, rawPos)
           if (!term || !definition) {
             skippedCount++
             continue
           }
           const ipa = typeof rec.ipa === 'string' ? normalizeIpa(rec.ipa) : undefined
-          const partOfSpeech =
-            typeof rec.partOfSpeech === 'string' && rec.partOfSpeech.trim()
-              ? rec.partOfSpeech.trim()
-              : undefined
           const example =
             typeof rec.example === 'string' && rec.example.trim()
               ? rec.example.trim()
@@ -133,16 +221,21 @@ export function parseDailyEnglish(text: string): ParseResult {
     let skippedCount = 0
     nonEmptyLines.forEach((line, idx) => {
       const cols = line.split('\t').map((c) => c.trim())
-      const term = cols[0] || ''
+      const rawTerm = cols[0] || ''
       const definition = cols[1] || ''
-      if (!term || !definition) {
+      if (!rawTerm || !definition) {
         skippedCount++
         return
       }
-      if (idx === 0 && isHeaderRow(term, definition)) return
+      if (idx === 0 && isHeaderRow(rawTerm, definition)) return
+      const { term, partOfSpeech } = normalizeImportedTerm(rawTerm)
+      if (!term) {
+        skippedCount++
+        return
+      }
       const ipa = normalizeIpa(cols[2])
       const example = cols[3] || undefined
-      words.push({ term, definition, ipa, example })
+      words.push({ term, definition, ipa, partOfSpeech, example })
     })
     return { words, skippedCount, totalLines: lines.length, detectedFormat: 'tsv' }
   }
@@ -159,15 +252,19 @@ export function parseDailyEnglish(text: string): ParseResult {
     let skippedCount = 0
     nonEmptyLines.forEach((line, idx) => {
       const cols = parseCsvLine(line)
-      const term = cols[0] || ''
+      const rawTerm = cols[0] || ''
       const definition = cols[1] || ''
-      if (!term || !definition) {
+      if (!rawTerm || !definition) {
         skippedCount++
         return
       }
-      if (idx === 0 && isHeaderRow(term, definition)) return
+      if (idx === 0 && isHeaderRow(rawTerm, definition)) return
+      const { term, partOfSpeech } = normalizeImportedTerm(rawTerm, cols[3] || undefined)
+      if (!term) {
+        skippedCount++
+        return
+      }
       const ipa = normalizeIpa(cols[2])
-      const partOfSpeech = cols[3] || undefined
       const example = cols[4] || undefined
       words.push({ term, definition, ipa, partOfSpeech, example })
     })
@@ -223,18 +320,18 @@ export function parseDailyEnglish(text: string): ParseResult {
       continue
     }
 
-    let term = leftPart
+    let rawTerm = leftPart
     let ipa: string | undefined
 
     const slashStart = leftPart.indexOf('/')
     const slashEnd = leftPart.lastIndexOf('/')
 
     if (slashStart !== -1 && slashEnd !== -1 && slashEnd > slashStart) {
-      term = leftPart.substring(0, slashStart).trim()
+      rawTerm = leftPart.substring(0, slashStart).trim()
       ipa = normalizeIpa(leftPart.substring(slashStart + 1, slashEnd))
     }
 
-    term = term.replace(/^\*\*|\*\*$/g, '').trim()
+    const { term, partOfSpeech } = normalizeImportedTerm(rawTerm)
 
     if (!term) {
       skippedCount++
@@ -244,6 +341,7 @@ export function parseDailyEnglish(text: string): ParseResult {
     words.push({
       term,
       ipa,
+      partOfSpeech,
       definition: rightPart,
     })
   }

@@ -83,6 +83,7 @@ class CloudSyncManager {
   private pendingPush = false
   private listeners = new Set<() => void>()
   private initialized = false
+  private lastDailyFeedCheckAt = 0
 
   public subscribe(listener: () => void): () => void {
     this.listeners.add(listener)
@@ -182,7 +183,10 @@ class CloudSyncManager {
   }
 
   // Initialize auto-sync listeners & check ?sync=VF-XXXX-XXXX QR magic link on boot
-  public async init(onRemoteHydrated: () => void): Promise<RestoreOutcome | null> {
+  public async init(
+    onRemoteHydrated: () => void,
+    onDailyNotice?: (outcome: RestoreOutcome) => void
+  ): Promise<RestoreOutcome | null> {
     if (!this.initialized && typeof window !== 'undefined') {
       this.initialized = true
       this.getSyncCode() // Ensure device has a persistent Sync ID ready
@@ -198,7 +202,22 @@ class CloudSyncManager {
       }
       window.addEventListener('pagehide', flushOnHide)
       document.addEventListener('visibilitychange', () => {
-        if (document.hidden) flushOnHide()
+        if (document.hidden) {
+          flushOnHide()
+          return
+        }
+        // When user switches back to an already-open tab after ≥3 mins, silently check Daily-English feed!
+        if (Date.now() - this.lastDailyFeedCheckAt >= 180_000) {
+          void this.pullOfficialDailyFeed().then((added) => {
+            if (added > 0) {
+              onRemoteHydrated()
+              onDailyNotice?.({
+                ok: true,
+                message: `Đã tự động đồng bộ ${added} từ mới hôm nay từ sổ tay Daily-English!`,
+              })
+            }
+          })
+        }
       })
     }
 
@@ -244,6 +263,7 @@ class CloudSyncManager {
 
   public async pullOfficialDailyFeed(): Promise<number> {
     if (typeof navigator !== 'undefined' && !navigator.onLine) return 0
+    this.lastDailyFeedCheckAt = Date.now()
     try {
       const res = await fetch(
         `${SUPABASE_URL}/rest/v1/community_decks?id=eq.${encodeURIComponent(

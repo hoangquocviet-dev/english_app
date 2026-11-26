@@ -1,4 +1,5 @@
 import {
+  AlertTriangle,
   Award,
   BarChart3,
   BookOpen,
@@ -7,11 +8,13 @@ import {
   Lock,
   Sparkles,
   Star,
+  Target,
   Trophy,
+  Volume2,
   X,
 } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
-import type { Deck, GameHighScores, WordItem } from '../../types'
+import type { Deck, GameHighScores, StudyMode, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
 import { storageService } from '../../utils/storage'
 
@@ -23,6 +26,7 @@ interface StatsModalProps {
   streak: number
   highScores: GameHighScores
   onJumpToDeck: (deckId: string) => void
+  onStartGlobalWeakReview?: (mode: StudyMode) => void
 }
 
 export function StatsModal({
@@ -33,6 +37,7 @@ export function StatsModal({
   streak,
   highScores,
   onJumpToDeck,
+  onStartGlobalWeakReview,
 }: StatsModalProps) {
   useEffect(() => {
     if (!isOpen) return
@@ -53,6 +58,7 @@ export function StatsModal({
     let srsLv3Plus = 0
     const levelCounts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
     const deckTotals = new Map<string, { total: number; mastered: number }>()
+    const weakPool: WordItem[] = []
 
     for (const w of allWords) {
       const curDeck = deckTotals.get(w.deckId) || { total: 0, mastered: 0 }
@@ -67,9 +73,21 @@ export function StatsModal({
         if (!w.nextReview || w.nextReview <= nowMs) due += 1
       } else if (w.status === 'learning') {
         learning += 1
+        weakPool.push(w)
       }
       deckTotals.set(w.deckId, curDeck)
     }
+
+    const seenTerms = new Set<string>()
+    const topWeakWords = weakPool
+      .sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0) || (b.lastReviewed || 0) - (a.lastReviewed || 0))
+      .filter((w) => {
+        const k = w.term.trim().toLowerCase()
+        if (seenTerms.has(k)) return false
+        seenTerms.add(k)
+        return true
+      })
+      .slice(0, 5)
 
     const totalScore =
       (highScores['sky-defender'] || 0) +
@@ -94,6 +112,8 @@ export function StatsModal({
       totalScore,
       levelCounts,
       deckRows,
+      topWeakWords,
+      uniqueWeakCount: seenTerms.size,
       overallPct: allWords.length > 0 ? Math.round((mastered / allWords.length) * 100) : 0,
     }
   }, [allWords, decks, highScores, nowMs])
@@ -330,6 +350,67 @@ export function StatsModal({
             ))}
           </div>
         </div>
+
+        {/* Top Weak / Leech Words Spotlight (Visible when learner has unmastered mistakes) */}
+        {summary.topWeakWords.length > 0 && (
+          <div className="p-3.5 rounded-2xl bg-rose-500/8 dark:bg-rose-500/10 border border-rose-500/25 space-y-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-bold text-rose-700 dark:text-rose-300 flex items-center gap-1.5">
+                <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
+                <span>Từ hay nhầm cần củng cố ({summary.uniqueWeakCount})</span>
+              </span>
+              {onStartGlobalWeakReview && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    audioService.playClick()
+                    onStartGlobalWeakReview('flashcard')
+                  }}
+                  className="py-1 px-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-bold flex items-center gap-1 whitespace-nowrap shrink-0 active:scale-95 transition-transform"
+                >
+                  <Target className="w-3 h-3" />
+                  <span>Ôn gộp ngay</span>
+                </button>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              {summary.topWeakWords.map((w) => (
+                <div
+                  key={w.id}
+                  className="p-2 px-2.5 rounded-xl bg-white/90 dark:bg-slate-900/75 border border-rose-500/15 flex items-center justify-between gap-2"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-xs font-extrabold text-slate-900 dark:text-slate-100 truncate">
+                        {w.term}
+                      </span>
+                      {w.ipa && (
+                        <span className="text-[10px] font-mono text-slate-400">{w.ipa}</span>
+                      )}
+                      {w.reviewCount > 0 && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-rose-500/15 text-rose-600 dark:text-rose-400">
+                          Nhầm {w.reviewCount}×
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                      {w.definition}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void audioService.speak(w.term)}
+                    aria-label={`Nghe phát âm ${w.term}`}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
+                  >
+                    <Volume2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Per-Deck Mastery Progress */}
         <div className="space-y-2">

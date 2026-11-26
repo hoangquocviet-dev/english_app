@@ -566,7 +566,12 @@ export function FlashcardView({
           <ArrowLeft className="w-5 h-5" />
         </button>
 
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center min-w-0">
+          {filterMode && filterMode !== 'all' && (
+            <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 truncate max-w-[170px] leading-tight mb-0.5">
+              {deckName}
+            </span>
+          )}
           <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
             Thẻ {currentIndex + 1} / {queue.length}
           </span>

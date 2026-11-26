@@ -12573,5 +12573,16 @@ export const INITIAL_WORDS: WordItem[] = [
     "partOfSpeech": "phrase",
     "status": "new",
     "reviewCount": 0
+  },
+  {
+    "id": "cs-164",
+    "deckId": "deck-cs-foundations",
+    "term": "RAM",
+    "ipa": "/ræm/",
+    "definition": "Bộ nhớ truy cập ngẫu nhiên khả biến (viết tắt của Random Access Memory) giúp CPU đọc/ghi dữ liệu tức thời",
+    "example": "Upgrading your laptop to 32GB of RAM prevents browser tabs and Docker containers from freezing.",
+    "partOfSpeech": "noun",
+    "status": "new",
+    "reviewCount": 0
   }
 ]
