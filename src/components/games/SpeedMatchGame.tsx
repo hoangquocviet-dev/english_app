@@ -1,5 +1,16 @@
 import confetti from 'canvas-confetti'
-import { ArrowLeft, Clock, Flame, Pause, Play, RotateCcw, Trophy, Zap } from 'lucide-react'
+import {
+  ArrowLeft,
+  Check,
+  Clock,
+  Flame,
+  Lightbulb,
+  Pause,
+  Play,
+  RotateCcw,
+  Trophy,
+  Zap,
+} from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { WordItem } from '../../types'
 import { formatArcadeMeaning } from '../../utils/arcadeText'
@@ -18,6 +29,8 @@ interface MatchCardSlot {
   defKey: string
   text: string
   status: 'idle' | 'matched' | 'wrong'
+  pointsEarned?: number
+  spawnSeq: number
 }
 
 interface BoardState {
@@ -27,6 +40,7 @@ interface BoardState {
 
 const BOARD_ROWS = 5
 const INITIAL_TIME = 60
+const RIGHT_HOTKEYS = ['Q', 'W', 'E', 'R', 'T'] as const
 
 function shuffle<T>(arr: T[]): T[] {
   const copy = [...arr]
@@ -39,13 +53,27 @@ function shuffle<T>(arr: T[]): T[] {
   return copy
 }
 
+// Shuffle right batch independently and avoid identical ordering when >= 2 items
+function shuffleDistinctOrder<T extends { id: string }>(leftArr: T[]): T[] {
+  if (leftArr.length < 2) return [...leftArr]
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const candidate = shuffle(leftArr)
+    if (candidate.some((item, idx) => item.id !== leftArr[idx].id)) {
+      return candidate
+    }
+  }
+  return [...leftArr.slice(1), leftArr[0]]
+}
+
 function buildPlayablePool(words: WordItem[]): WordItem[] {
   const normalized = words
     .filter((w) => w.term.length <= 32)
-    .map((w) => ({ ...w, definition: formatArcadeMeaning(w.definition, 88) }))
-  const base = normalized.length >= 8 ? normalized : words.map((w) => ({ ...w, definition: formatArcadeMeaning(w.definition, 88) }))
+    .map((w) => ({ ...w, definition: formatArcadeMeaning(w.definition, 84) }))
+  const base =
+    normalized.length >= 8
+      ? normalized
+      : words.map((w) => ({ ...w, definition: formatArcadeMeaning(w.definition, 84) }))
 
-  // Deduplicate by term + definition so pairs on board are always unambiguous
   const unique: WordItem[] = []
   const seenTerms = new Set<string>()
   const seenDefs = new Set<string>()
@@ -64,7 +92,7 @@ function buildPlayablePool(words: WordItem[]): WordItem[] {
 
   for (const iw of storageService.getWords()) {
     if (iw.term.length > 28) continue
-    const formatted = { ...iw, definition: formatArcadeMeaning(iw.definition, 88) }
+    const formatted = { ...iw, definition: formatArcadeMeaning(iw.definition, 84) }
     const tk = formatted.term.trim().toLowerCase()
     const dk = formatted.definition.trim().toLowerCase()
     if (!seenTerms.has(tk) && !seenDefs.has(dk)) {
@@ -80,19 +108,24 @@ function buildPlayablePool(words: WordItem[]): WordItem[] {
 
 function createInitialBoard(pool: WordItem[]): BoardState {
   const batch = shuffle(pool).slice(0, BOARD_ROWS)
-  const left: Array<MatchCardSlot | null> = shuffle(batch).map((w) => ({
+  const leftBatch = shuffle(batch)
+  const rightBatch = shuffleDistinctOrder(leftBatch)
+
+  const left: Array<MatchCardSlot | null> = leftBatch.map((w, i) => ({
     wordId: w.id,
     termKey: w.term.trim().toLowerCase(),
     defKey: w.definition.trim().toLowerCase(),
     text: w.term,
     status: 'idle',
+    spawnSeq: i + 1,
   }))
-  const right: Array<MatchCardSlot | null> = shuffle(batch).map((w) => ({
+  const right: Array<MatchCardSlot | null> = rightBatch.map((w, i) => ({
     wordId: w.id,
     termKey: w.term.trim().toLowerCase(),
     defKey: w.definition.trim().toLowerCase(),
     text: w.definition,
     status: 'idle',
+    spawnSeq: i + 1,
   }))
   return { left, right }
 }
@@ -102,6 +135,7 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
 
   const drawQueueRef = useRef<WordItem[]>([])
   const timeoutsRef = useRef<number[]>([])
+  const spawnCounterRef = useRef(10)
 
   const clearAllTimeouts = useCallback(() => {
     for (const id of timeoutsRef.current) {
@@ -178,10 +212,13 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
     selectedRightRef.current = val
     setSelectedRight(val)
   }, [])
+
   const [score, setScore] = useState(0)
   const [combo, setCombo] = useState(0)
   const [maxCombo, setMaxCombo] = useState(0)
   const [matchedCount, setMatchedCount] = useState(0)
+  const [hintsLeft, setHintsLeft] = useState(2)
+  const [hintWordId, setHintWordId] = useState<string | null>(null)
   const [displaySeconds, setDisplaySeconds] = useState(INITIAL_TIME)
   const [bonusToast, setBonusToast] = useState<string | null>(null)
   const [isPaused, setIsPaused] = useState(false)
@@ -194,6 +231,7 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
   const timerBarRef = useRef<HTMLDivElement | null>(null)
   const scoreRef = useRef(0)
   const comboRef = useRef(0)
+  const matchesRef = useRef(0)
   const timeLeftRef = useRef(INITIAL_TIME)
   const lastShownSecRef = useRef(INITIAL_TIME)
   const lastMatchAtRef = useRef(0)
@@ -205,11 +243,11 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
     el.style.width = `${pct}%`
     const color =
       secondsRemaining <= 10
-        ? 'bg-rose-500'
+        ? 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.65)]'
         : secondsRemaining <= 25
         ? 'bg-amber-500'
         : 'bg-emerald-500'
-    el.className = `h-full rounded-full ${color}`
+    el.className = `h-full rounded-full transition-colors ${color}`
   }, [])
 
   const finishGame = useCallback(
@@ -230,30 +268,22 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
     [clearAllTimeouts]
   )
 
-  // Cleanup timeouts on unmount, auto-pause on tab switch & keyboard Pause (P / Escape)
-  useEffect(() => {
-    const onVisibility = () => {
-      if (document.hidden && !isFinished) {
-        setIsPaused(true)
-      }
-    }
-    const onKey = (e: KeyboardEvent) => {
-      if (isFinished) return
-      if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') {
-        e.preventDefault()
-        setIsPaused((p) => !p)
-      }
-    }
-    document.addEventListener('visibilitychange', onVisibility)
-    window.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('visibilitychange', onVisibility)
-      window.removeEventListener('keydown', onKey)
-      clearAllTimeouts()
-    }
-  }, [isFinished, clearAllTimeouts])
+  const triggerHint = useCallback(() => {
+    if (isFinished || isPaused || hintsLeft <= 0) return
+    const idlePairs = boardRef.current.left.filter(
+      (s): s is MatchCardSlot => s !== null && s.status === 'idle'
+    )
+    if (idlePairs.length === 0) return
+    const chosen = idlePairs[Math.floor(Math.random() * idlePairs.length)]
+    setHintsLeft((h) => Math.max(0, h - 1))
+    setHintWordId(chosen.wordId)
+    audioService.playPowerup()
+    scheduleTimeout(() => {
+      setHintWordId((cur) => (cur === chosen.wordId ? null : cur))
+    }, 1800)
+  }, [hintsLeft, isFinished, isPaused, scheduleTimeout])
 
-  // 60fps DOM timer bar + 1x/sec state update (prevents 10x/sec button re-renders during fast taps!)
+  // 60fps Timer Bar + final countdown tick
   useEffect(() => {
     if (isFinished || isPaused) return
 
@@ -272,6 +302,9 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
       if (ceilSec !== lastShownSecRef.current) {
         lastShownSecRef.current = ceilSec
         setDisplaySeconds(ceilSec)
+        if (ceilSec > 0 && ceilSec <= 5) {
+          audioService.playCountdownTick()
+        }
       }
 
       if (nextTime <= 0) {
@@ -294,6 +327,7 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
 
     scoreRef.current = 0
     comboRef.current = 0
+    matchesRef.current = 0
     timeLeftRef.current = INITIAL_TIME
     lastShownSecRef.current = INITIAL_TIME
     lastMatchAtRef.current = 0
@@ -302,6 +336,8 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
     setCombo(0)
     setMaxCombo(0)
     setMatchedCount(0)
+    setHintsLeft(2)
+    setHintWordId(null)
     updateSelectedLeft(null)
     updateSelectedRight(null)
     setBonusToast(null)
@@ -327,6 +363,7 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
 
         const nextCombo = withinComboWindow ? comboRef.current + 1 : 1
         comboRef.current = nextCombo
+        matchesRef.current += 1
         const multiplier = Math.min(5, 1 + Math.floor(nextCombo / 3))
         const gained = 50 * multiplier
 
@@ -334,9 +371,14 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
         setScore(scoreRef.current)
         setCombo(nextCombo)
         setMaxCombo((prev) => Math.max(prev, nextCombo))
-        setMatchedCount((prev) => prev + 1)
+        setMatchedCount(matchesRef.current)
+        setHintWordId((cur) => (cur === lCard.wordId ? null : cur))
         updateSelectedLeft(null)
         updateSelectedRight(null)
+
+        if (matchesRef.current % 8 === 0) {
+          setHintsLeft((h) => Math.min(3, h + 1))
+        }
 
         if (typeof navigator !== 'undefined' && navigator.vibrate) {
           try {
@@ -346,7 +388,7 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
         audioService.playCombo(nextCombo)
         storageService.recordDailyActivity(true)
 
-        // Bonus +3 seconds every 5 combo streak!
+        // Fever Bonus +3s every 5 combo!
         if (nextCombo > 0 && nextCombo % 5 === 0) {
           const boosted = Math.min(90, timeLeftRef.current + 3)
           timeLeftRef.current = boosted
@@ -354,19 +396,21 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
           lastShownSecRef.current = ceilSec
           setDisplaySeconds(ceilSec)
           syncTimerBarDom(boosted)
-          setBonusToast(`Combo x${nextCombo}! +3 giây`)
+          audioService.playPowerup()
+          setBonusToast(`🔥 FEVER COMBO x${nextCombo}! +3 giây`)
           scheduleTimeout(() => setBonusToast(null), 1300)
         }
 
-        // Atomically mark matched green flash on both columns
         commitBoard({
-          left: current.left.map((s, idx) => (idx === lIdx && s ? { ...s, status: 'matched' } : s)),
+          left: current.left.map((s, idx) =>
+            idx === lIdx && s ? { ...s, status: 'matched', pointsEarned: gained } : s
+          ),
           right: current.right.map((s, idx) =>
-            idx === rIdx && s ? { ...s, status: 'matched' } : s
+            idx === rIdx && s ? { ...s, status: 'matched', pointsEarned: gained } : s
           ),
         })
 
-        // Clear matched slots after 210ms; atomically refill both columns when >= 2 slots empty!
+        // Anti-exploit batch deal: refill as soon as >= 2 pairs are cleared (so newly dealt pairs shuffle across >=2 slots and cannot be blind-tapped!)
         scheduleTimeout(() => {
           const snap = boardRef.current
           const nextL = snap.left.map((s, idx) =>
@@ -384,8 +428,10 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
             .filter((idx) => idx !== -1)
 
           const refillCount = Math.min(emptyLeftIndices.length, emptyRightIndices.length)
+          const remainingActive = nextL.filter((s) => s !== null).length
+          const threshold = remainingActive === 0 ? 1 : 2
 
-          if (refillCount >= 2) {
+          if (refillCount >= threshold) {
             const activeIds = new Set<string>()
             const activeTerms = new Set<string>()
             const activeDefs = new Set<string>()
@@ -407,31 +453,35 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
 
             const freshWords = pullNextWords(refillCount, activeIds, activeTerms, activeDefs)
             const shuffledLeftWords = shuffle(freshWords)
-            const shuffledRightWords = shuffle(freshWords)
+            const shuffledRightWords = shuffleDistinctOrder(shuffledLeftWords)
 
             shuffledLeftWords.forEach((w, i) => {
+              const seq = ++spawnCounterRef.current
               nextL[emptyLeftIndices[i]] = {
                 wordId: w.id,
                 termKey: w.term.trim().toLowerCase(),
                 defKey: w.definition.trim().toLowerCase(),
                 text: w.term,
                 status: 'idle',
+                spawnSeq: seq,
               }
             })
 
             shuffledRightWords.forEach((w, i) => {
+              const seq = ++spawnCounterRef.current
               nextR[emptyRightIndices[i]] = {
                 wordId: w.id,
                 termKey: w.term.trim().toLowerCase(),
                 defKey: w.definition.trim().toLowerCase(),
                 text: w.definition,
                 status: 'idle',
+                spawnSeq: seq,
               }
             })
           }
 
           commitBoard({ left: nextL, right: nextR })
-        }, 210)
+        }, 220)
       } else {
         // WRONG PAIR!
         if (typeof navigator !== 'undefined' && navigator.vibrate) {
@@ -460,53 +510,98 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
               idx === rIdx && s?.status === 'wrong' ? { ...s, status: 'idle' } : s
             ),
           })
-        }, 350)
+        }, 250)
       }
     },
     [commitBoard, pullNextWords, scheduleTimeout, syncTimerBarDom, updateSelectedLeft, updateSelectedRight]
   )
 
-  const handleSelectLeft = (idx: number) => {
-    if (isFinished || isPaused) return
-    const slot = boardRef.current.left[idx]
-    if (!slot || slot.status !== 'idle') return
+  const handleSelectLeft = useCallback(
+    (idx: number) => {
+      if (isFinished || isPaused) return
+      const slot = boardRef.current.left[idx]
+      if (!slot || slot.status !== 'idle') return
 
-    audioService.playClick()
-    if (selectedLeftRef.current === idx) {
-      updateSelectedLeft(null)
-      return
-    }
-    if (selectedRightRef.current !== null) {
-      checkPair(idx, selectedRightRef.current)
-    } else {
-      updateSelectedLeft(idx)
-    }
-  }
+      audioService.playClick()
+      if (selectedLeftRef.current === idx) {
+        updateSelectedLeft(null)
+        return
+      }
+      if (selectedRightRef.current !== null) {
+        checkPair(idx, selectedRightRef.current)
+      } else {
+        updateSelectedLeft(idx)
+      }
+    },
+    [checkPair, isFinished, isPaused, updateSelectedLeft]
+  )
 
-  const handleSelectRight = (idx: number) => {
-    if (isFinished || isPaused) return
-    const slot = boardRef.current.right[idx]
-    if (!slot || slot.status !== 'idle') return
+  const handleSelectRight = useCallback(
+    (idx: number) => {
+      if (isFinished || isPaused) return
+      const slot = boardRef.current.right[idx]
+      if (!slot || slot.status !== 'idle') return
 
-    audioService.playClick()
-    if (selectedRightRef.current === idx) {
-      updateSelectedRight(null)
-      return
+      audioService.playClick()
+      if (selectedRightRef.current === idx) {
+        updateSelectedRight(null)
+        return
+      }
+      if (selectedLeftRef.current !== null) {
+        checkPair(selectedLeftRef.current, idx)
+      } else {
+        updateSelectedRight(idx)
+      }
+    },
+    [checkPair, isFinished, isPaused, updateSelectedRight]
+  )
+
+  // Keyboard shortcuts (1-5 for English left, Q/W/E/R/T for Vietnamese right, H for Hint, P/Esc for Pause)
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.hidden && !isFinished) {
+        setIsPaused(true)
+      }
     }
-    if (selectedLeftRef.current !== null) {
-      checkPair(selectedLeftRef.current, idx)
-    } else {
-      updateSelectedRight(idx)
+    const onKey = (e: KeyboardEvent) => {
+      if (isFinished) return
+      if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') {
+        e.preventDefault()
+        setIsPaused((p) => !p)
+        return
+      }
+      if (isPaused) return
+
+      const k = e.key.toUpperCase()
+      if (['1', '2', '3', '4', '5'].includes(k)) {
+        e.preventDefault()
+        handleSelectLeft(Number(k) - 1)
+      } else if (RIGHT_HOTKEYS.includes(k as (typeof RIGHT_HOTKEYS)[number])) {
+        e.preventDefault()
+        handleSelectRight(RIGHT_HOTKEYS.indexOf(k as (typeof RIGHT_HOTKEYS)[number]))
+      } else if (k === 'H') {
+        e.preventDefault()
+        triggerHint()
+      }
     }
-  }
+    document.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('keydown', onKey)
+      clearAllTimeouts()
+    }
+  }, [isFinished, isPaused, handleSelectLeft, handleSelectRight, triggerHint, clearAllTimeouts])
+
+  const isFever = combo >= 5
 
   return (
     <div
-      className="w-full flex-1 flex flex-col max-w-md mx-auto px-3.5 py-1.5 select-none relative"
+      className="w-full max-w-xl mx-auto my-auto px-3.5 py-2 flex flex-col select-none relative"
       data-no-pull="true"
     >
       {/* Top HUD */}
-      <div className="flex items-center justify-between mb-1.5">
+      <div className="flex items-center justify-between mb-1.5 gap-1">
         <div className="flex items-center gap-1">
           <button
             type="button"
@@ -532,35 +627,59 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
           )}
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           <div
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-extrabold ${
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-extrabold tabular-nums ${
               displaySeconds <= 10
-                ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 animate-pulse'
-                : 'bg-slate-200/70 dark:bg-slate-800 text-slate-800 dark:text-slate-200'
+                ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 animate-pulse border border-rose-500/30'
+                : 'bg-slate-200/80 dark:bg-slate-800 text-slate-800 dark:text-slate-200'
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
             <span>{displaySeconds}s</span>
           </div>
 
-          <span className="text-sm font-extrabold text-slate-900 dark:text-slate-100">
+          <span className="text-sm font-extrabold text-slate-900 dark:text-slate-100 tabular-nums">
             {score.toLocaleString()} đ
           </span>
-        </div>
 
-        <div className="min-w-14 text-right">
           {combo >= 2 && (
-            <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-xs font-extrabold">
+            <span
+              className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-xs font-extrabold ${
+                isFever
+                  ? 'bg-gradient-to-r from-emerald-500 to-amber-500 text-white shadow-xs'
+                  : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+              }`}
+            >
               <Flame className="w-3 h-3" />
               x{combo}
             </span>
           )}
         </div>
+
+        {/* Radar Hint Button */}
+        {!isFinished ? (
+          <button
+            type="button"
+            disabled={hintsLeft <= 0 || isPaused}
+            onClick={triggerHint}
+            title="Radar Gợi ý 1 cặp đúng (Phím H)"
+            className={`px-2.5 py-1 rounded-xl text-xs font-extrabold flex items-center gap-1 transition-all active:scale-95 ${
+              hintsLeft > 0
+                ? 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-amber-400 border border-amber-500/30'
+                : 'bg-slate-200/50 dark:bg-slate-800/50 text-slate-400 opacity-50'
+            }`}
+          >
+            <Lightbulb className="w-3.5 h-3.5" />
+            <span>{hintsLeft}</span>
+          </button>
+        ) : (
+          <div className="w-10" />
+        )}
       </div>
 
       {/* Timer Bar */}
-      <div className="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden mb-2 relative">
+      <div className="w-full h-2.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden mb-2.5 relative">
         <div
           ref={timerBarRef}
           className="h-full rounded-full bg-emerald-500"
@@ -569,107 +688,146 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
       </div>
 
       {bonusToast && (
-        <div className="mb-1.5 py-1 px-3 rounded-full bg-emerald-500 text-white text-xs font-extrabold mx-auto shadow-md animate-bounce">
+        <div className="mb-2 py-1 px-3.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs font-extrabold mx-auto shadow-md animate-bounce">
           {bonusToast}
         </div>
       )}
 
       {!isFinished ? (
-        <div className="flex-1 flex flex-col relative">
-          <div className="text-center text-[11px] font-medium text-slate-400 dark:text-slate-500 mb-1.5 truncate">
-            Chạm nối nhanh 1 ô Tiếng Anh với 1 ô Nghĩa Việt ({deckName})
+        <div className="flex flex-col relative">
+          {/* Column Headers */}
+          <div className="grid grid-cols-2 gap-2.5 mb-1.5 px-1">
+            <div className="flex items-center justify-between text-[11px] font-extrabold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+              <span>Từ Tiếng Anh</span>
+              <span className="hidden sm:inline text-[10px] font-mono opacity-75">Phím 1–5</span>
+            </div>
+            <div className="flex items-center justify-between text-[11px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+              <span>Nghĩa Tiếng Việt</span>
+              <span className="hidden sm:inline text-[10px] font-mono opacity-75">Phím Q–T</span>
+            </div>
           </div>
 
-          {/* 2x5 Match Grid */}
-          <div className="flex-1 grid grid-cols-2 gap-2 my-auto">
+          {/* Crisp Locked-Height 5x2 Arcade Tile Matrix */}
+          <div className="grid grid-cols-2 gap-2.5">
             {/* Left Column: English Terms */}
-            <div className="flex flex-col gap-2">
+            <div className="grid grid-rows-5 gap-2">
               {board.left.map((slot, idx) => {
                 if (!slot) {
                   return (
                     <div
-                      key={`l-empty-${idx}`}
-                      className="flex-1 min-h-[50px] sm:min-h-[60px] rounded-2xl border border-dashed border-slate-200 dark:border-slate-800/60"
-                    />
+                      key={`l-charge-${idx}`}
+                      className="h-[62px] sm:h-[68px] rounded-2xl bg-emerald-500/8 dark:bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center gap-1.5 text-emerald-600/70 dark:text-emerald-400/70 text-xs font-bold"
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>Đã ghép</span>
+                    </div>
                   )
                 }
 
                 const isSelected = selectedLeft === idx
+                const isHinted = hintWordId === slot.wordId
                 let cardStyle =
-                  'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 hover:border-indigo-400'
+                  'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-950 text-slate-900 dark:text-slate-100 hover:border-indigo-400 dark:hover:border-indigo-500'
 
                 if (slot.status === 'matched') {
-                  cardStyle = 'bg-emerald-500 text-white border-emerald-500 scale-95 opacity-80'
+                  cardStyle =
+                    'bg-emerald-500 border-emerald-700 text-white scale-95 shadow-md shadow-emerald-500/25'
                 } else if (slot.status === 'wrong') {
                   cardStyle =
-                    'bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500 animate-shake'
+                    'bg-rose-500/20 border-rose-500 text-rose-600 dark:text-rose-300 animate-shake'
                 } else if (isSelected) {
                   cardStyle =
-                    'bg-indigo-600 text-white border-indigo-500 ring-2 ring-indigo-500/30 scale-[1.02]'
+                    'bg-indigo-600 border-indigo-800 text-white ring-2 ring-indigo-400/50 -translate-y-0.5 shadow-md shadow-indigo-600/25'
+                } else if (isHinted) {
+                  cardStyle =
+                    'bg-amber-500/15 border-amber-400 text-amber-700 dark:text-amber-200 ring-2 ring-amber-400/60 animate-pulse'
                 }
 
                 return (
                   <button
-                    key={`l-${idx}-${slot.wordId}`}
+                    key={`l-${idx}-${slot.spawnSeq}`}
                     type="button"
                     onClick={() => handleSelectLeft(idx)}
-                    className={`flex-1 min-h-[50px] sm:min-h-[60px] p-2 rounded-2xl border-2 font-bold text-xs sm:text-sm flex items-center justify-center text-center shadow-2xs transition-all duration-150 break-words leading-snug ${cardStyle}`}
+                    className={`relative h-[62px] sm:h-[68px] px-2.5 py-1.5 rounded-2xl border-2 border-b-4 font-extrabold text-xs sm:text-sm flex items-center justify-center text-center transition-all duration-150 active:translate-y-0.5 break-words leading-tight animate-popIn ${cardStyle}`}
                   >
-                    {slot.text}
+                    <span className="hidden sm:flex absolute top-1.5 left-2 w-4 h-4 rounded text-[10px] font-mono font-bold items-center justify-center opacity-45">
+                      {idx + 1}
+                    </span>
+                    <span className="line-clamp-2 px-1">{slot.text}</span>
+                    {slot.status === 'matched' && slot.pointsEarned && (
+                      <span className="absolute -top-2 right-2 px-1.5 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black shadow-xs animate-floatUp">
+                        +{slot.pointsEarned}
+                      </span>
+                    )}
                   </button>
                 )
               })}
             </div>
 
             {/* Right Column: Vietnamese Definitions */}
-            <div className="flex flex-col gap-2">
+            <div className="grid grid-rows-5 gap-2">
               {board.right.map((slot, idx) => {
                 if (!slot) {
                   return (
                     <div
-                      key={`r-empty-${idx}`}
-                      className="flex-1 min-h-[50px] sm:min-h-[60px] rounded-2xl border border-dashed border-slate-200 dark:border-slate-800/60"
-                    />
+                      key={`r-charge-${idx}`}
+                      className="h-[62px] sm:h-[68px] rounded-2xl bg-emerald-500/8 dark:bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center gap-1.5 text-emerald-600/70 dark:text-emerald-400/70 text-xs font-bold"
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>Đã ghép</span>
+                    </div>
                   )
                 }
 
                 const isSelected = selectedRight === idx
+                const isHinted = hintWordId === slot.wordId
                 let cardStyle =
-                  'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700/80 text-slate-700 dark:text-slate-200 hover:border-emerald-400'
+                  'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-950 text-slate-700 dark:text-slate-200 hover:border-emerald-400 dark:hover:border-emerald-500'
 
                 if (slot.status === 'matched') {
-                  cardStyle = 'bg-emerald-500 text-white border-emerald-500 scale-95 opacity-80'
+                  cardStyle =
+                    'bg-emerald-500 border-emerald-700 text-white scale-95 shadow-md shadow-emerald-500/25'
                 } else if (slot.status === 'wrong') {
                   cardStyle =
-                    'bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500 animate-shake'
+                    'bg-rose-500/20 border-rose-500 text-rose-600 dark:text-rose-300 animate-shake'
                 } else if (isSelected) {
                   cardStyle =
-                    'bg-indigo-600 text-white border-indigo-500 ring-2 ring-indigo-500/30 scale-[1.02]'
+                    'bg-emerald-600 border-emerald-800 text-white ring-2 ring-emerald-400/50 -translate-y-0.5 shadow-md shadow-emerald-600/25'
+                } else if (isHinted) {
+                  cardStyle =
+                    'bg-amber-500/15 border-amber-400 text-amber-700 dark:text-amber-200 ring-2 ring-amber-400/60 animate-pulse'
                 }
 
                 return (
                   <button
-                    key={`r-${idx}-${slot.wordId}`}
+                    key={`r-${idx}-${slot.spawnSeq}`}
                     type="button"
                     onClick={() => handleSelectRight(idx)}
-                    className={`flex-1 min-h-[50px] sm:min-h-[60px] p-2 rounded-2xl border-2 font-medium text-xs flex items-center justify-center text-center shadow-2xs transition-all duration-150 leading-snug line-clamp-3 break-words ${cardStyle}`}
+                    className={`relative h-[62px] sm:h-[68px] px-2.5 py-1.5 rounded-2xl border-2 border-b-4 font-semibold text-[11.5px] sm:text-xs flex items-center justify-center text-center transition-all duration-150 active:translate-y-0.5 leading-snug break-words animate-popIn ${cardStyle}`}
                   >
-                    {slot.text}
+                    <span className="hidden sm:flex absolute top-1.5 left-2 w-4 h-4 rounded text-[10px] font-mono font-bold items-center justify-center opacity-45">
+                      {RIGHT_HOTKEYS[idx]}
+                    </span>
+                    <span className="line-clamp-3 sm:pl-2">{slot.text}</span>
                   </button>
                 )
               })}
             </div>
           </div>
 
-          {/* Pause Overlay hides cards so timer can't be cheated */}
+          <div className="mt-2.5 text-center text-[11px] font-medium text-slate-400 dark:text-slate-500 truncate">
+            Bộ từ: {deckName} • Chuỗi 5 Combo tặng thêm +3 giây!
+          </div>
+
+          {/* Pause Overlay */}
           {isPaused && (
-            <div className="absolute inset-0 rounded-3xl bg-slate-950/85 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center animate-fadeIn z-20">
+            <div className="absolute inset-0 rounded-3xl bg-slate-950/88 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center animate-fadeIn z-20">
               <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mb-3">
                 <Pause className="w-7 h-7" />
               </div>
-              <h3 className="text-lg font-extrabold text-white mb-1">Đang tạm dừng</h3>
+              <h3 className="text-lg font-extrabold text-white mb-1">Tạm dừng Ghép Từ</h3>
               <p className="text-xs text-slate-400 mb-5">
-                Còn {displaySeconds} giây • Điểm hiện tại: <strong>{score.toLocaleString()}</strong>
+                Còn <strong>{displaySeconds}s</strong> • Điểm: <strong>{score.toLocaleString()}</strong>
               </p>
               <div className="w-full max-w-xs space-y-2.5">
                 <button
@@ -696,7 +854,7 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
         </div>
       ) : (
         /* Summary Screen */
-        <div className="flex-1 flex flex-col items-center justify-center p-5 text-center animate-fadeIn">
+        <div className="flex flex-col items-center justify-center p-5 text-center animate-fadeIn bg-white dark:bg-slate-800/80 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg">
           <div className="w-16 h-16 rounded-3xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-500 flex items-center justify-center mb-3">
             <Zap className="w-8 h-8" />
           </div>
@@ -711,18 +869,18 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
             Hết giờ thi đấu!
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-5">
-            Bạn đã ghép chuẩn <strong>{matchedCount} cặp từ</strong> với chuỗi Combo tối đa{' '}
+            Bạn đã ghép chuẩn <strong>{matchedCount} cặp từ</strong> • Chuỗi Combo tối đa{' '}
             <strong>x{maxCombo}</strong>
           </p>
 
           <div className="w-full max-w-xs grid grid-cols-2 gap-3 mb-5">
-            <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800">
+            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
               <div className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
                 {score.toLocaleString()}
               </div>
               <div className="text-xs text-slate-400">Tổng điểm</div>
             </div>
-            <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800">
+            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
               <div className="text-xl font-extrabold text-amber-500 flex items-center justify-center gap-1">
                 <Trophy className="w-4 h-4" />
                 <span>{bestScore.toLocaleString()}</span>
@@ -743,7 +901,7 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
             <button
               type="button"
               onClick={onBack}
-              className="w-full py-3 rounded-xl bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs"
+              className="w-full py-3 rounded-xl bg-slate-200/70 dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-semibold text-xs"
             >
               Về Đấu Trường chọn trò khác
             </button>

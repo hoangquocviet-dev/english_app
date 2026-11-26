@@ -158,7 +158,7 @@ class AudioManager {
   }
 
   // Arcade Laser Pew (Sky Defender)
-  public playLaser(): void {
+  public playLaser(overdrive = false): void {
     if (!this.isSoundEnabled) return
     try {
       const ctx = this.getAudioContext()
@@ -167,18 +167,157 @@ class AudioManager {
       const osc = ctx.createOscillator()
       const gain = ctx.createGain()
 
-      osc.type = 'triangle'
-      osc.frequency.setValueAtTime(780, now)
-      osc.frequency.exponentialRampToValueAtTime(240, now + 0.045)
+      osc.type = overdrive ? 'sawtooth' : 'triangle'
+      osc.frequency.setValueAtTime(overdrive ? 980 : 820, now)
+      osc.frequency.exponentialRampToValueAtTime(220, now + 0.06)
 
-      gain.gain.setValueAtTime(0.03, now)
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045)
+      gain.gain.setValueAtTime(0.045, now)
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06)
 
       osc.connect(gain)
       gain.connect(ctx.destination)
 
       osc.start(now)
-      osc.stop(now + 0.045)
+      osc.stop(now + 0.06)
+    } catch {}
+  }
+
+  // Synthesized Arcade Explosion (noise + low-end punch)
+  public playExplosion(isBoss = false): void {
+    if (!this.isSoundEnabled) return
+    try {
+      const ctx = this.getAudioContext()
+      if (!ctx) return
+      const now = ctx.currentTime
+      const duration = isBoss ? 0.45 : 0.22
+
+      // Sub-bass impact punch
+      const sub = ctx.createOscillator()
+      const subGain = ctx.createGain()
+      sub.type = 'sine'
+      sub.frequency.setValueAtTime(isBoss ? 150 : 190, now)
+      sub.frequency.exponentialRampToValueAtTime(36, now + duration)
+      subGain.gain.setValueAtTime(isBoss ? 0.22 : 0.14, now)
+      subGain.gain.exponentialRampToValueAtTime(0.001, now + duration)
+      sub.connect(subGain)
+      subGain.connect(ctx.destination)
+      sub.start(now)
+      sub.stop(now + duration)
+
+      // Filtered white-noise burst
+      const bufferSize = Math.floor(ctx.sampleRate * duration)
+      const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
+      const output = noiseBuffer.getChannelData(0)
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = Math.random() * 2 - 1
+      }
+      const whiteNoise = ctx.createBufferSource()
+      whiteNoise.buffer = noiseBuffer
+
+      const filter = ctx.createBiquadFilter()
+      filter.type = 'lowpass'
+      filter.frequency.setValueAtTime(isBoss ? 1400 : 1100, now)
+      filter.frequency.exponentialRampToValueAtTime(180, now + duration)
+
+      const noiseGain = ctx.createGain()
+      noiseGain.gain.setValueAtTime(isBoss ? 0.16 : 0.09, now)
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + duration)
+
+      whiteNoise.connect(filter)
+      filter.connect(noiseGain)
+      noiseGain.connect(ctx.destination)
+      whiteNoise.start(now)
+      whiteNoise.stop(now + duration)
+    } catch {}
+  }
+
+  // Shield charge / power-up arpeggio
+  public playPowerup(): void {
+    if (!this.isSoundEnabled) return
+    try {
+      const ctx = this.getAudioContext()
+      if (!ctx) return
+      const now = ctx.currentTime
+      const notes = [523.25, 659.25, 783.99, 1046.5]
+      notes.forEach((freq, idx) => {
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.type = 'triangle'
+        const t = now + idx * 0.045
+        osc.frequency.setValueAtTime(freq, t)
+        gain.gain.setValueAtTime(0.09, t)
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.14)
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.start(t)
+        osc.stop(t + 0.14)
+      })
+    } catch {}
+  }
+
+  // Energy Shield absorb sound
+  public playShieldBlock(): void {
+    if (!this.isSoundEnabled) return
+    try {
+      const ctx = this.getAudioContext()
+      if (!ctx) return
+      const now = ctx.currentTime
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(320, now)
+      osc.frequency.exponentialRampToValueAtTime(760, now + 0.16)
+      gain.gain.setValueAtTime(0.14, now)
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18)
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.start(now)
+      osc.stop(now + 0.18)
+    } catch {}
+  }
+
+  // Subtle urgent countdown tick for final seconds
+  public playCountdownTick(): void {
+    if (!this.isSoundEnabled) return
+    try {
+      const ctx = this.getAudioContext()
+      if (!ctx) return
+      const now = ctx.currentTime
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(960, now)
+      gain.gain.setValueAtTime(0.04, now)
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.035)
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.start(now)
+      osc.stop(now + 0.035)
+    } catch {}
+  }
+
+  // Boss Incoming Warning Siren
+  public playBossWarning(): void {
+    if (!this.isSoundEnabled) return
+    try {
+      const ctx = this.getAudioContext()
+      if (!ctx) return
+      const now = ctx.currentTime
+      for (let i = 0; i < 2; i++) {
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        const t = now + i * 0.22
+        osc.type = 'sawtooth'
+        osc.frequency.setValueAtTime(240, t)
+        osc.frequency.linearRampToValueAtTime(420, t + 0.14)
+        osc.frequency.linearRampToValueAtTime(220, t + 0.2)
+        gain.gain.setValueAtTime(0.07, t)
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.21)
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.start(t)
+        osc.stop(t + 0.21)
+      }
     } catch {}
   }
 

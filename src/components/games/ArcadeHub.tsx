@@ -187,7 +187,7 @@ export function ArcadeHub({
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                Chạm chọn làn bay để khai hỏa laser bắn hạ đúng máy bay mang từ khớp với nghĩa mục tiêu.
+                Điều khiển chiến cơ Valkyrie khai hỏa plasma, tích Khiên Aegis và công phá Tàu Mẹ Boss mỗi 5 đợt!
               </p>
             </div>
           </div>

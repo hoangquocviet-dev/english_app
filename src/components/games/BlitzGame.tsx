@@ -1,5 +1,16 @@
 import confetti from 'canvas-confetti'
-import { ArrowLeft, Check, Flame, Heart, Pause, Play, RotateCcw, Trophy, X } from 'lucide-react'
+import {
+  ArrowLeft,
+  Check,
+  Flame,
+  Heart,
+  Pause,
+  Play,
+  RotateCcw,
+  Trophy,
+  Volume2,
+  X,
+} from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { WordItem } from '../../types'
 import { formatArcadeMeaning } from '../../utils/arcadeText'
@@ -20,25 +31,24 @@ interface BlitzPrompt {
 }
 
 function getDurationForRound(round: number, defLength: number): number {
-  let base = 2050
-  if (round === 1) base = 3400
-  else if (round <= 6) base = 2900
-  else if (round <= 14) base = 2550
-  else if (round <= 24) base = 2250
+  let base = 1950
+  if (round <= 2) base = 2900
+  else if (round <= 6) base = 2550
+  else if (round <= 14) base = 2250
+  else if (round <= 24) base = 2050
 
-  // Fair reading allowance for multi-clause Vietnamese meanings
-  const lengthBonus = defLength > 52 ? 450 : 0
+  const lengthBonus = defLength > 48 ? 420 : 0
   return base + lengthBonus
 }
 
 function buildBlitzPool(words: WordItem[]): WordItem[] {
   const normalized = words
     .filter((w) => w.term.length <= 32)
-    .map((w) => ({ ...w, definition: formatArcadeMeaning(w.definition, 92) }))
+    .map((w) => ({ ...w, definition: formatArcadeMeaning(w.definition, 90) }))
   const base =
     normalized.length >= 6
       ? normalized
-      : words.map((w) => ({ ...w, definition: formatArcadeMeaning(w.definition, 92) }))
+      : words.map((w) => ({ ...w, definition: formatArcadeMeaning(w.definition, 90) }))
 
   const unique: WordItem[] = []
   const seen = new Set<string>()
@@ -54,7 +64,7 @@ function buildBlitzPool(words: WordItem[]): WordItem[] {
 
   for (const iw of storageService.getWords()) {
     if (iw.term.length > 28) continue
-    const formatted = { ...iw, definition: formatArcadeMeaning(iw.definition, 92) }
+    const formatted = { ...iw, definition: formatArcadeMeaning(iw.definition, 90) }
     const tk = formatted.term.trim().toLowerCase()
     if (!seen.has(tk)) {
       seen.add(tk)
@@ -67,6 +77,7 @@ function buildBlitzPool(words: WordItem[]): WordItem[] {
 
 export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
   const getPool = useCallback(() => buildBlitzPool(words), [words])
+  const recentPolarityRef = useRef<boolean[]>([])
 
   const generatePrompt = useCallback(
     (roundNum: number, prevWordId?: string): BlitzPrompt => {
@@ -75,7 +86,14 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
       const sourceList = candidates.length > 0 ? candidates : pool
       const word = sourceList[Math.floor(Math.random() * sourceList.length)]
 
-      const isMatch = Math.random() < 0.5
+      // Prevent >3 identical True/False answers in a row so rhythm stays sharp
+      const hist = recentPolarityRef.current
+      let isMatch = Math.random() < 0.5
+      if (hist.length >= 3 && hist.slice(-3).every((v) => v === isMatch)) {
+        isMatch = !isMatch
+      }
+      recentPolarityRef.current = [...hist.slice(-4), isMatch]
+
       let shownDefinition = word.definition
 
       if (!isMatch) {
@@ -85,7 +103,18 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
             w.definition.trim().toLowerCase() !== word.definition.trim().toLowerCase()
         )
         if (traps.length > 0) {
-          const trapWord = traps[Math.floor(Math.random() * traps.length)]
+          // Prefer smart traps with matching partOfSpeech & similar definition length
+          const samePos = word.partOfSpeech
+            ? traps.filter((t) => t.partOfSpeech === word.partOfSpeech)
+            : []
+          const trapCandidates = samePos.length >= 2 ? samePos : traps
+          const sortedByLen = [...trapCandidates].sort(
+            (a, b) =>
+              Math.abs(a.definition.length - word.definition.length) -
+              Math.abs(b.definition.length - word.definition.length)
+          )
+          const topSlice = sortedByLen.slice(0, Math.min(5, sortedByLen.length))
+          const trapWord = topSlice[Math.floor(Math.random() * topSlice.length)]
           shownDefinition = trapWord.definition
         } else {
           return {
@@ -115,6 +144,7 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
   const [correctTotal, setCorrectTotal] = useState(0)
   const [lives, setLives] = useState(3)
   const [feedback, setFeedback] = useState<'none' | 'correct' | 'wrong' | 'timeout'>('none')
+  const [lastPointsPop, setLastPointsPop] = useState<string | null>(null)
   const [secondsLeft, setSecondsLeft] = useState(() =>
     Number((prompt.durationMs / 1000).toFixed(1))
   )
@@ -126,10 +156,16 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
     () => storageService.getHighScores()['blitz-2s'] || 0
   )
 
+  // Swipe gesture state for Tinder-style left/right reflex swipes
+  const swipeStartRef = useRef<{ x: number; y: number } | null>(null)
+  const [dragX, setDragX] = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
+
   const barRef = useRef<HTMLDivElement | null>(null)
   const progressPctRef = useRef(100)
   const remainingMsRef = useRef(prompt.durationMs)
   const lastTenthsRef = useRef(Math.round(prompt.durationMs / 100))
+  const tickedFinalRef = useRef(false)
   const scoreRef = useRef(0)
   const livesRef = useRef(3)
   const lockedRef = useRef(false)
@@ -148,7 +184,11 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
     if (!el) return
     el.style.width = `${pct}%`
     const colorClass =
-      pct <= 35 ? 'bg-rose-500' : pct <= 65 ? 'bg-amber-500' : 'bg-emerald-500'
+      pct <= 35
+        ? 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.7)]'
+        : pct <= 65
+        ? 'bg-amber-500'
+        : 'bg-emerald-500'
     el.className = `h-full rounded-full ${colorClass}`
   }, [])
 
@@ -176,10 +216,14 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
       remainingMsRef.current = nextP.durationMs
       const tenths = Math.round(nextP.durationMs / 100)
       lastTenthsRef.current = tenths
+      tickedFinalRef.current = false
 
+      setDragX(0)
+      setIsDragging(false)
       setPrompt(nextP)
       setRound(nextRoundNum)
       setFeedback('none')
+      setLastPointsPop(null)
       setIsUrgentText(false)
       setSecondsLeft(tenths / 10)
       applyBarVisual(100)
@@ -193,6 +237,7 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
     lockedRef.current = true
     applyBarVisual(0)
     setSecondsLeft(0)
+    setDragX(0)
 
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
       try {
@@ -215,10 +260,9 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
       } else {
         advanceNextRound(round + 1, prompt.word.id)
       }
-    }, 1400)
+    }, 680)
   }, [isGameOver, round, prompt.word.id, applyBarVisual, clearFeedbackTimeout, endGame, advanceNextRound])
 
-  // Cleanup on unmount & auto-pause on tab hide
   useEffect(() => {
     const onVisibility = () => {
       if (document.hidden && !isGameOver && !lockedRef.current) {
@@ -232,7 +276,7 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
     }
   }, [isGameOver, clearFeedbackTimeout])
 
-  // Direct DOM 60fps Timer Bar Loop (avoids 60 React re-renders/sec!)
+  // 60fps Timer Bar Loop
   useEffect(() => {
     if (isGameOver || isPaused) return
 
@@ -247,6 +291,11 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
         remainingMsRef.current = Math.max(0, remainingMsRef.current - dtMs)
         const pct = (remainingMsRef.current / prompt.durationMs) * 100
         applyBarVisual(pct)
+
+        if (remainingMsRef.current <= 750 && !tickedFinalRef.current && remainingMsRef.current > 0) {
+          tickedFinalRef.current = true
+          audioService.playCountdownTick()
+        }
 
         const tenths = Math.ceil(remainingMsRef.current / 100)
         if (tenths !== lastTenthsRef.current) {
@@ -271,14 +320,32 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
     (userSaysMatch: boolean) => {
       if (lockedRef.current || isGameOver || isPaused) return
       lockedRef.current = true
+      setDragX(0)
+      setIsDragging(false)
 
       const isRight = userSaysMatch === prompt.isMatch
 
       if (isRight) {
         const nextStreak = streak + 1
-        const isFever = nextStreak >= 5
-        const timeBonus = Math.round((progressPctRef.current / 100) * 30)
-        const gained = (50 + timeBonus) * (isFever ? 2 : 1)
+        const mult = nextStreak >= 10 ? 3 : nextStreak >= 5 ? 2 : 1
+        const timeBonus = Math.round((progressPctRef.current / 100) * 35)
+        let gained = (50 + timeBonus) * mult
+        let popLabel = mult > 1 ? `+${gained} (x${mult})` : `+${gained}`
+
+        // Every 10 consecutive streak restores +1 Heart (or awards +150 Perfect Bonus!)
+        if (nextStreak % 10 === 0) {
+          audioService.playPowerup()
+          if (livesRef.current < 3) {
+            livesRef.current += 1
+            setLives(livesRef.current)
+            popLabel = `🔥 CHUỖI ${nextStreak}! +1 ❤️`
+          } else {
+            gained += 150
+            popLabel = `🔥 CHUỖI ${nextStreak}! +${gained}`
+          }
+        } else {
+          audioService.playCombo(nextStreak)
+        }
 
         scoreRef.current += gained
         setScore(scoreRef.current)
@@ -286,20 +353,20 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
         setMaxStreak((prev) => Math.max(prev, nextStreak))
         setCorrectTotal((prev) => prev + 1)
         setFeedback('correct')
+        setLastPointsPop(popLabel)
 
         if (typeof navigator !== 'undefined' && navigator.vibrate) {
           try {
-            navigator.vibrate(25)
+            navigator.vibrate(20)
           } catch {}
         }
-        audioService.playCombo(nextStreak)
         storageService.recordDailyActivity(true)
 
         clearFeedbackTimeout()
         feedbackTimeoutRef.current = window.setTimeout(() => {
           feedbackTimeoutRef.current = null
           advanceNextRound(round + 1, prompt.word.id)
-        }, 220)
+        }, 210)
       } else {
         if (typeof navigator !== 'undefined' && navigator.vibrate) {
           try {
@@ -322,13 +389,12 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
           } else {
             advanceNextRound(round + 1, prompt.word.id)
           }
-        }, 1150)
+        }, 650)
       }
     },
     [isGameOver, isPaused, prompt, streak, round, clearFeedbackTimeout, advanceNextRound, endGame]
   )
 
-  // Keyboard shortcuts (binds only once per round instead of 60x/sec!)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (isGameOver) return
@@ -358,10 +424,12 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
     scoreRef.current = 0
     livesRef.current = 3
     lockedRef.current = false
+    recentPolarityRef.current = []
 
     const first = generatePrompt(1)
     remainingMsRef.current = first.durationMs
     lastTenthsRef.current = Math.round(first.durationMs / 100)
+    tickedFinalRef.current = false
 
     setScore(0)
     setLives(3)
@@ -374,16 +442,45 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
     setPrompt(first)
     setRound(1)
     setFeedback('none')
+    setLastPointsPop(null)
+    setDragX(0)
     setIsUrgentText(false)
     setSecondsLeft(Number((first.durationMs / 1000).toFixed(1)))
     applyBarVisual(100)
   }
 
+  const onPointerDown = (clientX: number, clientY: number) => {
+    if (lockedRef.current || isPaused || isGameOver) return
+    swipeStartRef.current = { x: clientX, y: clientY }
+    setIsDragging(true)
+  }
+
+  const onPointerMove = (clientX: number) => {
+    if (!swipeStartRef.current || lockedRef.current) return
+    setDragX(clientX - swipeStartRef.current.x)
+  }
+
+  const onPointerEnd = () => {
+    if (!swipeStartRef.current) return
+    swipeStartRef.current = null
+    setIsDragging(false)
+    if (dragX <= -65) {
+      handleAnswer(false)
+    } else if (dragX >= 65) {
+      handleAnswer(true)
+    } else {
+      setDragX(0)
+    }
+  }
+
   const isFever = streak >= 5
+  const multBadge = streak >= 10 ? 'OVERDRIVE x3' : streak >= 5 ? 'FEVER x2' : `Chuỗi ${streak}`
+  const rightStampOpacity = Math.min(1, Math.max(0, (dragX - 20) / 50))
+  const leftStampOpacity = Math.min(1, Math.max(0, (-dragX - 20) / 50))
 
   return (
     <div
-      className="w-full flex-1 flex flex-col max-w-md mx-auto px-3.5 py-1.5 select-none relative"
+      className="w-full max-w-md mx-auto my-auto px-3.5 py-2 flex flex-col select-none relative"
       data-no-pull="true"
     >
       {/* Top HUD */}
@@ -402,10 +499,9 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
             <button
               type="button"
               onClick={() => {
-                if (!lockedRef.current) {
-                  audioService.playClick()
-                  setIsPaused((p) => !p)
-                }
+                if (lockedRef.current) return
+                audioService.playClick()
+                setIsPaused((p) => !p)
               }}
               className="p-2 rounded-lg text-slate-500 hover:text-rose-600 dark:hover:text-rose-400"
               title={isPaused ? 'Tiếp tục (P)' : 'Tạm dừng (P)'}
@@ -416,19 +512,19 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-sm font-extrabold text-slate-900 dark:text-slate-100">
+          <span className="text-sm font-extrabold text-slate-900 dark:text-slate-100 tabular-nums">
             {score.toLocaleString()} đ
           </span>
           {streak >= 2 && (
             <span
               className={`inline-flex items-center gap-0.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold ${
                 isFever
-                  ? 'bg-gradient-to-r from-rose-500 to-amber-500 text-white shadow-sm'
+                  ? 'bg-gradient-to-r from-rose-500 to-amber-500 text-white shadow-xs'
                   : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
               }`}
             >
               <Flame className="w-3.5 h-3.5" />
-              {isFever ? `FEVER x2 (${streak})` : `Chuỗi ${streak}`}
+              <span>{multBadge}</span>
             </span>
           )}
         </div>
@@ -448,24 +544,24 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
       </div>
 
       {!isGameOver ? (
-        <div className="flex-1 flex flex-col relative">
-          {/* Urgent 2-Second Bar */}
+        <div className="flex flex-col relative">
+          {/* Urgent Countdown Bar */}
           <div className="flex items-center justify-between text-xs font-bold mb-1.5 px-1 gap-2">
             <span className="text-slate-400 uppercase tracking-wider text-[11px] truncate">
               Câu {round} • {deckName}
             </span>
             <span
-              className={
+              className={`tabular-nums ${
                 isUrgentText
-                  ? 'text-rose-500 font-extrabold shrink-0'
+                  ? 'text-rose-500 font-extrabold shrink-0 animate-pulse'
                   : 'text-slate-600 dark:text-slate-300 shrink-0'
-              }
+              }`}
             >
               {secondsLeft.toFixed(1)}s
             </span>
           </div>
 
-          <div className="w-full h-2.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden mb-3.5 sm:mb-5">
+          <div className="w-full h-3 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden mb-3.5">
             <div
               ref={barRef}
               className="h-full rounded-full bg-emerald-500"
@@ -473,84 +569,135 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
             />
           </div>
 
-          {/* Blitz Flash Card */}
+          {/* Balanced Cyber Reflex Card (Swipeable Left/Right + Compact Proportions on Desktop!) */}
           <div
-            className={`flex-1 rounded-3xl p-4 sm:p-6 flex flex-col items-center justify-center text-center border-2 transition-colors my-auto shadow-lg ${
+            onTouchStart={(e) => onPointerDown(e.touches[0].clientX, e.touches[0].clientY)}
+            onTouchMove={(e) => onPointerMove(e.touches[0].clientX)}
+            onTouchEnd={onPointerEnd}
+            onMouseDown={(e) => onPointerDown(e.clientX, e.clientY)}
+            onMouseMove={(e) => {
+              if (e.buttons === 1) onPointerMove(e.clientX)
+            }}
+            onMouseUp={onPointerEnd}
+            onMouseLeave={() => {
+              if (isDragging) onPointerEnd()
+            }}
+            style={{
+              transform: `translate3d(${dragX}px, 0, 0) rotate(${dragX * 0.045}deg)`,
+              transition: isDragging ? 'none' : 'transform 0.22s cubic-bezier(0.22, 1, 0.36, 1)',
+            }}
+            className={`relative min-h-[245px] sm:min-h-[275px] rounded-3xl p-5 sm:p-6 flex flex-col items-center justify-center text-center border-2 shadow-xl cursor-grab active:cursor-grabbing touch-none ${
               feedback === 'correct'
                 ? 'bg-emerald-500/15 border-emerald-500'
                 : feedback === 'wrong' || feedback === 'timeout'
                 ? 'bg-rose-500/15 border-rose-500 animate-shake'
                 : isFever
-                ? 'bg-white dark:bg-slate-800 border-amber-500/60 shadow-amber-500/10'
-                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-800'
+                ? 'bg-white dark:bg-slate-800 border-amber-500/70 shadow-amber-500/15'
+                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700/80'
             }`}
           >
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
-              Cặp từ — nghĩa này Đúng hay Sai?
+            {/* Swipe Stamps */}
+            {rightStampOpacity > 0.05 && (
+              <div
+                style={{ opacity: rightStampOpacity }}
+                className="absolute top-4 left-4 px-2.5 py-1 rounded-xl border-2 border-emerald-500 bg-emerald-500/15 text-emerald-500 font-black text-xs uppercase -rotate-12 pointer-events-none"
+              >
+                ✓ ĐÚNG
+              </div>
+            )}
+            {leftStampOpacity > 0.05 && (
+              <div
+                style={{ opacity: leftStampOpacity }}
+                className="absolute top-4 right-4 px-2.5 py-1 rounded-xl border-2 border-rose-500 bg-rose-500/15 text-rose-500 font-black text-xs uppercase rotate-12 pointer-events-none"
+              >
+                ✕ SAI
+              </div>
+            )}
+
+            {/* Floating Score Pop */}
+            {lastPointsPop && (
+              <div className="absolute top-3 right-4 px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-950 text-xs font-black shadow-sm animate-floatUp">
+                {lastPointsPop}
+              </div>
+            )}
+
+            {/* Speaker button */}
+            <button
+              type="button"
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+              onClick={() => audioService.speak(prompt.word.term, 0.95)}
+              title="Nghe phát âm"
+              className="absolute top-3.5 right-3.5 p-2 rounded-xl bg-slate-100 dark:bg-slate-700/70 text-slate-500 dark:text-slate-300 hover:text-indigo-500 transition-colors"
+            >
+              <Volume2 className="w-4 h-4" />
+            </button>
+
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-500 dark:text-indigo-400 mb-1.5">
+              {prompt.word.partOfSpeech ? `(${prompt.word.partOfSpeech}) • ` : ''}Đúng hay Bẫy?
             </span>
 
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-50 tracking-tight break-words">
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight break-words">
               {prompt.word.term}
             </h2>
             {prompt.word.ipa && (
-              <p className="text-xs font-sans font-semibold text-indigo-500 dark:text-indigo-400 mt-0.5">
+              <p className="text-xs font-sans font-semibold text-slate-400 mt-0.5">
                 {prompt.word.ipa}
               </p>
             )}
 
-            <div className="w-12 h-0.5 bg-slate-200 dark:bg-slate-700 my-3.5 sm:my-5 rounded-full" />
+            <div className="w-14 h-1 bg-gradient-to-r from-indigo-500/40 via-sky-400/60 to-emerald-500/40 my-3.5 rounded-full" />
 
             <p className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100 leading-snug break-words px-2">
-              "{prompt.shownDefinition}"
+              “{prompt.shownDefinition}”
             </p>
 
             {(feedback === 'wrong' || feedback === 'timeout') && (
-              <div className="mt-3 p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/25 text-xs text-rose-600 dark:text-rose-300 font-semibold animate-fadeIn leading-relaxed">
-                {feedback === 'timeout' ? (
-                  <>
-                    Hết giờ! Đáp án là <strong>{prompt.isMatch ? 'ĐÚNG' : 'SAI'}</strong> — Nghĩa của{' '}
-                    <strong>{prompt.word.term}</strong> là:{' '}
-                    <span className="underline">{prompt.word.definition}</span>
-                  </>
-                ) : prompt.isMatch ? (
-                  <>
-                    Cặp này <strong>ĐÚNG</strong> đấy! <strong>{prompt.word.term}</strong> chính là:{' '}
-                    <span className="underline">{prompt.word.definition}</span>
-                  </>
-                ) : (
-                  <>
-                    Bẫy đấy (<strong>SAI</strong>)! Nghĩa thật của <strong>{prompt.word.term}</strong> là:{' '}
-                    <span className="underline">{prompt.word.definition}</span>
-                  </>
-                )}
+              <div className="mt-3 px-3 py-2 rounded-xl bg-rose-500/15 border border-rose-500/30 text-xs text-rose-700 dark:text-rose-200 font-semibold animate-fadeIn leading-snug">
+                {feedback === 'timeout' ? '⏰ Hết giờ! ' : '💡 '}
+                Nghĩa chuẩn: <strong>{prompt.word.definition}</strong>
               </div>
             )}
           </div>
 
-          {/* Giant 2-Thumb Action Buttons */}
-          <div className="grid grid-cols-2 gap-3 pt-3.5 sm:pt-5 pb-1">
+          {/* 3D Tactile Arcade Push-Buttons */}
+          <div className="grid grid-cols-2 gap-3 pt-3.5">
             <button
               type="button"
               onClick={() => handleAnswer(false)}
-              className="py-4 sm:py-5 rounded-2xl bg-rose-600 hover:bg-rose-500 active:scale-95 text-white font-extrabold text-base flex items-center justify-center gap-2 shadow-lg shadow-rose-600/20 transition-transform"
+              className="py-3.5 sm:py-4 rounded-2xl bg-rose-600 hover:bg-rose-500 border-b-4 border-rose-800 active:border-b-0 active:translate-y-1 text-white font-extrabold text-base flex items-center justify-center gap-2 shadow-lg shadow-rose-600/25 transition-all"
             >
-              <X className="w-6 h-6 stroke-[2.5]" />
-              <span>SAI</span>
+              <X className="w-6 h-6 stroke-[2.8]" />
+              <div className="flex flex-col items-start leading-none">
+                <span>SAI</span>
+                <span className="text-[10px] font-mono opacity-80 font-semibold mt-0.5">
+                  Phím A / ◀
+                </span>
+              </div>
             </button>
 
             <button
               type="button"
               onClick={() => handleAnswer(true)}
-              className="py-4 sm:py-5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-extrabold text-base flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-transform"
+              className="py-3.5 sm:py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1 text-white font-extrabold text-base flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/25 transition-all"
             >
-              <Check className="w-6 h-6 stroke-[2.5]" />
-              <span>ĐÚNG</span>
+              <Check className="w-6 h-6 stroke-[2.8]" />
+              <div className="flex flex-col items-start leading-none">
+                <span>ĐÚNG</span>
+                <span className="text-[10px] font-mono opacity-80 font-semibold mt-0.5">
+                  Phím D / ▶
+                </span>
+              </div>
             </button>
           </div>
 
-          {/* Pause Overlay hides current prompt so timer can't be abused */}
+          <div className="mt-2.5 text-center text-[11px] font-medium text-slate-400 dark:text-slate-500">
+            Mẹo: Vuốt thẻ Trái / Phải hoặc bấm nút • Chuỗi 10 đúng hồi +1 ❤️
+          </div>
+
+          {/* Pause Overlay */}
           {isPaused && (
-            <div className="absolute inset-0 rounded-3xl bg-slate-950/88 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center animate-fadeIn z-20">
+            <div className="absolute inset-0 rounded-3xl bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center animate-fadeIn z-20">
               <div className="w-14 h-14 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-400 flex items-center justify-center mb-3">
                 <Pause className="w-7 h-7" />
               </div>
@@ -582,8 +729,8 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
           )}
         </div>
       ) : (
-        /* Game Over Screen */
-        <div className="flex-1 flex flex-col items-center justify-center p-5 text-center animate-fadeIn">
+        /* Game Over Summary */
+        <div className="flex flex-col items-center justify-center p-5 text-center animate-fadeIn bg-white dark:bg-slate-800/80 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg">
           <div className="w-16 h-16 rounded-3xl bg-rose-500/15 border border-rose-500/30 text-rose-500 flex items-center justify-center mb-3">
             <Flame className="w-8 h-8" />
           </div>
@@ -595,21 +742,20 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
           )}
 
           <h3 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">
-            Kết thúc Blitz 2 Giây!
+            Kết thúc Phản Xạ!
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-5">
-            Phản xạ đúng <strong>{correctTotal} câu</strong> • Chuỗi liên tiếp cao nhất:{' '}
-            <strong>{maxStreak}</strong>
+            Đúng <strong>{correctTotal} câu</strong> • Chuỗi cao nhất <strong>{maxStreak}</strong>
           </p>
 
           <div className="w-full max-w-xs grid grid-cols-2 gap-3 mb-5">
-            <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800">
+            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
               <div className="text-xl font-extrabold text-rose-600 dark:text-rose-400">
                 {score.toLocaleString()}
               </div>
               <div className="text-xs text-slate-400">Tổng điểm</div>
             </div>
-            <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800">
+            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
               <div className="text-xl font-extrabold text-amber-500 flex items-center justify-center gap-1">
                 <Trophy className="w-4 h-4" />
                 <span>{bestScore.toLocaleString()}</span>
@@ -630,7 +776,7 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
             <button
               type="button"
               onClick={onBack}
-              className="w-full py-3 rounded-xl bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs"
+              className="w-full py-3 rounded-xl bg-slate-200/70 dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-semibold text-xs"
             >
               Về Đấu Trường chọn trò khác
             </button>
