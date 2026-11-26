@@ -51,6 +51,7 @@ export function LibraryView({
   const [newDeckName, setNewDeckName] = useState('')
   const [renamingDeckId, setRenamingDeckId] = useState<string | null>(null)
   const [renameDeckDraft, setRenameDeckDraft] = useState('')
+  const [nowMs] = useState(() => Date.now())
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
   const activeDeckCardRef = useRef<HTMLDivElement | null>(null)
 
@@ -96,12 +97,12 @@ export function LibraryView({
 
       if (statusFilter === 'mastered') return w.status === 'mastered'
       if (statusFilter === 'due') {
-        return w.status === 'mastered' && (!w.nextReview || w.nextReview <= Date.now())
+        return w.status === 'mastered' && (!w.nextReview || w.nextReview <= nowMs)
       }
       if (statusFilter === 'review') return w.status === 'learning' || w.status === 'new'
       return true
     })
-  }, [sourceWords, searchQuery, statusFilter])
+  }, [sourceWords, searchQuery, statusFilter, nowMs])
 
   const visibleWords = useMemo(
     () => filteredWords.slice(0, visibleLimit),
@@ -316,9 +317,8 @@ export function LibraryView({
     [sourceWords]
   )
   const dueTotal = useMemo(
-    // eslint-disable-next-line react-hooks/purity
-    () => sourceWords.filter((w) => w.status === 'mastered' && (!w.nextReview || w.nextReview <= Date.now())).length,
-    [sourceWords]
+    () => sourceWords.filter((w) => w.status === 'mastered' && (!w.nextReview || w.nextReview <= nowMs)).length,
+    [sourceWords, nowMs]
   )
   const allMasteredTotal = useMemo(
     () => allWords.filter((w) => w.status === 'mastered').length,
@@ -885,9 +885,9 @@ export function LibraryView({
                         <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400">
                           SRS Lv.{word.srsLevel}
                           {word.nextReview
-                            ? word.nextReview <= Date.now()
+                            ? word.nextReview <= nowMs
                               ? ' • Đến hạn'
-                              : ` • ${Math.max(1, Math.ceil((word.nextReview - Date.now()) / 86400000))}d`
+                              : ` • ${Math.max(1, Math.ceil((word.nextReview - nowMs) / 86400000))}d`
                             : ''}
                         </span>
                       )}
@@ -1102,7 +1102,6 @@ export function LibraryView({
       {/* Sync Modal */}
       {isSyncModalOpen && (
         <ImportExportModal
-          key={activeDeck.id}
           isOpen={isSyncModalOpen}
           onClose={() => setIsSyncModalOpen(false)}
           activeDeck={activeDeck}
