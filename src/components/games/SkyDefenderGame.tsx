@@ -9,6 +9,7 @@ import {
   RotateCcw,
   Shield,
   Skull,
+  Star as StarIcon,
   Trophy,
   Volume2,
 } from 'lucide-react'
@@ -1432,16 +1433,39 @@ export function SkyDefenderGame({ words, deckName, onBack }: SkyDefenderGameProp
                         {formatArcadeMeaning(mw.definition, 54)}
                       </span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        void audioService.speak(mw.term, 0.9)
-                      }}
-                      className="p-1.5 rounded-lg bg-indigo-500/20 text-cyan-300 shrink-0"
-                    >
-                      <Volume2 className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          const next = storageService.toggleWordStar(mw.id)
+                          audioService.playClick()
+                          setMissedWords((prev) =>
+                            prev.map((item) =>
+                              item.id === mw.id ? { ...item, starred: next } : item
+                            )
+                          )
+                        }}
+                        title="Đánh dấu sao từ này"
+                        className={`p-1.5 rounded-lg transition-colors ${
+                          mw.starred
+                            ? 'bg-amber-500/20 text-amber-400'
+                            : 'bg-slate-800 text-slate-400 hover:text-amber-400'
+                        }`}
+                      >
+                        <StarIcon className={`w-3.5 h-3.5 ${mw.starred ? 'fill-amber-400' : ''}`} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          void audioService.speak(mw.term, 0.9)
+                        }}
+                        className="p-1.5 rounded-lg bg-indigo-500/20 text-cyan-300"
+                      >
+                        <Volume2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

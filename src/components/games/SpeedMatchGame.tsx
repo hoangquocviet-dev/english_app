@@ -8,6 +8,7 @@ import {
   Pause,
   Play,
   RotateCcw,
+  Star,
   Trophy,
   Volume2,
   Zap,
@@ -911,14 +912,34 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
                     <span className="font-bold text-slate-900 dark:text-slate-100">{mw.term}</span>
                     <span className="text-slate-500 dark:text-slate-400"> — {mw.definition}</span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => void audioService.speak(mw.term)}
-                    className="p-1 rounded-lg text-indigo-500 hover:bg-indigo-500/10 shrink-0"
-                    title="Nghe phát âm"
-                  >
-                    <Volume2 className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = storageService.toggleWordStar(mw.id)
+                        audioService.playClick()
+                        setMissedWords((prev) =>
+                          prev.map((item) => (item.id === mw.id ? { ...item, starred: next } : item))
+                        )
+                      }}
+                      className={`p-1 rounded-lg transition-colors ${
+                        mw.starred
+                          ? 'text-amber-500 bg-amber-500/10'
+                          : 'text-slate-400 hover:text-amber-500'
+                      }`}
+                      title="Đánh dấu sao từ này"
+                    >
+                      <Star className={`w-3.5 h-3.5 ${mw.starred ? 'fill-amber-400' : ''}`} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void audioService.speak(mw.term)}
+                      className="p-1 rounded-lg text-indigo-500 hover:bg-indigo-500/10"
+                      title="Nghe phát âm"
+                    >
+                      <Volume2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

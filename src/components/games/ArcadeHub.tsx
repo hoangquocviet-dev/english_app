@@ -20,6 +20,8 @@ import { audioService } from '../../utils/audio'
 import { cloudSyncService, computePlayerTag } from '../../utils/cloudSync'
 
 export const ALL_DECKS_ID = '__all__'
+export const STARRED_POOL_ID = '__starred__'
+export const LEARNING_POOL_ID = '__learning__'
 
 interface ArcadeHubProps {
   decks: Deck[]
@@ -54,12 +56,16 @@ export function ArcadeHub({
     (highScores['blitz-2s'] || 0) +
     (highScores['word-bomb'] || 0)
 
-  const deckCounts = useMemo(() => {
+  const { deckCounts, starredTotal, learningTotal } = useMemo(() => {
     const map: Record<string, number> = {}
+    let starred = 0
+    let learning = 0
     for (const w of allWords) {
       map[w.deckId] = (map[w.deckId] || 0) + 1
+      if (w.starred) starred++
+      if (w.status === 'learning') learning++
     }
-    return map
+    return { deckCounts: map, starredTotal: starred, learningTotal: learning }
   }, [allWords])
 
   const loadLeaderboard = useCallback(async () => {
@@ -166,6 +172,16 @@ export function ArcadeHub({
               <option value={ALL_DECKS_ID} className="text-slate-900 bg-white font-bold">
                 Tất cả kho từ vựng ({allWords.length.toLocaleString()} từ)
               </option>
+              {starredTotal > 0 && (
+                <option value={STARRED_POOL_ID} className="text-amber-700 bg-white font-bold">
+                  ⭐ Từ đã đánh dấu sao ({starredTotal} từ)
+                </option>
+              )}
+              {learningTotal > 0 && (
+                <option value={LEARNING_POOL_ID} className="text-rose-700 bg-white font-bold">
+                  🔥 Từ khó đang ôn ({learningTotal} từ)
+                </option>
+              )}
               {decks.map((deck) => (
                 <option key={deck.id} value={deck.id} className="text-slate-900 bg-white">
                   {deck.name} ({deckCounts[deck.id] || 0} từ)

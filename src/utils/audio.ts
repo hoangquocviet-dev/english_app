@@ -1,10 +1,19 @@
 const SOUND_STORAGE_KEY = 'vocabflow_sound_enabled'
+const VOICE_ACCENT_STORAGE_KEY = 'vocabflow_voice_accent'
+
+export type VoiceAccent = 'en-US' | 'en-GB'
 
 class AudioManager {
   private ctx: AudioContext | null = null
   private voices: SpeechSynthesisVoice[] = []
-  private preferredVoice: SpeechSynthesisVoice | null = null
+  private preferredVoiceUS: SpeechSynthesisVoice | null = null
+  private preferredVoiceGB: SpeechSynthesisVoice | null = null
+  private voiceAccent: VoiceAccent = 'en-US'
   private isSoundEnabled: boolean = true
+  private activeUtterance: SpeechSynthesisUtterance | null = null
+  private activeResolve: (() => void) | null = null
+  private activeTimer: number | null = null
+  private accentListeners = new Set<() => void>()
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -12,6 +21,10 @@ class AudioManager {
         const saved = window.localStorage.getItem(SOUND_STORAGE_KEY)
         if (saved !== null) {
           this.isSoundEnabled = saved !== 'false'
+        }
+        const savedAccent = window.localStorage.getItem(VOICE_ACCENT_STORAGE_KEY)
+        if (savedAccent === 'en-GB' || savedAccent === 'en-US') {
+          this.voiceAccent = savedAccent
         }
       } catch {}
     }
@@ -41,13 +54,63 @@ class AudioManager {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return
     this.voices = window.speechSynthesis.getVoices()
     if (this.voices.length > 0) {
-      // Find high quality English voices (en-US, en-GB)
-      this.preferredVoice =
-        this.voices.find(v => (v.lang === 'en-US' || v.lang === 'en_US') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Siri'))) ||
-        this.voices.find(v => v.lang.startsWith('en-US')) ||
-        this.voices.find(v => v.lang.startsWith('en')) ||
+      this.preferredVoiceUS =
+        this.voices.find(
+          (v) =>
+            (v.lang === 'en-US' || v.lang === 'en_US') &&
+            (v.name.includes('Natural') ||
+              v.name.includes('Google') ||
+              v.name.includes('Samantha') ||
+              v.name.includes('Siri'))
+        ) ||
+        this.voices.find((v) => v.lang.startsWith('en-US') || v.lang.startsWith('en_US')) ||
+        this.voices.find((v) => v.lang.startsWith('en')) ||
         this.voices[0] ||
         null
+
+      this.preferredVoiceGB =
+        this.voices.find(
+          (v) =>
+            (v.lang === 'en-GB' || v.lang === 'en_GB') &&
+            (v.name.includes('Natural') ||
+              v.name.includes('Google') ||
+              v.name.includes('Daniel') ||
+              v.name.includes('Libby') ||
+              v.name.includes('Siri'))
+        ) ||
+        this.voices.find((v) => v.lang.startsWith('en-GB') || v.lang.startsWith('en_GB')) ||
+        this.preferredVoiceUS
+    }
+  }
+
+  public getVoiceAccent(): VoiceAccent {
+    return this.voiceAccent
+  }
+
+  public setVoiceAccent(accent: VoiceAccent): void {
+    this.voiceAccent = accent
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.setItem(VOICE_ACCENT_STORAGE_KEY, accent)
+      } catch {}
+    }
+    for (const fn of this.accentListeners) {
+      try {
+        fn()
+      } catch {}
+    }
+  }
+
+  public toggleVoiceAccent(): VoiceAccent {
+    const next: VoiceAccent = this.voiceAccent === 'en-US' ? 'en-GB' : 'en-US'
+    this.setVoiceAccent(next)
+    return next
+  }
+
+  public subscribeAccent(listener: () => void): () => void {
+    this.accentListeners.add(listener)
+    return () => {
+      this.accentListeners.delete(listener)
     }
   }
 
@@ -372,7 +435,20 @@ class AudioManager {
     } catch {}
   }
 
-  // Speak word using native SpeechSynthesis
+  private clearActiveSpeechState(): void {
+    if (this.activeTimer !== null && typeof window !== 'undefined') {
+      window.clearTimeout(this.activeTimer)
+      this.activeTimer = null
+    }
+    this.activeUtterance = null
+    if (this.activeResolve) {
+      const done = this.activeResolve
+      this.activeResolve = null
+      done()
+    }
+  }
+
+  // Speak word using native SpeechSynthesis (with GC pin + anti-hang timeout + US/UK accent)
   public speak(text: string, rate: number = 0.9): Promise<void> {
     return new Promise((resolve) => {
       if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
@@ -381,7 +457,7 @@ class AudioManager {
       }
 
       try {
-        // Cancel any pending speech
+        this.clearActiveSpeechState()
         window.speechSynthesis.cancel()
 
         const cleanText = text.replace(/[/\\()[\]]/g, '').trim()
@@ -391,22 +467,44 @@ class AudioManager {
         }
 
         const utterance = new SpeechSynthesisUtterance(cleanText)
-        utterance.lang = 'en-US'
+        utterance.lang = this.voiceAccent
         utterance.rate = rate
         utterance.pitch = 1.0
 
-        if (this.preferredVoice) {
-          utterance.voice = this.preferredVoice
+        const chosenVoice =
+          this.voiceAccent === 'en-GB'
+            ? this.preferredVoiceGB || this.preferredVoiceUS
+            : this.preferredVoiceUS || this.preferredVoiceGB
+
+        if (chosenVoice) {
+          utterance.voice = chosenVoice
         }
 
-        utterance.onend = () => resolve()
-        utterance.onerror = () => resolve()
+        this.activeUtterance = utterance
+        this.activeResolve = resolve
 
-        // Resume AudioContext just in case
+        const safetyMs = Math.max(3500, Math.round((cleanText.length * 125) / Math.max(0.5, rate)))
+        this.activeTimer = window.setTimeout(() => {
+          if (this.activeUtterance === utterance) {
+            this.clearActiveSpeechState()
+          }
+        }, safetyMs)
+
+        utterance.onend = () => {
+          if (this.activeUtterance === utterance) {
+            this.clearActiveSpeechState()
+          }
+        }
+        utterance.onerror = () => {
+          if (this.activeUtterance === utterance) {
+            this.clearActiveSpeechState()
+          }
+        }
+
         this.getAudioContext()
-
         window.speechSynthesis.speak(utterance)
       } catch {
+        this.clearActiveSpeechState()
         resolve()
       }
     })
@@ -420,8 +518,11 @@ class AudioManager {
 
   // Stop any active speech
   public stopSpeech(): void {
+    this.clearActiveSpeechState()
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel()
+      try {
+        window.speechSynthesis.cancel()
+      } catch {}
     }
   }
 }

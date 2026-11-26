@@ -4,7 +4,12 @@ import { BottomNav } from './components/common/BottomNav'
 import { ErrorBoundary } from './components/common/ErrorBoundary'
 import { Navbar } from './components/common/Navbar'
 import { PullToRefresh } from './components/common/PullToRefresh'
-import { ALL_DECKS_ID, ArcadeHub } from './components/games/ArcadeHub'
+import {
+  ALL_DECKS_ID,
+  ArcadeHub,
+  LEARNING_POOL_ID,
+  STARRED_POOL_ID,
+} from './components/games/ArcadeHub'
 import { PracticeHome } from './components/practice/PracticeHome'
 import type { ActiveTab, ArcadeGameId, Deck, StudyFilterMode, StudyMode, WordItem } from './types'
 import { audioService } from './utils/audio'
@@ -92,7 +97,7 @@ export function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('practice')
   const [activeStudyMode, setActiveStudyMode] = useState<StudyMode | null>(null)
   const [activeGame, setActiveGame] = useState<ArcadeGameId | null>(null)
-  const [arcadeUseAllDecks, setArcadeUseAllDecks] = useState<boolean>(false)
+  const [arcadePoolId, setArcadePoolId] = useState<string>('')
   const [sessionWords, setSessionWords] = useState<WordItem[]>([])
   const [sessionFilterMode, setSessionFilterMode] = useState<StudyFilterMode>('all')
   const [isGlobalSrsSession, setIsGlobalSrsSession] = useState(false)
@@ -163,11 +168,15 @@ export function App() {
   }
 
   const handleSelectArcadeDeck = (deckId: string) => {
-    if (deckId === ALL_DECKS_ID) {
-      setArcadeUseAllDecks(true)
+    if (
+      deckId === ALL_DECKS_ID ||
+      deckId === STARRED_POOL_ID ||
+      deckId === LEARNING_POOL_ID
+    ) {
+      setArcadePoolId(deckId)
       setAllWords(storageService.getWords())
     } else {
-      setArcadeUseAllDecks(false)
+      setArcadePoolId('')
       handleSelectDeck(deckId)
     }
   }
@@ -257,10 +266,35 @@ export function App() {
     : activeDeck?.name || 'Kho từ vựng'
   const studyPoolWords = isGlobalSrsSession ? allWords : words
   const isFullScreenSession = Boolean(activeStudyMode || activeGame)
-  const arcadeWords = arcadeUseAllDecks ? allWords : words
-  const arcadeDeckLabel = arcadeUseAllDecks
-    ? 'Tất cả kho từ'
-    : activeDeck?.name || 'Kho từ vựng'
+
+  const starredAllWords = allWords.filter((w) => Boolean(w.starred))
+  const learningAllWords = allWords.filter((w) => w.status === 'learning')
+  const effectiveArcadePoolId =
+    arcadePoolId === ALL_DECKS_ID
+      ? ALL_DECKS_ID
+      : arcadePoolId === STARRED_POOL_ID && starredAllWords.length > 0
+      ? STARRED_POOL_ID
+      : arcadePoolId === LEARNING_POOL_ID && learningAllWords.length > 0
+      ? LEARNING_POOL_ID
+      : ''
+
+  const arcadeWords =
+    effectiveArcadePoolId === ALL_DECKS_ID
+      ? allWords
+      : effectiveArcadePoolId === STARRED_POOL_ID
+      ? starredAllWords
+      : effectiveArcadePoolId === LEARNING_POOL_ID
+      ? learningAllWords
+      : words
+
+  const arcadeDeckLabel =
+    effectiveArcadePoolId === ALL_DECKS_ID
+      ? 'Tất cả kho từ'
+      : effectiveArcadePoolId === STARRED_POOL_ID
+      ? 'Từ đã đánh dấu sao'
+      : effectiveArcadePoolId === LEARNING_POOL_ID
+      ? 'Từ khó đang ôn'
+      : activeDeck?.name || 'Kho từ vựng'
 
   return (
     <ErrorBoundary>
@@ -434,7 +468,7 @@ export function App() {
                   {activeTab === 'games' && (
                     <ArcadeHub
                       decks={decks}
-                      selectedDeckId={arcadeUseAllDecks ? ALL_DECKS_ID : activeDeck.id}
+                      selectedDeckId={effectiveArcadePoolId || activeDeck.id}
                       words={arcadeWords}
                       allWords={allWords}
                       highScores={highScores}

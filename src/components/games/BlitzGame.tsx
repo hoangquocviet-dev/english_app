@@ -7,6 +7,7 @@ import {
   Pause,
   Play,
   RotateCcw,
+  Star,
   Trophy,
   Volume2,
   X,
@@ -794,13 +795,34 @@ export function BlitzGame({ words, deckName, onBack }: BlitzGameProps) {
                       {mw.definition}
                     </span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => audioService.speak(mw.term, 0.9)}
-                    className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-500 shrink-0"
-                  >
-                    <Volume2 className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = storageService.toggleWordStar(mw.id)
+                        audioService.playClick()
+                        setMissedWords((prev) =>
+                          prev.map((item) => (item.id === mw.id ? { ...item, starred: next } : item))
+                        )
+                      }}
+                      title="Đánh dấu sao từ này"
+                      className={`p-1.5 rounded-lg transition-colors ${
+                        mw.starred
+                          ? 'bg-amber-500/15 text-amber-500'
+                          : 'bg-slate-200/60 dark:bg-slate-800 text-slate-400 hover:text-amber-500'
+                      }`}
+                    >
+                      <Star className={`w-3.5 h-3.5 ${mw.starred ? 'fill-amber-400' : ''}`} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void audioService.speak(mw.term, 0.9)}
+                      className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-500"
+                      title="Nghe phát âm"
+                    >
+                      <Volume2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

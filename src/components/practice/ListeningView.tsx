@@ -1,10 +1,24 @@
-import { ArrowLeft, Check, Headphones, Star, Volume2, X } from 'lucide-react'
+import {
+  ArrowLeft,
+  Check,
+  Headphones,
+  HelpCircle,
+  Keyboard,
+  Lightbulb,
+  ListChecks,
+  Star,
+  Volume2,
+  X,
+} from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { StudyFilterMode, StudySessionStats, WordItem } from '../../types'
 import { formatArcadeMeaning } from '../../utils/arcadeText'
 import { audioService } from '../../utils/audio'
 import { GLOBAL_SRS_DECK_ID, storageService } from '../../utils/storage'
 import { StudySummary } from './StudySummary'
+
+const LISTENING_STYLE_KEY = 'vocabflow_listening_style'
+type ListeningStyle = 'choice' | 'dictation'
 
 interface ListeningViewProps {
   words: WordItem[]
@@ -39,6 +53,27 @@ function shuffleArray<T>(array: T[]): T[] {
   return arr
 }
 
+function normalizeDictation(raw: string): string {
+  return raw
+    .toLowerCase()
+    .replace(/\([^)]*\)/g, ' ')
+    .replace(/[-_']/g, ' ')
+    .replace(/[^a-z0-9\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function maskTermSkeleton(term: string): string {
+  return term
+    .trim()
+    .split(/\s+/)
+    .map((part) => {
+      if (part.length <= 2) return `${part[0] || ''}${'_'.repeat(Math.max(0, part.length - 1))}`
+      return `${part[0]} ${Array.from({ length: part.length - 2 }, () => '_').join(' ')} ${part[part.length - 1]}`
+    })
+    .join('   ')
+}
+
 function buildListeningQuestions(
   sourceWords: WordItem[],
   fullDeckWords: WordItem[]
@@ -48,7 +83,6 @@ function buildListeningQuestions(
       ? [...fullDeckWords, ...sourceWords]
       : [...fullDeckWords, ...sourceWords, ...storageService.getWords().slice(0, 40)]
 
-  // Deduplicate pool once in O(N)
   const seenTerms = new Set<string>()
   const uniquePool: Array<ListeningOption & { termKey: string }> = []
   for (const w of rawList) {
@@ -66,7 +100,6 @@ function buildListeningQuestions(
     const picked: ListeningOption[] = []
     const pickedKeys = new Set<string>([targetKey])
 
-    // Fast O(1) random sampling of 3 distractors
     for (let attempts = 0; attempts < 24 && picked.length < 3 && poolLen > 1; attempts++) {
       const cand = uniquePool[Math.floor(Math.random() * poolLen)]
       if (!pickedKeys.has(cand.termKey)) {
@@ -118,8 +151,21 @@ export function ListeningView({
   const [questions, setQuestions] = useState<ListeningQuestion[]>(() =>
     buildListeningQuestions(words, allDeckWords)
   )
+  const [listeningStyle, setListeningStyle] = useState<ListeningStyle>(() => {
+    try {
+      return window.localStorage.getItem(LISTENING_STYLE_KEY) === 'dictation'
+        ? 'dictation'
+        : 'choice'
+    } catch {
+      return 'choice'
+    }
+  })
+  const [voiceAccent, setVoiceAccent] = useState(() => audioService.getVoiceAccent())
   const [currentIndex, setCurrentIndex] = useState(0)
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
+  const [typedInput, setTypedInput] = useState('')
+  const [dictationOutcome, setDictationOutcome] = useState<'none' | 'correct' | 'wrong'>('none')
+  const [showDictationHint, setShowDictationHint] = useState(false)
   const [isLocked, setIsLocked] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const [stats, setStats] = useState({ mastered: 0, review: 0 })
@@ -127,7 +173,9 @@ export function ListeningView({
   const [starredIds, setStarredIds] = useState<Set<string>>(
     () => new Set(words.filter((w) => w.starred).map((w) => w.id))
   )
+
   const transitionTimerRef = useRef<number | null>(null)
+  const inputRef = useRef<HTMLInputElement | null>(null)
   const mountedRef = useRef(true)
 
   const clearTransitionTimer = useCallback(() => {
@@ -160,21 +208,21 @@ export function ListeningView({
     [currentQ]
   )
 
-  // Always play audio when question appears in Listening Mode
   useEffect(() => {
     if (currentQ && !isCompleted) {
-      audioService.speak(currentQ.targetWord.term, 0.9)
+      void audioService.speak(currentQ.targetWord.term, 0.9)
     }
   }, [currentIndex, currentQ, isCompleted])
 
-  const handleSelect = useCallback(
-    (index: number) => {
-      if (isLocked || !currentQ) return
+  useEffect(() => {
+    if (listeningStyle === 'dictation' && !isLocked && !isCompleted) {
+      inputRef.current?.focus()
+    }
+  }, [listeningStyle, currentIndex, isLocked, isCompleted])
 
-      setIsLocked(true)
-      setSelectedOption(index)
-
-      const isCorrect = index === currentQ.correctOptionIndex
+  const recordOutcomeAndAdvance = useCallback(
+    (isCorrect: boolean, customDelayMs?: number) => {
+      if (!currentQ) return
       let wasRequeued = false
 
       if (isCorrect) {
@@ -214,23 +262,70 @@ export function ListeningView({
         }
       }
 
-      const delay = isCorrect ? 1000 : 1850
+      const delay = customDelayMs ?? (isCorrect ? 1000 : 1950)
       const nextTotal = questions.length + (wasRequeued ? 1 : 0)
 
       clearTransitionTimer()
       transitionTimerRef.current = window.setTimeout(() => {
         transitionTimerRef.current = null
+        if (!mountedRef.current) return
         if (currentIndex + 1 >= nextTotal) {
           setIsCompleted(true)
         } else {
           setCurrentIndex((prev) => prev + 1)
           setSelectedOption(null)
+          setTypedInput('')
+          setDictationOutcome('none')
+          setShowDictationHint(false)
           setIsLocked(false)
         }
       }, delay)
     },
-    [isLocked, currentQ, questions.length, currentIndex, clearTransitionTimer]
+    [clearTransitionTimer, currentIndex, currentQ, questions.length]
   )
+
+  const handleSelect = useCallback(
+    (index: number) => {
+      if (isLocked || !currentQ) return
+      setIsLocked(true)
+      setSelectedOption(index)
+      recordOutcomeAndAdvance(index === currentQ.correctOptionIndex)
+    },
+    [isLocked, currentQ, recordOutcomeAndAdvance]
+  )
+
+  const handleDictationSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (isLocked || !currentQ) return
+    const cleanAttempt = normalizeDictation(typedInput)
+    if (!cleanAttempt) return
+
+    const cleanTarget = normalizeDictation(currentQ.targetWord.term)
+    const isCorrect = cleanAttempt === cleanTarget
+    setIsLocked(true)
+    setDictationOutcome(isCorrect ? 'correct' : 'wrong')
+    recordOutcomeAndAdvance(isCorrect, isCorrect ? 1050 : 2200)
+  }
+
+  const handleRevealDictationAnswer = () => {
+    if (isLocked || !currentQ) return
+    setIsLocked(true)
+    setDictationOutcome('wrong')
+    void audioService.speak(currentQ.targetWord.term, 0.85)
+    recordOutcomeAndAdvance(false, 2300)
+  }
+
+  const handleSwitchStyle = (nextStyle: ListeningStyle) => {
+    if (nextStyle === listeningStyle || isLocked) return
+    audioService.playClick()
+    setListeningStyle(nextStyle)
+    setTypedInput('')
+    setDictationOutcome('none')
+    setShowDictationHint(false)
+    try {
+      window.localStorage.setItem(LISTENING_STYLE_KEY, nextStyle)
+    } catch {}
+  }
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -238,10 +333,21 @@ export function ListeningView({
       if (e.key === 'Escape') {
         e.preventDefault()
         onBack()
-      } else if (e.code === 'Space') {
+        return
+      }
+
+      const isTypingInBox =
+        typeof document !== 'undefined' && document.activeElement === inputRef.current
+
+      if (e.code === 'Space' && !isTypingInBox) {
         e.preventDefault()
         void playAudio(0.9)
-      } else if (!isLocked && ['1', '2', '3', '4'].includes(e.key)) {
+      } else if (
+        listeningStyle === 'choice' &&
+        !isLocked &&
+        !isTypingInBox &&
+        ['1', '2', '3', '4'].includes(e.key)
+      ) {
         const idx = parseInt(e.key, 10) - 1
         if (idx < currentQ.options.length) {
           handleSelect(idx)
@@ -250,13 +356,16 @@ export function ListeningView({
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isLocked, isCompleted, currentQ, playAudio, handleSelect, onBack])
+  }, [listeningStyle, isLocked, isCompleted, currentQ, playAudio, handleSelect, onBack])
 
   const resetListening = (sourceWords: WordItem[]) => {
     clearTransitionTimer()
     setQuestions(buildListeningQuestions(sourceWords, allDeckWords))
     setCurrentIndex(0)
     setSelectedOption(null)
+    setTypedInput('')
+    setDictationOutcome('none')
+    setShowDictationHint(false)
     setIsLocked(false)
     setStats({ mastered: 0, review: 0 })
     setIsCompleted(false)
@@ -297,10 +406,10 @@ export function ListeningView({
   return (
     <div className="w-full flex flex-col my-auto max-w-md sm:max-w-lg mx-auto px-3.5 py-2 select-none">
       {/* Top Bar */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3">
         <button
           onClick={onBack}
-          title="Quay lại"
+          title="Quay lại (Esc)"
           className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -343,16 +452,63 @@ export function ListeningView({
         </button>
       </div>
 
+      {/* Mode Switcher (4 Đáp án vs Nghe gõ từ) + US/UK Accent */}
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="inline-flex p-0.5 rounded-xl bg-slate-200/80 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/70">
+          <button
+            type="button"
+            disabled={isLocked}
+            onClick={() => handleSwitchStyle('choice')}
+            className={`py-1.5 px-2.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all whitespace-nowrap ${
+              listeningStyle === 'choice'
+                ? 'bg-white dark:bg-slate-900 text-violet-600 dark:text-violet-400 shadow-2xs'
+                : 'text-slate-500 dark:text-slate-400'
+            }`}
+          >
+            <ListChecks className="w-3.5 h-3.5" />
+            <span>4 Đáp án</span>
+          </button>
+          <button
+            type="button"
+            disabled={isLocked}
+            onClick={() => handleSwitchStyle('dictation')}
+            className={`py-1.5 px-2.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all whitespace-nowrap ${
+              listeningStyle === 'dictation'
+                ? 'bg-white dark:bg-slate-900 text-violet-600 dark:text-violet-400 shadow-2xs'
+                : 'text-slate-500 dark:text-slate-400'
+            }`}
+          >
+            <Keyboard className="w-3.5 h-3.5" />
+            <span>Nghe gõ từ</span>
+          </button>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            const next = audioService.toggleVoiceAccent()
+            setVoiceAccent(next)
+            void playAudio(0.9)
+          }}
+          className="py-1.5 px-2.5 rounded-xl text-xs font-bold border bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700/80 text-slate-700 dark:text-slate-200 hover:border-violet-400 whitespace-nowrap active:scale-95 transition-all"
+          title="Đổi giọng đọc Anh-Mỹ (US) / Anh-Anh (UK) và nghe lại"
+        >
+          {voiceAccent === 'en-US' ? '🇺🇸 US' : '🇬🇧 UK'}
+        </button>
+      </div>
+
       {/* Audio Prompt Card */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 text-center border border-slate-200 dark:border-slate-800 shadow-sm mb-5">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 text-center border border-slate-200 dark:border-slate-800 shadow-sm mb-4">
         <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-3">
-          Lắng nghe phát âm và chọn từ đúng
+          {listeningStyle === 'dictation'
+            ? 'Nghe kỹ phát âm và gõ lại từ tiếng Anh'
+            : 'Lắng nghe phát âm và chọn từ đúng'}
         </span>
 
         <div className="flex items-center justify-center gap-3 my-2">
           <button
             type="button"
-            onClick={() => playAudio(0.9)}
+            onClick={() => void playAudio(0.9)}
             className={`w-16 h-16 rounded-2xl bg-violet-600 hover:bg-violet-500 text-white flex items-center justify-center shadow-lg shadow-violet-500/25 active:scale-95 transition-all ${
               isPlaying ? 'ring-4 ring-violet-500/30 scale-105' : ''
             }`}
@@ -367,7 +523,7 @@ export function ListeningView({
 
           <button
             type="button"
-            onClick={() => playAudio(0.6)}
+            onClick={() => void playAudio(0.6)}
             className="h-12 px-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-700/80 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1.5 active:scale-95 transition-all"
             title="Nghe chậm rõ từng âm (0.6x)"
           >
@@ -387,6 +543,9 @@ export function ListeningView({
                 {currentQ.targetWord.ipa}
               </div>
             )}
+            <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">
+              {currentQ.targetWord.definition}
+            </p>
           </div>
         ) : (
           <p className="text-xs text-slate-400 dark:text-slate-500 mt-3">
@@ -395,62 +554,166 @@ export function ListeningView({
         )}
       </div>
 
-      {/* 4 Options */}
-      <div className="space-y-2.5 flex-1 flex flex-col justify-center">
-        {currentQ.options.map((option, idx) => {
-          const isSelected = selectedOption === idx
-          const isCorrect = idx === currentQ.correctOptionIndex
+      {listeningStyle === 'choice' ? (
+        /* 4 Multiple-Choice Options */
+        <div className="space-y-2.5 flex-1 flex flex-col justify-center">
+          {currentQ.options.map((option, idx) => {
+            const isSelected = selectedOption === idx
+            const isCorrect = idx === currentQ.correctOptionIndex
 
-          let buttonStyle =
-            'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700/80 hover:border-violet-400'
+            let buttonStyle =
+              'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700/80 hover:border-violet-400'
 
-          if (isLocked) {
-            if (isCorrect) {
-              buttonStyle =
-                'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500 font-semibold'
-            } else if (isSelected) {
-              buttonStyle =
-                'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500 font-semibold animate-shake'
-            } else {
-              buttonStyle = 'opacity-40 border-transparent bg-slate-100 dark:bg-slate-800/40'
+            if (isLocked) {
+              if (isCorrect) {
+                buttonStyle =
+                  'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500 font-semibold'
+              } else if (isSelected) {
+                buttonStyle =
+                  'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500 font-semibold animate-shake'
+              } else {
+                buttonStyle = 'opacity-40 border-transparent bg-slate-100 dark:bg-slate-800/40'
+              }
             }
-          }
 
-          return (
-            <button
-              key={option.id + '-' + idx}
-              disabled={isLocked}
-              onClick={() => handleSelect(idx)}
-              className={`w-full py-3 px-3.5 rounded-2xl border text-left transition-all flex items-center justify-between shadow-xs active:scale-98 ${buttonStyle}`}
-            >
-              <div className="flex items-center gap-3 min-w-0 flex-1">
-                <span className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-xs font-semibold text-slate-500 dark:text-slate-400 shrink-0">
-                  {idx + 1}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
-                    {option.term}
-                  </div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">
-                    {formatArcadeMeaning(
-                      option.definition.replace(
-                        /^Kỹ thuật (?:refactoring|tái cấu trúc(?: mã nguồn)?(?:\s+bằng cách)?)\s+/i,
-                        ''
-                      ),
-                      76
-                    )}
+            return (
+              <button
+                key={option.id + '-' + idx}
+                disabled={isLocked}
+                onClick={() => handleSelect(idx)}
+                className={`w-full py-3 px-3.5 rounded-2xl border text-left transition-all flex items-center justify-between shadow-xs active:scale-98 ${buttonStyle}`}
+              >
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <span className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-xs font-semibold text-slate-500 dark:text-slate-400 shrink-0">
+                    {idx + 1}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
+                      {option.term}
+                    </div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">
+                      {formatArcadeMeaning(
+                        option.definition.replace(
+                          /^Kỹ thuật (?:refactoring|tái cấu trúc(?: mã nguồn)?(?:\s+bằng cách)?)\s+/i,
+                          ''
+                        ),
+                        76
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {isLocked && isCorrect && <Check className="w-5 h-5 text-emerald-500 shrink-0 ml-2" />}
-              {isLocked && isSelected && !isCorrect && (
-                <X className="w-5 h-5 text-rose-500 shrink-0 ml-2" />
+                {isLocked && isCorrect && (
+                  <Check className="w-5 h-5 text-emerald-500 shrink-0 ml-2" />
+                )}
+                {isLocked && isSelected && !isCorrect && (
+                  <X className="w-5 h-5 text-rose-500 shrink-0 ml-2" />
+                )}
+              </button>
+            )
+          })}
+        </div>
+      ) : (
+        /* Active Dictation (Type What You Hear) Panel */
+        <form
+          onSubmit={handleDictationSubmit}
+          className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
+              Chép chính tả tiếng Anh
+            </span>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                disabled={isLocked}
+                onClick={() => {
+                  audioService.playClick()
+                  setShowDictationHint((prev) => !prev)
+                }}
+                className="py-1 px-2.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[11px] font-bold flex items-center gap-1 transition-colors"
+              >
+                <Lightbulb className="w-3 h-3" />
+                <span>{showDictationHint ? 'Ẩn gợi ý' : 'Gợi ý'}</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={isLocked}
+                onClick={handleRevealDictationAnswer}
+                className="py-1 px-2 rounded-lg bg-slate-100 dark:bg-slate-700/70 hover:bg-slate-200 text-slate-500 dark:text-slate-300 text-[11px] font-semibold flex items-center gap-1 transition-colors"
+                title="Xem đáp án và ôn lại từ này ở cuối lượt"
+              >
+                <HelpCircle className="w-3 h-3" />
+                <span>Đáp án</span>
+              </button>
+            </div>
+          </div>
+
+          {showDictationHint && !isLocked && (
+            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-left space-y-1 animate-fadeIn">
+              <div className="font-mono text-xs font-extrabold text-amber-700 dark:text-amber-300 tracking-wider">
+                {maskTermSkeleton(currentQ.targetWord.term)}
+              </div>
+              <div className="text-xs text-slate-600 dark:text-slate-300">
+                Nghĩa: <strong>{currentQ.targetWord.definition}</strong>
+              </div>
+            </div>
+          )}
+
+          <input
+            ref={inputRef}
+            type="text"
+            disabled={isLocked}
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            value={typedInput}
+            onChange={(e) => setTypedInput(e.target.value)}
+            placeholder="Nhập từ tiếng Anh bạn nghe được..."
+            className={`w-full py-3 px-3.5 rounded-xl border text-base font-bold text-center transition-colors focus:outline-none focus:ring-2 ${
+              dictationOutcome === 'correct'
+                ? 'bg-emerald-500/15 border-emerald-500 text-emerald-700 dark:text-emerald-300 focus:ring-emerald-500'
+                : dictationOutcome === 'wrong'
+                ? 'bg-rose-500/15 border-rose-500 text-rose-600 dark:text-rose-300 animate-shake focus:ring-rose-500'
+                : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-violet-500'
+            }`}
+          />
+
+          {dictationOutcome !== 'none' && (
+            <div
+              className={`p-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 animate-fadeIn ${
+                dictationOutcome === 'correct'
+                  ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+                  : 'bg-rose-500/15 text-rose-600 dark:text-rose-300'
+              }`}
+            >
+              {dictationOutcome === 'correct' ? (
+                <>
+                  <Check className="w-4 h-4 shrink-0" />
+                  <span>Chính xác tuyệt đối!</span>
+                </>
+              ) : (
+                <>
+                  <X className="w-4 h-4 shrink-0" />
+                  <span>
+                    Đáp án chuẩn: <strong className="underline">{currentQ.targetWord.term}</strong>
+                  </span>
+                </>
               )}
-            </button>
-          )
-        })}
-      </div>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={isLocked || !typedInput.trim()}
+            className="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-xs active:scale-98 transition-all"
+          >
+            <Check className="w-4 h-4" />
+            <span>Kiểm tra chính tả (Enter)</span>
+          </button>
+        </form>
+      )}
     </div>
   )
 }

@@ -5,6 +5,7 @@ import {
   ChevronDown,
   ChevronUp,
   RotateCcw,
+  Star,
   Target,
   Trophy,
   Volume2,
@@ -13,6 +14,7 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import type { StudySessionStats, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
+import { storageService } from '../../utils/storage'
 
 interface StudySummaryProps {
   stats: StudySessionStats
@@ -29,6 +31,9 @@ export function StudySummary({
 }: StudySummaryProps) {
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [showRemainingList, setShowRemainingList] = useState(false)
+  const [starredIds, setStarredIds] = useState<Set<string>>(
+    () => new Set((stats.remainingWords || []).filter((w) => w.starred).map((w) => w.id))
+  )
 
   const remainingWords = useMemo(() => stats.remainingWords || [], [stats.remainingWords])
   const isAllDeckMastered = remainingWords.length === 0
@@ -182,14 +187,39 @@ export function StudySummary({
                         {w.definition}
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => audioService.speak(w.term)}
-                      className="p-1 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 shrink-0"
-                      title="Nghe phát âm"
-                    >
-                      <Volume2 className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center gap-0.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = storageService.toggleWordStar(w.id)
+                          audioService.playClick()
+                          setStarredIds((prev) => {
+                            const copy = new Set(prev)
+                            if (next) copy.add(w.id)
+                            else copy.delete(w.id)
+                            return copy
+                          })
+                        }}
+                        className={`p-1 rounded-lg transition-colors ${
+                          starredIds.has(w.id)
+                            ? 'text-amber-500'
+                            : 'text-slate-300 dark:text-slate-600 hover:text-amber-500'
+                        }`}
+                        title="Đánh dấu sao từ cần ôn"
+                      >
+                        <Star
+                          className={`w-3.5 h-3.5 ${starredIds.has(w.id) ? 'fill-amber-400' : ''}`}
+                        />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void audioService.speak(w.term)}
+                        className="p-1 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400"
+                        title="Nghe phát âm"
+                      >
+                        <Volume2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

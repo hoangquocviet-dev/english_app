@@ -52,7 +52,6 @@ export function LibraryView({
   const [newDeckName, setNewDeckName] = useState('')
   const [renamingDeckId, setRenamingDeckId] = useState<string | null>(null)
   const [renameDeckDraft, setRenameDeckDraft] = useState('')
-  const [nowMs] = useState(() => Date.now())
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
   const activeDeckCardRef = useRef<HTMLDivElement | null>(null)
 
@@ -83,6 +82,7 @@ export function LibraryView({
     onConfirm: () => void
   } | null>(null)
 
+  const nowMs = storageService.getNowMs()
   const sourceWords = searchAllDecks ? allWords : words
 
   const filteredWords = useMemo(() => {
@@ -760,14 +760,14 @@ export function LibraryView({
         </div>
 
         {/* Filter Pills + Reset Progress */}
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex gap-1.5">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none min-w-0 flex-1">
             <button
               onClick={() => {
                 setStatusFilter('all')
                 setVisibleLimit(PAGE_SIZE)
               }}
-              className={`py-1.5 px-2.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`py-1.5 px-2.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all ${
                 statusFilter === 'all'
                   ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
@@ -780,7 +780,7 @@ export function LibraryView({
                 setStatusFilter('mastered')
                 setVisibleLimit(PAGE_SIZE)
               }}
-              className={`py-1.5 px-2.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`py-1.5 px-2.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all ${
                 statusFilter === 'mastered'
                   ? 'bg-emerald-600 text-white'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
@@ -793,7 +793,7 @@ export function LibraryView({
                 setStatusFilter('review')
                 setVisibleLimit(PAGE_SIZE)
               }}
-              className={`py-1.5 px-2.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`py-1.5 px-2.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all ${
                 statusFilter === 'review'
                   ? 'bg-amber-600 text-white'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
@@ -807,7 +807,7 @@ export function LibraryView({
                   setStatusFilter((prev) => (prev === 'due' ? 'all' : 'due'))
                   setVisibleLimit(PAGE_SIZE)
                 }}
-                className={`py-1.5 px-2.5 rounded-xl text-xs font-semibold transition-all ${
+                className={`py-1.5 px-2.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all ${
                   statusFilter === 'due'
                     ? 'bg-indigo-600 text-white'
                     : 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
@@ -822,7 +822,7 @@ export function LibraryView({
                   setStatusFilter((prev) => (prev === 'starred' ? 'all' : 'starred'))
                   setVisibleLimit(PAGE_SIZE)
                 }}
-                className={`py-1.5 px-2.5 rounded-xl text-xs font-semibold flex items-center gap-1 transition-all ${
+                className={`py-1.5 px-2.5 rounded-xl text-xs font-semibold flex items-center gap-1 whitespace-nowrap shrink-0 transition-all ${
                   statusFilter === 'starred'
                     ? 'bg-amber-500 text-white'
                     : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
@@ -838,7 +838,7 @@ export function LibraryView({
             <button
               onClick={handleResetProgress}
               title="Đặt lại tiến độ học của bộ từ này"
-              className="py-1.5 px-2.5 rounded-xl text-[11px] font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 bg-slate-100 dark:bg-slate-800 flex items-center gap-1 transition-colors"
+              className="py-1.5 px-2.5 rounded-xl text-[11px] font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 bg-slate-100 dark:bg-slate-800 flex items-center gap-1 whitespace-nowrap shrink-0 transition-colors"
             >
               <RotateCcw className="w-3 h-3" />
               <span>Đặt lại</span>

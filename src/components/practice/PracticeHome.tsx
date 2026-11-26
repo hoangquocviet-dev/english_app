@@ -64,6 +64,7 @@ export function PracticeHome({
   onGoToLibrary,
 }: PracticeHomeProps) {
   const [showResetConfirm, setShowResetConfirm] = useState(false)
+  const [voiceAccent, setVoiceAccent] = useState(() => audioService.getVoiceAccent())
   const [filterMode, setFilterMode] = useState<
     'all' | 'learning' | 'due' | 'global-due' | 'starred'
   >('all')
@@ -512,28 +513,47 @@ export function PracticeHome({
             </div>
           )}
 
-          {/* Clean Header: Section Label + Shuffle Toggle */}
+          {/* Clean Header: Section Label + Accent & Shuffle Toggles */}
           <div className="flex items-center justify-between gap-2 px-0.5">
             <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
               Chế độ học ({activePoolCount} thẻ)
             </span>
 
-            <button
-              type="button"
-              onClick={() => {
-                audioService.playClick()
-                onToggleShuffle()
-              }}
-              className={`py-1 px-2.5 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all active:scale-95 ${
-                shuffleEnabled
-                  ? 'bg-indigo-500/15 border-indigo-500/40 text-indigo-600 dark:text-indigo-400'
-                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400'
-              }`}
-              title="Trộn ngẫu nhiên thứ tự thẻ chưa thuộc"
-            >
-              <Shuffle className="w-3.5 h-3.5 shrink-0" />
-              <span>Trộn</span>
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  const next = audioService.toggleVoiceAccent()
+                  setVoiceAccent(next)
+                  audioService.playClick()
+                }}
+                className="py-1 px-2 rounded-xl text-xs font-bold border bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-indigo-400 transition-all active:scale-95 whitespace-nowrap"
+                title={
+                  voiceAccent === 'en-US'
+                    ? 'Giọng đọc: Anh-Mỹ (en-US) — Chạm để đổi sang Anh-Anh (en-GB)'
+                    : 'Giọng đọc: Anh-Anh (en-GB) — Chạm để đổi sang Anh-Mỹ (en-US)'
+                }
+              >
+                {voiceAccent === 'en-US' ? '🇺🇸 US' : '🇬🇧 UK'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  audioService.playClick()
+                  onToggleShuffle()
+                }}
+                className={`py-1 px-2.5 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all active:scale-95 ${
+                  shuffleEnabled
+                    ? 'bg-indigo-500/15 border-indigo-500/40 text-indigo-600 dark:text-indigo-400'
+                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400'
+                }`}
+                title="Trộn ngẫu nhiên thứ tự thẻ chưa thuộc"
+              >
+                <Shuffle className="w-3.5 h-3.5 shrink-0" />
+                <span>Trộn</span>
+              </button>
+            </div>
           </div>
 
           {/* Dedicated Filter Pills Row (Eliminates horizontal squishing on 360px) */}
@@ -745,7 +765,7 @@ export function PracticeHome({
                   </h4>
                 </div>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">
-                  Nghe phát âm chuẩn & chậm 0.6x để nhận diện từ vựng bằng tai
+                  Nghe chọn 4 đáp án hoặc Chép chính tả (US / UK) để luyện tai chuẩn xác
                 </p>
               </div>
             </div>

@@ -30,8 +30,7 @@ interface QueuedWord {
 }
 
 interface HistoryEntry {
-  word: WordItem
-  prevStatus: WordItem['status']
+  prevWord: WordItem
   action: 'mastered' | 'review'
   wasRequeued: boolean
 }
@@ -258,7 +257,7 @@ export function FlashcardView({
 
       try {
         const rec = new Ctor()
-        rec.lang = 'en-US'
+        rec.lang = audioService.getVoiceAccent()
         rec.interimResults = false
         rec.maxAlternatives = 3
         recognitionRef.current = rec
@@ -323,7 +322,9 @@ export function FlashcardView({
       stopMic()
       setSpeechFeedback(null)
 
-      const prevStatus = currentWord.status
+      const liveWord =
+        storageService.getWords().find((w) => w.id === currentWord.id) || currentWord
+      const prevWordSnapshot: WordItem = { ...liveWord }
       let wasRequeued = false
 
       if (action === 'mastered') {
@@ -356,7 +357,7 @@ export function FlashcardView({
 
       setHistory((prev) => [
         ...prev,
-        { word: currentWord, prevStatus, action, wasRequeued },
+        { prevWord: prevWordSnapshot, action, wasRequeued },
       ])
 
       setDragOffset({ x: 0, y: 0 })
@@ -382,7 +383,7 @@ export function FlashcardView({
     const last = history[history.length - 1]
     audioService.playClick()
 
-    storageService.updateWordStatus(last.word.id, last.prevStatus, false)
+    storageService.updateWord(last.prevWord)
 
     setStats((prev) => ({
       mastered: last.action === 'mastered' ? Math.max(0, prev.mastered - 1) : prev.mastered,

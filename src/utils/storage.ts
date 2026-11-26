@@ -437,6 +437,10 @@ class SafeStorageService {
   }
 
   // Spaced Repetition (SRS) helper queries
+  public getNowMs(): number {
+    return Date.now()
+  }
+
   public getDueReviewWords(deckId?: string): WordItem[] {
     const words = deckId && deckId !== GLOBAL_SRS_DECK_ID ? this.getWords(deckId) : this.getWords()
     const now = Date.now()
