@@ -26,6 +26,7 @@ interface PracticeHomeProps {
   decks: Deck[]
   activeDeck: Deck
   words: WordItem[]
+  allWords?: WordItem[]
   isSeedLoading?: boolean
   dailyProgress: DailyProgress
   shuffleEnabled: boolean
@@ -44,6 +45,7 @@ export function PracticeHome({
   decks,
   activeDeck,
   words,
+  allWords = [],
   isSeedLoading = false,
   dailyProgress,
   shuffleEnabled,
@@ -68,6 +70,32 @@ export function PracticeHome({
   const dueReviewCount = words.filter(
     (w) => w.status === 'mastered' && (!w.nextReview || w.nextReview <= now)
   ).length
+
+  // Cross-deck SRS radar: find if OTHER decks have mastered cards due for spaced repetition!
+  const otherDueSummary = (() => {
+    const countsByDeck = new Map<string, number>()
+    for (const w of allWords) {
+      if (
+        w.deckId !== activeDeck.id &&
+        w.status === 'mastered' &&
+        (!w.nextReview || w.nextReview <= now)
+      ) {
+        countsByDeck.set(w.deckId, (countsByDeck.get(w.deckId) || 0) + 1)
+      }
+    }
+    let topDeckId: string | null = null
+    let topCount = 0
+    let totalOtherDue = 0
+    for (const [dId, cnt] of countsByDeck.entries()) {
+      totalOtherDue += cnt
+      if (cnt > topCount) {
+        topCount = cnt
+        topDeckId = dId
+      }
+    }
+    const topDeck = topDeckId ? decks.find((d) => d.id === topDeckId) || null : null
+    return { totalOtherDue, topDeck, topCount }
+  })()
 
   let effectiveFilterMode: 'all' | 'learning' | 'due' = 'all'
   let activePoolCount = unmasteredCount
@@ -114,7 +142,36 @@ export function PracticeHome({
   }
 
   return (
-    <div className="w-full flex flex-col max-w-md mx-auto px-3.5 py-4 space-y-4 animate-fadeIn">
+    <div className="w-full flex flex-col max-w-md sm:max-w-xl mx-auto px-3.5 py-4 space-y-4 animate-fadeIn">
+      {/* Global Cross-Deck SRS Alert when another deck has due words */}
+      {dueReviewCount === 0 && otherDueSummary.totalOtherDue > 0 && otherDueSummary.topDeck && (
+        <div className="rounded-2xl p-3 bg-indigo-500/10 border border-indigo-500/25 flex items-center justify-between gap-2.5 animate-fadeIn">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0">
+              <Clock className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-extrabold text-indigo-700 dark:text-indigo-300 truncate">
+                Có {otherDueSummary.totalOtherDue} từ đến hạn ôn SRS!
+              </div>
+              <div className="text-[11px] text-slate-600 dark:text-slate-400 truncate">
+                Bộ "{otherDueSummary.topDeck.name}" có {otherDueSummary.topCount} thẻ cần nhắc lại
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              audioService.playClick()
+              onSelectDeck(otherDueSummary.topDeck!.id)
+              setFilterMode('due')
+            }}
+            className="py-1.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold whitespace-nowrap shrink-0 active:scale-95 transition-transform"
+          >
+            Ôn ngay
+          </button>
+        </div>
+      )}
       {/* Daily Goal Card (Interactive Goal Selector) */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-800 shadow-xs">
         <div className="flex items-center justify-between gap-2 mb-2">

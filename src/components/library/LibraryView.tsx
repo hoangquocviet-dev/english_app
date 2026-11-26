@@ -324,7 +324,7 @@ export function LibraryView({
   const isActiveDeckShared = sharedDeckIds.has(activeDeck.id)
 
   return (
-    <div className="w-full max-w-md mx-auto px-3.5 py-4 space-y-4 animate-fadeIn">
+    <div className="w-full max-w-md sm:max-w-xl mx-auto px-3.5 py-4 space-y-4 animate-fadeIn">
       {/* Top Header & Action Buttons */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
@@ -794,6 +794,16 @@ export function LibraryView({
                       >
                         {isMastered ? 'Đã thuộc' : word.status === 'learning' ? 'Đang ôn' : 'Mới'}
                       </button>
+                      {isMastered && typeof word.srsLevel === 'number' && word.srsLevel > 0 && (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400">
+                          SRS Lv.{word.srsLevel}
+                          {word.nextReview
+                            ? word.nextReview <= Date.now()
+                              ? ' • Đến hạn'
+                              : ` • ${Math.max(1, Math.ceil((word.nextReview - Date.now()) / 86400000))}d`
+                            : ''}
+                        </span>
+                      )}
                       {searchAllDecks && deckNameMap[word.deckId] && (
                         <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 truncate max-w-40">
                           {deckNameMap[word.deckId]}

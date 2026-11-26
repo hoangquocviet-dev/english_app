@@ -40,7 +40,7 @@ export function BottomNav({ currentTab, onTabChange }: BottomNavProps) {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200 dark:border-slate-800 pb-[env(safe-area-inset-bottom,0px)]">
-      <div className="w-full max-w-md mx-auto grid grid-cols-4 h-14">
+      <div className="w-full max-w-md sm:max-w-xl mx-auto grid grid-cols-4 h-14">
         {tabs.map((tab) => {
           const Icon = tab.icon
           const isActive = currentTab === tab.id

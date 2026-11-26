@@ -210,7 +210,7 @@ export function AddWordView({
   }
 
   return (
-    <div className="w-full max-w-md mx-auto px-3.5 py-4 space-y-4 animate-fadeIn">
+    <div className="w-full max-w-md sm:max-w-xl mx-auto px-3.5 py-4 space-y-4 animate-fadeIn">
       <div>
         <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Thêm từ vựng mới</h2>
         <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">

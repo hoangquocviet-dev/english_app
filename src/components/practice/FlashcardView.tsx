@@ -143,13 +143,16 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isCompleted) return
-      if (e.code === 'Space') {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        onBack()
+      } else if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'ArrowDown') {
         e.preventDefault()
         handleFlip()
-      } else if (e.code === 'ArrowRight') {
+      } else if (e.code === 'ArrowRight' || e.key === '2') {
         e.preventDefault()
         handleAction('mastered')
-      } else if (e.code === 'ArrowLeft') {
+      } else if (e.code === 'ArrowLeft' || e.key === '1') {
         e.preventDefault()
         handleAction('review')
       } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
@@ -159,7 +162,7 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isCompleted, handleFlip, handleAction, handleUndo])
+  }, [isCompleted, handleFlip, handleAction, handleUndo, onBack])
 
   const handleSpeak = (e: React.MouseEvent, rate: number = 0.9) => {
     e.stopPropagation()
@@ -175,27 +178,22 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
     }
   }
 
-  // Touch Handlers
-  const handleTouchStart = (e: React.TouchEvent) => {
-    const touch = e.touches[0]
-    if (touch.clientX < 24) return
-
-    touchStartRef.current = {
-      x: touch.clientX,
-      y: touch.clientY,
-    }
+  // Touch & Mouse Drag Handlers
+  const startDrag = (clientX: number, clientY: number, isTouch: boolean) => {
+    if (isTouch && clientX < 24) return
+    touchStartRef.current = { x: clientX, y: clientY }
     setIsDragging(true)
   }
 
-  const handleTouchMove = (e: React.TouchEvent) => {
+  const moveDrag = (clientX: number, clientY: number) => {
     if (!touchStartRef.current) return
-    const touch = e.touches[0]
-    const dx = touch.clientX - touchStartRef.current.x
-    const dy = touch.clientY - touchStartRef.current.y
-    setDragOffset({ x: dx, y: dy })
+    setDragOffset({
+      x: clientX - touchStartRef.current.x,
+      y: clientY - touchStartRef.current.y,
+    })
   }
 
-  const handleTouchEnd = () => {
+  const endDrag = () => {
     if (!touchStartRef.current) return
     const { x, y } = dragOffset
     const absX = Math.abs(x)
@@ -316,10 +314,21 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
 
       {/* 3D Flashcard Container */}
       <div
-        className="flex-1 flex items-center justify-center perspective-1000 my-auto py-2 relative"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
+        className="flex-1 flex items-center justify-center perspective-1000 my-auto py-3 relative"
+        onTouchStart={(e) => startDrag(e.touches[0].clientX, e.touches[0].clientY, true)}
+        onTouchMove={(e) => moveDrag(e.touches[0].clientX, e.touches[0].clientY)}
+        onTouchEnd={endDrag}
+        onMouseDown={(e) => {
+          if ((e.target as HTMLElement | null)?.closest('button')) return
+          startDrag(e.clientX, e.clientY, false)
+        }}
+        onMouseMove={(e) => {
+          if (e.buttons === 1) moveDrag(e.clientX, e.clientY)
+        }}
+        onMouseUp={endDrag}
+        onMouseLeave={() => {
+          if (isDragging) endDrag()
+        }}
         data-no-pull="true"
       >
         {/* Dynamic Swipe Stamps */}

@@ -474,7 +474,10 @@ class CloudSyncManager {
 
       const hs = remote.high_scores || {}
       const totalScore =
-        (hs['sky-defender'] || 0) + (hs['speed-match'] || 0) + (hs['blitz-2s'] || 0)
+        (hs['sky-defender'] || 0) +
+        (hs['speed-match'] || 0) +
+        (hs['blitz-2s'] || 0) +
+        (hs['word-bomb'] || 0)
       const customDecksCount = Array.isArray(remote.custom_decks) ? remote.custom_decks.length : 0
 
       return {

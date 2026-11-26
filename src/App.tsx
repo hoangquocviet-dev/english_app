@@ -391,6 +391,7 @@ export function App() {
                       decks={decks}
                       activeDeck={activeDeck}
                       words={words}
+                      allWords={allWords}
                       isSeedLoading={isSeedLoading}
                       dailyProgress={dailyProgress}
                       shuffleEnabled={studyPrefs.shuffle}

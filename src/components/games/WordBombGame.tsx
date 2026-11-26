@@ -636,7 +636,7 @@ export function WordBombGame({ words, deckName, onBack }: WordBombGameProps) {
             </span>
             <span
               className={`tabular-nums font-extrabold ${
-                isUrgent ? 'text-rose-500 animate-pulse' : 'text-cyan-500 dark:text-cyan-400'
+                isUrgent ? 'text-rose-500 animate-pulse' : 'text-cyan-700 dark:text-cyan-400'
               }`}
             >
               {secondsLeft.toFixed(1)}s
