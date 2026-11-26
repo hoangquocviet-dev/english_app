@@ -9,6 +9,7 @@ import {
   Play,
   RotateCcw,
   Trophy,
+  Volume2,
   Zap,
 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -24,6 +25,7 @@ interface SpeedMatchGameProps {
 }
 
 interface MatchCardSlot {
+  word: WordItem
   wordId: string
   termKey: string
   defKey: string
@@ -112,6 +114,7 @@ function createInitialBoard(pool: WordItem[]): BoardState {
   const rightBatch = shuffleDistinctOrder(leftBatch)
 
   const left: Array<MatchCardSlot | null> = leftBatch.map((w, i) => ({
+    word: w,
     wordId: w.id,
     termKey: w.term.trim().toLowerCase(),
     defKey: w.definition.trim().toLowerCase(),
@@ -120,6 +123,7 @@ function createInitialBoard(pool: WordItem[]): BoardState {
     spawnSeq: i + 1,
   }))
   const right: Array<MatchCardSlot | null> = rightBatch.map((w, i) => ({
+    word: w,
     wordId: w.id,
     termKey: w.term.trim().toLowerCase(),
     defKey: w.definition.trim().toLowerCase(),
@@ -217,6 +221,7 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
   const [combo, setCombo] = useState(0)
   const [maxCombo, setMaxCombo] = useState(0)
   const [matchedCount, setMatchedCount] = useState(0)
+  const [missedWords, setMissedWords] = useState<WordItem[]>([])
   const [hintsLeft, setHintsLeft] = useState(2)
   const [hintWordId, setHintWordId] = useState<string | null>(null)
   const [displaySeconds, setDisplaySeconds] = useState(INITIAL_TIME)
@@ -336,6 +341,7 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
     setCombo(0)
     setMaxCombo(0)
     setMatchedCount(0)
+    setMissedWords([])
     setHintsLeft(2)
     setHintWordId(null)
     updateSelectedLeft(null)
@@ -458,6 +464,7 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
             shuffledLeftWords.forEach((w, i) => {
               const seq = ++spawnCounterRef.current
               nextL[emptyLeftIndices[i]] = {
+                word: w,
                 wordId: w.id,
                 termKey: w.term.trim().toLowerCase(),
                 defKey: w.definition.trim().toLowerCase(),
@@ -470,6 +477,7 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
             shuffledRightWords.forEach((w, i) => {
               const seq = ++spawnCounterRef.current
               nextR[emptyRightIndices[i]] = {
+                word: w,
                 wordId: w.id,
                 termKey: w.term.trim().toLowerCase(),
                 defKey: w.definition.trim().toLowerCase(),
@@ -492,6 +500,9 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
         audioService.playErrorBuzz()
         comboRef.current = 0
         setCombo(0)
+        setMissedWords((prev) =>
+          prev.some((w) => w.id === lCard.word.id) ? prev : [...prev.slice(-3), lCard.word]
+        )
         updateSelectedLeft(null)
         updateSelectedRight(null)
 
@@ -888,6 +899,30 @@ export function SpeedMatchGame({ words, deckName, onBack }: SpeedMatchGameProps)
               <div className="text-xs text-slate-400">Kỷ lục cao nhất</div>
             </div>
           </div>
+
+          {missedWords.length > 0 && (
+            <div className="w-full max-w-xs mb-4 p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 text-left space-y-1.5">
+              <div className="text-[11px] font-extrabold uppercase tracking-wider text-rose-500">
+                Từ vừa nối nhầm ({missedWords.length})
+              </div>
+              {missedWords.map((mw) => (
+                <div key={mw.id} className="flex items-center justify-between gap-2 py-1 text-xs">
+                  <div className="min-w-0">
+                    <span className="font-bold text-slate-900 dark:text-slate-100">{mw.term}</span>
+                    <span className="text-slate-500 dark:text-slate-400"> — {mw.definition}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void audioService.speak(mw.term)}
+                    className="p-1 rounded-lg text-indigo-500 hover:bg-indigo-500/10 shrink-0"
+                    title="Nghe phát âm"
+                  >
+                    <Volume2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="w-full max-w-xs space-y-2.5">
             <button

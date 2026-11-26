@@ -94,6 +94,7 @@ export function App() {
   const [activeGame, setActiveGame] = useState<ArcadeGameId | null>(null)
   const [arcadeUseAllDecks, setArcadeUseAllDecks] = useState<boolean>(false)
   const [sessionWords, setSessionWords] = useState<WordItem[]>([])
+  const [isGlobalSrsSession, setIsGlobalSrsSession] = useState(false)
   const [isCloudModalOpen, setIsCloudModalOpen] = useState(false)
   const [syncToast, setSyncToast] = useState<{ ok: boolean; message: string } | null>(null)
 
@@ -195,20 +196,26 @@ export function App() {
 
   const handleStartMode = (
     mode: StudyMode,
-    filterMode: 'all' | 'learning' | 'due' = 'all'
+    filterMode: 'all' | 'learning' | 'due' | 'global-due' = 'all'
   ) => {
-    const freshWords = storageService.getWords(activeDeckId)
     const now = Date.now()
     let targetList: WordItem[]
 
-    if (filterMode === 'due') {
-      targetList = freshWords.filter(
-        (w) => w.status === 'mastered' && (!w.nextReview || w.nextReview <= now)
-      )
-    } else if (filterMode === 'learning') {
-      targetList = freshWords.filter((w) => w.status === 'learning')
+    if (filterMode === 'global-due') {
+      targetList = storageService
+        .getWords()
+        .filter((w) => w.status === 'mastered' && (!w.nextReview || w.nextReview <= now))
     } else {
-      targetList = freshWords.filter((w) => w.status !== 'mastered')
+      const freshWords = storageService.getWords(activeDeckId)
+      if (filterMode === 'due') {
+        targetList = freshWords.filter(
+          (w) => w.status === 'mastered' && (!w.nextReview || w.nextReview <= now)
+        )
+      } else if (filterMode === 'learning') {
+        targetList = freshWords.filter((w) => w.status === 'learning')
+      } else {
+        targetList = freshWords.filter((w) => w.status !== 'mastered')
+      }
     }
 
     if (targetList.length === 0) return
@@ -220,6 +227,7 @@ export function App() {
       targetList = targetList.slice(0, studyPrefs.batchSize)
     }
 
+    setIsGlobalSrsSession(filterMode === 'global-due')
     setSessionWords(targetList)
     setActiveStudyMode(mode)
   }
@@ -227,6 +235,7 @@ export function App() {
   const handleExitStudy = () => {
     audioService.stopSpeech()
     setActiveStudyMode(null)
+    setIsGlobalSrsSession(false)
     refreshData()
   }
 
@@ -237,6 +246,10 @@ export function App() {
   }
 
   const activeDeck = decks.find((d) => d.id === activeDeckId) || decks[0] || null
+  const studyDeckName = isGlobalSrsSession
+    ? 'Ôn tập SRS Toàn kho'
+    : activeDeck?.name || 'Kho từ vựng'
+  const studyPoolWords = isGlobalSrsSession ? allWords : words
   const isFullScreenSession = Boolean(activeStudyMode || activeGame)
   const arcadeWords = arcadeUseAllDecks ? allWords : words
   const arcadeDeckLabel = arcadeUseAllDecks
@@ -304,7 +317,7 @@ export function App() {
                 <FlashcardView
                   words={sessionWords}
                   deckId={activeDeck.id}
-                  deckName={activeDeck.name}
+                  deckName={studyDeckName}
                   onBack={handleExitStudy}
                 />
               )}
@@ -312,9 +325,9 @@ export function App() {
               {activeStudyMode === 'quiz' && activeDeck && (
                 <QuizView
                   words={sessionWords}
-                  allDeckWords={words}
+                  allDeckWords={studyPoolWords}
                   deckId={activeDeck.id}
-                  deckName={activeDeck.name}
+                  deckName={studyDeckName}
                   onBack={handleExitStudy}
                 />
               )}
@@ -323,7 +336,7 @@ export function App() {
                 <SpellingView
                   words={sessionWords}
                   deckId={activeDeck.id}
-                  deckName={activeDeck.name}
+                  deckName={studyDeckName}
                   onBack={handleExitStudy}
                 />
               )}
@@ -331,9 +344,9 @@ export function App() {
               {activeStudyMode === 'listening' && activeDeck && (
                 <ListeningView
                   words={sessionWords}
-                  allDeckWords={words}
+                  allDeckWords={studyPoolWords}
                   deckId={activeDeck.id}
-                  deckName={activeDeck.name}
+                  deckName={studyDeckName}
                   onBack={handleExitStudy}
                 />
               )}
@@ -341,9 +354,9 @@ export function App() {
               {activeStudyMode === 'cloze' && activeDeck && (
                 <ClozeView
                   words={sessionWords}
-                  allDeckWords={words}
+                  allDeckWords={studyPoolWords}
                   deckId={activeDeck.id}
-                  deckName={activeDeck.name}
+                  deckName={studyDeckName}
                   onBack={handleExitStudy}
                 />
               )}

@@ -36,7 +36,10 @@ interface PracticeHomeProps {
   onChangeDailyGoal: (goal: number) => void
   onSelectDeck: (deckId: string) => void
   onResetDeck: (deckId: string) => void
-  onStartMode: (mode: StudyMode, filterMode?: 'all' | 'learning' | 'due') => void
+  onStartMode: (
+    mode: StudyMode,
+    filterMode?: 'all' | 'learning' | 'due' | 'global-due'
+  ) => void
   onGoToAddWord: () => void
   onGoToLibrary: () => void
 }
@@ -60,7 +63,7 @@ export function PracticeHome({
   onGoToLibrary,
 }: PracticeHomeProps) {
   const [showResetConfirm, setShowResetConfirm] = useState(false)
-  const [filterMode, setFilterMode] = useState<'all' | 'learning' | 'due'>('all')
+  const [filterMode, setFilterMode] = useState<'all' | 'learning' | 'due' | 'global-due'>('all')
 
   const masteredCount = words.filter((w) => w.status === 'mastered').length
   const learningCount = words.filter((w) => w.status === 'learning').length
@@ -98,10 +101,15 @@ export function PracticeHome({
     return { totalOtherDue, topDeck, topCount }
   })()
 
-  let effectiveFilterMode: 'all' | 'learning' | 'due' = 'all'
+  const totalGlobalDue = dueReviewCount + otherDueSummary.totalOtherDue
+
+  let effectiveFilterMode: 'all' | 'learning' | 'due' | 'global-due' = 'all'
   let activePoolCount = unmasteredCount
 
-  if (filterMode === 'due' && dueReviewCount > 0) {
+  if (filterMode === 'global-due' && totalGlobalDue > 0) {
+    effectiveFilterMode = 'global-due'
+    activePoolCount = totalGlobalDue
+  } else if (filterMode === 'due' && dueReviewCount > 0) {
     effectiveFilterMode = 'due'
     activePoolCount = dueReviewCount
   } else if (filterMode === 'learning' && learningCount > 0) {
@@ -110,6 +118,9 @@ export function PracticeHome({
   } else if (unmasteredCount === 0 && dueReviewCount > 0) {
     effectiveFilterMode = 'due'
     activePoolCount = dueReviewCount
+  } else if (unmasteredCount === 0 && totalGlobalDue > 0) {
+    effectiveFilterMode = 'global-due'
+    activePoolCount = totalGlobalDue
   } else {
     effectiveFilterMode = 'all'
     activePoolCount = unmasteredCount
@@ -144,8 +155,8 @@ export function PracticeHome({
 
   return (
     <div className="w-full flex flex-col max-w-md sm:max-w-xl mx-auto px-3.5 py-4 space-y-4 animate-fadeIn">
-      {/* Global Cross-Deck SRS Alert when another deck has due words */}
-      {dueReviewCount === 0 && otherDueSummary.totalOtherDue > 0 && otherDueSummary.topDeck && (
+      {/* Global Cross-Deck SRS Alert when other decks have due words */}
+      {otherDueSummary.totalOtherDue > 0 && otherDueSummary.topDeck && effectiveFilterMode !== 'global-due' && (
         <div className="rounded-2xl p-3 bg-indigo-500/10 border border-indigo-500/25 flex items-center justify-between gap-2.5 animate-fadeIn">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0">
@@ -153,10 +164,10 @@ export function PracticeHome({
             </div>
             <div className="min-w-0">
               <div className="text-xs font-extrabold text-indigo-700 dark:text-indigo-300 truncate">
-                Có {otherDueSummary.totalOtherDue} từ đến hạn ôn SRS!
+                Có {totalGlobalDue} từ đến hạn ôn SRS toàn kho!
               </div>
               <div className="text-[11px] text-slate-600 dark:text-slate-400 truncate">
-                Bộ "{otherDueSummary.topDeck.name}" có {otherDueSummary.topCount} thẻ cần nhắc lại
+                Riêng "{otherDueSummary.topDeck.name}" có {otherDueSummary.topCount} thẻ đến chu kỳ nhắc lại
               </div>
             </div>
           </div>
@@ -164,12 +175,11 @@ export function PracticeHome({
             type="button"
             onClick={() => {
               audioService.playClick()
-              onSelectDeck(otherDueSummary.topDeck!.id)
-              setFilterMode('due')
+              setFilterMode('global-due')
             }}
             className="py-1.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold whitespace-nowrap shrink-0 active:scale-95 transition-transform"
           >
-            Ôn ngay
+            Ôn gộp ngay
           </button>
         </div>
       )}
@@ -350,7 +360,7 @@ export function PracticeHome({
             </button>
           </div>
         )
-      ) : unmasteredCount === 0 && dueReviewCount === 0 ? (
+      ) : unmasteredCount === 0 && totalGlobalDue === 0 ? (
         /* All Cards Mastered & None Due */
         <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 text-center border border-emerald-500/30 shadow-xs space-y-3 animate-fadeIn">
           <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 text-emerald-500 flex items-center justify-center mx-auto">
@@ -377,12 +387,31 @@ export function PracticeHome({
       ) : (
         <div className="space-y-3">
           {/* SRS Due Notification Banner */}
-          {effectiveFilterMode === 'due' && (
-            <div className="rounded-2xl p-3.5 bg-indigo-500/10 border border-indigo-500/25 flex items-center gap-2.5 animate-fadeIn">
-              <Clock className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-              <p className="text-xs text-indigo-700 dark:text-indigo-300 leading-snug">
-                Đang ôn tập ngắt quãng (SRS) cho <strong>{dueReviewCount} thẻ</strong> đã đến chu kỳ nhắc lại để củng cố trí nhớ dài hạn.
-              </p>
+          {(effectiveFilterMode === 'due' || effectiveFilterMode === 'global-due') && (
+            <div className="rounded-2xl p-3.5 bg-indigo-500/10 border border-indigo-500/25 flex items-center justify-between gap-2.5 animate-fadeIn">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <Clock className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                <p className="text-xs text-indigo-700 dark:text-indigo-300 leading-snug">
+                  {effectiveFilterMode === 'global-due' ? (
+                    <>
+                      Đang chọn <strong>Ôn gộp SRS toàn kho ({totalGlobalDue} thẻ)</strong> xuyên suốt mọi bộ từ. Hãy bấm 1 trong 5 chế độ bên dưới để bắt đầu!
+                    </>
+                  ) : (
+                    <>
+                      Đang ôn tập ngắt quãng (SRS) cho <strong>{dueReviewCount} thẻ</strong> đã đến chu kỳ nhắc lại để củng cố trí nhớ dài hạn.
+                    </>
+                  )}
+                </p>
+              </div>
+              {effectiveFilterMode === 'global-due' && unmasteredCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setFilterMode('all')}
+                  className="py-1 px-2.5 rounded-lg bg-white/80 dark:bg-slate-800 text-[11px] font-bold text-slate-600 dark:text-slate-300 shrink-0"
+                >
+                  Về bộ hiện tại
+                </button>
+              )}
             </div>
           )}
 
@@ -411,8 +440,8 @@ export function PracticeHome({
           </div>
 
           {/* Dedicated Filter Pills Row (Eliminates horizontal squishing on 360px) */}
-          {(dueReviewCount > 0 || learningCount > 0) && (
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+          {(totalGlobalDue > 0 || learningCount > 0) && (
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
               <button
                 type="button"
                 onClick={() => {
@@ -444,6 +473,25 @@ export function PracticeHome({
                 >
                   <Clock className="w-3.5 h-3.5 shrink-0" />
                   <span>Đến hạn ({dueReviewCount})</span>
+                </button>
+              )}
+
+              {otherDueSummary.totalOtherDue > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    audioService.playClick()
+                    setFilterMode((prev) => (prev === 'global-due' ? 'all' : 'global-due'))
+                  }}
+                  title="Ôn gộp toàn bộ thẻ SRS đến hạn trên tất cả các bộ từ"
+                  className={`py-1.5 px-3 rounded-xl text-xs font-semibold border flex items-center gap-1.5 whitespace-nowrap transition-all active:scale-95 ${
+                    effectiveFilterMode === 'global-due'
+                      ? 'bg-violet-600 text-white border-violet-600 shadow-2xs'
+                      : 'bg-white dark:bg-slate-800 border-violet-500/35 text-violet-600 dark:text-violet-400'
+                  }`}
+                >
+                  <Clock className="w-3.5 h-3.5 shrink-0" />
+                  <span>SRS Toàn kho ({totalGlobalDue})</span>
                 </button>
               )}
 

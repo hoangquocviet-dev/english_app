@@ -1,31 +1,47 @@
+import { cloudSyncService } from './cloudSync'
+import { storageService } from './storage'
+
 /**
- * Checks for any updated PWA Service Worker (with a fast timeout so offline
- * mode never hangs) before reloading the page so users always receive the
- * latest deployed build in a single tap.
+ * Flushes any pending in-memory vocabulary/Cloud Sync writes, checks for an
+ * updated PWA Service Worker (with a fast 500ms timeout so offline mode never
+ * hangs), and reloads the page cleanly.
  */
 export async function forceReloadApp(): Promise<void> {
   if (typeof window === 'undefined') return
 
   try {
-    if ('serviceWorker' in navigator) {
-      const updateTask = (async () => {
-        const registrations = await navigator.serviceWorker.getRegistrations()
-        await Promise.all(
-          registrations.map(async (reg) => {
-            try {
-              await reg.update()
-              if (reg.waiting) {
-                reg.waiting.postMessage({ type: 'SKIP_WAITING' })
-              }
-            } catch {}
-          })
-        )
-      })()
+    storageService.flushPendingWrites()
+  } catch {}
 
-      // Never block reload for more than 500ms if offline or on slow network
+  try {
+    const tasks: Array<Promise<unknown>> = []
+
+    if (cloudSyncService.hasPendingPush()) {
+      tasks.push(cloudSyncService.pushNow(false, true).catch(() => {}))
+    }
+
+    if ('serviceWorker' in navigator) {
+      tasks.push(
+        (async () => {
+          const registrations = await navigator.serviceWorker.getRegistrations()
+          await Promise.all(
+            registrations.map(async (reg) => {
+              try {
+                await reg.update()
+                if (reg.waiting) {
+                  reg.waiting.postMessage({ type: 'SKIP_WAITING' })
+                }
+              } catch {}
+            })
+          )
+        })()
+      )
+    }
+
+    if (tasks.length > 0) {
       await Promise.race([
-        updateTask,
-        new Promise((resolve) => window.setTimeout(resolve, 500)),
+        Promise.all(tasks),
+        new Promise((resolve) => window.setTimeout(resolve, 550)),
       ])
     }
   } catch {}

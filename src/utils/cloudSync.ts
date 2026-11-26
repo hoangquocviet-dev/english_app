@@ -242,6 +242,10 @@ class CloudSyncManager {
     }, 1800)
   }
 
+  public hasPendingPush(): boolean {
+    return this.pendingPush
+  }
+
   private buildProfilePayload() {
     const syncCode = this.getSyncCode()
     const nickname = this.getNickname()
