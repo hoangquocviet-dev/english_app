@@ -426,7 +426,7 @@ export function ArcadeHub({
                         )}
                       </div>
                       <div className="text-[10px] text-slate-400 truncate">
-                        KC: {entry.sky_score} • GC: {entry.match_score} • 2s: {entry.blitz_score}
+                        KC: {entry.sky_score} • GC: {entry.match_score} • 2s: {entry.blitz_score} • GB: {entry.bomb_score ?? 0}
                         {entry.mastered_count > 0 ? ` • Thuộc ${entry.mastered_count} từ` : ''}
                       </div>
                     </div>

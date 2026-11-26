@@ -69,6 +69,7 @@ export interface LeaderboardEntry {
   sky_score: number
   match_score: number
   blitz_score: number
+  bomb_score?: number
   total_score: number
   mastered_count: number
   updated_at: string

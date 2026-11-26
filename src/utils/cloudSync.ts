@@ -358,6 +358,7 @@ class CloudSyncManager {
             sky_score: payload.highScores['sky-defender'] || 0,
             match_score: payload.highScores['speed-match'] || 0,
             blitz_score: payload.highScores['blitz-2s'] || 0,
+            bomb_score: payload.highScores['word-bomb'] || 0,
             mastered_count: payload.masteredCount,
             updated_at: new Date().toISOString(),
           }),
