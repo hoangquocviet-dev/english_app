@@ -373,14 +373,23 @@ export function FlashcardView({ words, deckId, deckName, onBack }: FlashcardView
             }}
             className="absolute inset-0 rounded-3xl bg-white dark:bg-slate-800 p-6 flex flex-col justify-between items-center text-center shadow-xs select-none"
           >
-            <div className="w-full flex justify-between items-center">
-              {currentWord.partOfSpeech ? (
-                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                  {currentWord.partOfSpeech}
-                </span>
-              ) : (
-                <span />
-              )}
+            <div className="w-full flex justify-between items-center gap-2">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {currentWord.partOfSpeech && (
+                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                    {currentWord.partOfSpeech}
+                  </span>
+                )}
+                {currentWord.status === 'mastered' && currentWord.srsLevel ? (
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-600 dark:text-sky-400">
+                    SRS Lv.{currentWord.srsLevel}
+                  </span>
+                ) : currentWord.status === 'learning' ? (
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                    Đang ôn
+                  </span>
+                ) : null}
+              </div>
 
               <div className="flex items-center gap-1.5">
                 <button

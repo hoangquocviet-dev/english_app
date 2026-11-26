@@ -201,6 +201,19 @@ class SafeStorageService {
     return newDeck
   }
 
+  public renameDeck(deckId: string, newName: string): boolean {
+    const clean = newName.trim()
+    if (!clean) return false
+    const decks = this.getDecks()
+    const target = decks.find((d) => d.id === deckId)
+    if (!target || target.isBuiltIn) return false
+    const nextDecks = decks.map((d) => (d.id === deckId ? { ...d, name: clean } : d))
+    this.decksCache = nextDecks
+    this.set(STORAGE_KEYS.DECKS, nextDecks)
+    this.emitMutation()
+    return true
+  }
+
   public deleteDeck(deckId: string): boolean {
     const decks = this.getDecks()
     const target = decks.find((d) => d.id === deckId)
@@ -553,7 +566,20 @@ class SafeStorageService {
   }
 
   public getStudyStreak(): number {
-    return this.get<number>(STORAGE_KEYS.STREAK, 1)
+    const savedStreak = this.get<number>(STORAGE_KEYS.STREAK, 1)
+    const lastActive = this.get<string>(STORAGE_KEYS.LAST_ACTIVE_DATE, '')
+    if (!lastActive) return savedStreak
+
+    const now = new Date()
+    const adjustedTime = new Date(now.getTime() - 4 * 60 * 60 * 1000)
+    const todayKey = `${adjustedTime.getFullYear()}-${adjustedTime.getMonth() + 1}-${adjustedTime.getDate()}`
+    if (lastActive === todayKey) return savedStreak
+
+    const yesterdayAdjusted = new Date(adjustedTime.getTime() - 24 * 60 * 60 * 1000)
+    const yesterdayKey = `${yesterdayAdjusted.getFullYear()}-${yesterdayAdjusted.getMonth() + 1}-${yesterdayAdjusted.getDate()}`
+    if (lastActive === yesterdayKey) return savedStreak
+
+    return 0
   }
 
   public recordDailyActivity(incrementWordCount: boolean = true): void {
@@ -683,9 +709,13 @@ class SafeStorageService {
           const ls = lw?.status || 'new'
           const bestStatus = rankStatus(cs) >= rankStatus(ls) ? cs : ls
           const bestReviews = Math.max(cp?.r || 0, lw?.reviewCount || 0)
-          const latestTime = Math.max(cp?.t || 0, lw?.lastReviewed || 0) || undefined
+          const cloudTime = cp?.t || 0
+          const localTime = lw?.lastReviewed || 0
+          const latestTime = Math.max(cloudTime, localTime) || undefined
           const bestLevel = Math.max(cp?.l || 0, lw?.srsLevel || 0) || undefined
-          const nextReview = cp?.n || lw?.nextReview || undefined
+          const nextReview =
+            (cloudTime >= localTime ? cp?.n || lw?.nextReview : lw?.nextReview || cp?.n) ||
+            undefined
           hydratedBuiltIns.push({
             ...bw,
             status: bestStatus,
@@ -841,6 +871,8 @@ class SafeStorageService {
         status: prev?.status || 'new',
         reviewCount: prev?.reviewCount || 0,
         lastReviewed: prev?.lastReviewed,
+        srsLevel: prev?.srsLevel,
+        nextReview: prev?.nextReview,
       }
     })
 

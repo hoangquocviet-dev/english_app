@@ -269,7 +269,7 @@ export function App() {
 
           {/* Magic QR Link Restore Toast */}
           {syncToast && (
-            <div className="w-full max-w-md mx-auto px-3.5 pt-2.5 animate-fadeIn">
+            <div className="w-full max-w-md sm:max-w-xl mx-auto px-3.5 pt-2.5 animate-fadeIn">
               <div
                 className={`p-3 rounded-2xl border text-xs font-bold flex items-center justify-between gap-2 shadow-sm ${
                   syncToast.ok

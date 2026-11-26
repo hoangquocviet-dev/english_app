@@ -229,9 +229,12 @@ export function ListeningView({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isCompleted || !currentQ) return
-      if (e.code === 'Space') {
+      if (e.key === 'Escape') {
         e.preventDefault()
-        playAudio(0.9)
+        onBack()
+      } else if (e.code === 'Space') {
+        e.preventDefault()
+        void playAudio(0.9)
       } else if (!isLocked && ['1', '2', '3', '4'].includes(e.key)) {
         const idx = parseInt(e.key, 10) - 1
         if (idx < currentQ.options.length) {
@@ -241,7 +244,7 @@ export function ListeningView({
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isLocked, isCompleted, currentQ, playAudio, handleSelect])
+  }, [isLocked, isCompleted, currentQ, playAudio, handleSelect, onBack])
 
   const resetListening = (sourceWords: WordItem[]) => {
     clearTransitionTimer()

@@ -44,11 +44,13 @@ export function LibraryView({
 }: LibraryViewProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchAllDecks, setSearchAllDecks] = useState(false)
-  const [statusFilter, setStatusFilter] = useState<'all' | 'mastered' | 'review'>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'mastered' | 'review' | 'due'>('all')
   const [visibleLimit, setVisibleLimit] = useState(PAGE_SIZE)
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false)
   const [isCreatingDeck, setIsCreatingDeck] = useState(false)
   const [newDeckName, setNewDeckName] = useState('')
+  const [renamingDeckId, setRenamingDeckId] = useState<string | null>(null)
+  const [renameDeckDraft, setRenameDeckDraft] = useState('')
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
   const activeDeckCardRef = useRef<HTMLDivElement | null>(null)
 
@@ -93,6 +95,9 @@ export function LibraryView({
       }
 
       if (statusFilter === 'mastered') return w.status === 'mastered'
+      if (statusFilter === 'due') {
+        return w.status === 'mastered' && (!w.nextReview || w.nextReview <= Date.now())
+      }
       if (statusFilter === 'review') return w.status === 'learning' || w.status === 'new'
       return true
     })
@@ -207,6 +212,18 @@ export function LibraryView({
     onDataChanged()
   }
 
+  const handleRenameDeckSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!renamingDeckId || !renameDeckDraft.trim()) return
+    const ok = storageService.renameDeck(renamingDeckId, renameDeckDraft)
+    if (ok) {
+      audioService.playSuccessChime()
+      onDataChanged()
+    }
+    setRenamingDeckId(null)
+    setRenameDeckDraft('')
+  }
+
   const handleDeleteDeck = (deck: Deck) => {
     if (deck.isBuiltIn) return
     setConfirmAction({
@@ -296,6 +313,11 @@ export function LibraryView({
 
   const masteredTotal = useMemo(
     () => sourceWords.filter((w) => w.status === 'mastered').length,
+    [sourceWords]
+  )
+  const dueTotal = useMemo(
+    // eslint-disable-next-line react-hooks/purity
+    () => sourceWords.filter((w) => w.status === 'mastered' && (!w.nextReview || w.nextReview <= Date.now())).length,
     [sourceWords]
   )
   const allMasteredTotal = useMemo(
@@ -486,7 +508,7 @@ export function LibraryView({
           </button>
         </div>
 
-        {/* Create Deck inline form */}
+        {/* Create or Rename Deck inline form */}
         {isCreatingDeck && (
           <form
             onSubmit={handleCreateDeck}
@@ -505,6 +527,35 @@ export function LibraryView({
               className="py-1.5 px-3 rounded-xl bg-indigo-600 text-white font-medium text-xs shrink-0"
             >
               Lưu
+            </button>
+          </form>
+        )}
+
+        {renamingDeckId && (
+          <form
+            onSubmit={handleRenameDeckSubmit}
+            className="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-sky-500/30 flex gap-2 animate-fadeIn"
+          >
+            <input
+              type="text"
+              autoFocus
+              value={renameDeckDraft}
+              onChange={(e) => setRenameDeckDraft(e.target.value)}
+              placeholder="Nhập tên mới cho bộ từ..."
+              className="flex-1 py-1.5 px-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none"
+            />
+            <button
+              type="submit"
+              className="py-1.5 px-3 rounded-xl bg-sky-600 text-white font-semibold text-xs shrink-0"
+            >
+              Đổi tên
+            </button>
+            <button
+              type="button"
+              onClick={() => setRenamingDeckId(null)}
+              className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600"
+            >
+              <X className="w-3.5 h-3.5" />
             </button>
           </form>
         )}
@@ -549,20 +600,41 @@ export function LibraryView({
                     {deck.name}
                   </span>
                   {!deck.isBuiltIn && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleDeleteDeck(deck)
-                      }}
-                      className={`p-1 rounded-md transition-colors ${
-                        isSelected
-                          ? 'text-indigo-200 hover:text-white'
-                          : 'text-slate-400 hover:text-rose-500'
-                      }`}
-                      title="Xóa bộ từ"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center gap-0.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          audioService.playClick()
+                          setIsCreatingDeck(false)
+                          setRenamingDeckId(deck.id)
+                          setRenameDeckDraft(deck.name)
+                        }}
+                        className={`p-1 rounded-md transition-colors ${
+                          isSelected
+                            ? 'text-indigo-200 hover:text-white'
+                            : 'text-slate-400 hover:text-sky-500'
+                        }`}
+                        title="Đổi tên bộ từ"
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteDeck(deck)
+                        }}
+                        className={`p-1 rounded-md transition-colors ${
+                          isSelected
+                            ? 'text-indigo-200 hover:text-white'
+                            : 'text-slate-400 hover:text-rose-500'
+                        }`}
+                        title="Xóa bộ từ"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   )}
                 </div>
 
@@ -717,6 +789,21 @@ export function LibraryView({
             >
               Cần ôn ({sourceWords.length - masteredTotal})
             </button>
+            {dueTotal > 0 && (
+              <button
+                onClick={() => {
+                  setStatusFilter((prev) => (prev === 'due' ? 'all' : 'due'))
+                  setVisibleLimit(PAGE_SIZE)
+                }}
+                className={`py-1.5 px-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  statusFilter === 'due'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+                }`}
+              >
+                Đến hạn ({dueTotal})
+              </button>
+            )}
           </div>
 
           {!searchAllDecks && (

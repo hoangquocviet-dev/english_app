@@ -152,7 +152,7 @@ export function SpellingView({ words, deckId, deckName, onBack }: SpellingViewPr
         audioService.playSuccessChime()
         storageService.updateWordStatus(currentWord.id, 'mastered')
         setStats((prev) => ({ ...prev, mastered: prev.mastered + 1 }))
-        audioService.speak(currentWord.term)
+        void audioService.speakAuto(currentWord.term)
 
         clearTransitionTimer()
         transitionTimerRef.current = window.setTimeout(() => {
@@ -278,7 +278,21 @@ export function SpellingView({ words, deckId, deckName, onBack }: SpellingViewPr
   // Physical keyboard listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (isSuccess || !currentWord) return
+      if (isCompleted || !currentWord) return
+
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        onBack()
+        return
+      }
+
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        void audioService.speak(currentWord.term, 0.9)
+        return
+      }
+
+      if (isSuccess) return
 
       if (e.key === 'Backspace') {
         e.preventDefault()
@@ -301,7 +315,7 @@ export function SpellingView({ words, deckId, deckName, onBack }: SpellingViewPr
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isSuccess, currentWord, handleRemovePlacedTile, handleSelectPoolTile])
+  }, [isCompleted, isSuccess, currentWord, handleRemovePlacedTile, handleSelectPoolTile, onBack])
 
   const handleClearAll = () => {
     if (!currentWord || isSuccess) return
@@ -335,7 +349,7 @@ export function SpellingView({ words, deckId, deckName, onBack }: SpellingViewPr
       ])
     }
 
-    audioService.speak(currentWord.term)
+    void audioService.speakAuto(currentWord.term)
 
     clearTransitionTimer()
     transitionTimerRef.current = window.setTimeout(() => {

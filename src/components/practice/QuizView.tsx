@@ -1,9 +1,13 @@
-import { ArrowLeft, Check, Volume2, X } from 'lucide-react'
+import { ArrowLeft, ArrowLeftRight, Check, Volume2, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { StudySessionStats, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
 import { storageService } from '../../utils/storage'
 import { StudySummary } from './StudySummary'
+
+export type QuizDirection = 'en-vi' | 'vi-en'
+
+const QUIZ_DIR_STORAGE_KEY = 'vocabflow_quiz_dir'
 
 interface QuizViewProps {
   words: WordItem[]
@@ -31,58 +35,112 @@ function shuffleArray<T>(array: T[]): T[] {
   return arr
 }
 
-function buildQuestions(sourceWords: WordItem[], fullDeckWords: WordItem[]): QuizQuestion[] {
+function buildQuestions(
+  sourceWords: WordItem[],
+  fullDeckWords: WordItem[],
+  direction: QuizDirection
+): QuizQuestion[] {
   const rawPool =
     fullDeckWords.length >= 6
       ? [...fullDeckWords, ...sourceWords]
-      : [...fullDeckWords, ...sourceWords, ...storageService.getWords().slice(0, 40)]
+      : [...fullDeckWords, ...sourceWords, ...storageService.getWords().slice(0, 50)]
 
-  // Pre-deduplicate candidate pool once in O(N) instead of O(N^2) per question
-  const seenDefs = new Set<string>()
-  const uniqueCandidates: Array<{ termLower: string; def: string; defLower: string }> = []
+  interface Candidate {
+    term: string
+    termLower: string
+    def: string
+    defLower: string
+    pos: string
+  }
+
+  // Pre-deduplicate candidate pool once in O(N)
+  const seenKeys = new Set<string>()
+  const uniqueCandidates: Candidate[] = []
   for (const w of rawPool) {
+    const term = w.term.trim()
+    const termLower = term.toLowerCase()
     const def = w.definition.trim()
     const defLower = def.toLowerCase()
-    if (!seenDefs.has(defLower)) {
-      seenDefs.add(defLower)
+    const dedupKey = direction === 'en-vi' ? defLower : termLower
+    if (!seenKeys.has(dedupKey)) {
+      seenKeys.add(dedupKey)
       uniqueCandidates.push({
-        termLower: w.term.trim().toLowerCase(),
+        term,
+        termLower,
         def,
         defLower,
+        pos: (w.partOfSpeech || '').trim().toLowerCase(),
       })
     }
   }
 
-  const generated: QuizQuestion[] = sourceWords.map((targetWord) => {
-    const correctDef = targetWord.definition.trim()
-    const correctLower = correctDef.toLowerCase()
-    const targetTermLower = targetWord.term.trim().toLowerCase()
+  // Group by partOfSpeech so distractors feel realistic (verb vs verb, noun vs noun)
+  const byPos = new Map<string, Candidate[]>()
+  for (const c of uniqueCandidates) {
+    if (!c.pos) continue
+    const list = byPos.get(c.pos)
+    if (list) list.push(c)
+    else byPos.set(c.pos, [c])
+  }
 
-    // Fast O(1) random sampling of 3 distinct distractors
+  const generated: QuizQuestion[] = sourceWords.map((targetWord) => {
+    const correctText =
+      direction === 'en-vi' ? targetWord.definition.trim() : targetWord.term.trim()
+    const correctLower = correctText.toLowerCase()
+    const targetTermLower = targetWord.term.trim().toLowerCase()
+    const targetDefLower = targetWord.definition.trim().toLowerCase()
+    const targetPos = (targetWord.partOfSpeech || '').trim().toLowerCase()
+
     const picked: string[] = []
     const pickedLower = new Set<string>([correctLower])
-    const poolLen = uniqueCandidates.length
 
-    for (let attempts = 0; attempts < 24 && picked.length < 3 && poolLen > 1; attempts++) {
-      const cand = uniqueCandidates[Math.floor(Math.random() * poolLen)]
-      if (cand.termLower !== targetTermLower && !pickedLower.has(cand.defLower)) {
-        pickedLower.add(cand.defLower)
-        picked.push(cand.def)
+    const tryPickFrom = (pool: Candidate[], maxAttempts: number) => {
+      const len = pool.length
+      if (len <= 1) return
+      for (let attempts = 0; attempts < maxAttempts && picked.length < 3; attempts++) {
+        const cand = pool[Math.floor(Math.random() * len)]
+        const val = direction === 'en-vi' ? cand.def : cand.term
+        const valLower = direction === 'en-vi' ? cand.defLower : cand.termLower
+        if (
+          cand.termLower !== targetTermLower &&
+          cand.defLower !== targetDefLower &&
+          !pickedLower.has(valLower)
+        ) {
+          pickedLower.add(valLower)
+          picked.push(val)
+        }
       }
+    }
+
+    // 1. Prefer same part-of-speech distractors
+    const samePosPool = targetPos ? byPos.get(targetPos) : undefined
+    if (samePosPool && samePosPool.length >= 4) {
+      tryPickFrom(samePosPool, 18)
+    }
+
+    // 2. Fill remaining from general pool
+    if (picked.length < 3) {
+      tryPickFrom(uniqueCandidates, 24)
     }
 
     if (picked.length < 3) {
       for (const cand of uniqueCandidates) {
         if (picked.length >= 3) break
-        if (cand.termLower !== targetTermLower && !pickedLower.has(cand.defLower)) {
-          pickedLower.add(cand.defLower)
-          picked.push(cand.def)
+        const val = direction === 'en-vi' ? cand.def : cand.term
+        const valLower = direction === 'en-vi' ? cand.defLower : cand.termLower
+        if (
+          cand.termLower !== targetTermLower &&
+          cand.defLower !== targetDefLower &&
+          !pickedLower.has(valLower)
+        ) {
+          pickedLower.add(valLower)
+          picked.push(val)
         }
       }
     }
 
-    const shuffledOptions = shuffleArray([correctDef, ...picked])
-    const correctIndex = shuffledOptions.indexOf(correctDef)
+    const shuffledOptions = shuffleArray([correctText, ...picked])
+    const correctIndex = shuffledOptions.indexOf(correctText)
 
     return {
       targetWord,
@@ -96,8 +154,15 @@ function buildQuestions(sourceWords: WordItem[], fullDeckWords: WordItem[]): Qui
 }
 
 export function QuizView({ words, allDeckWords, deckId, deckName, onBack }: QuizViewProps) {
+  const [direction, setDirection] = useState<QuizDirection>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = window.localStorage.getItem(QUIZ_DIR_STORAGE_KEY)
+      if (saved === 'vi-en' || saved === 'en-vi') return saved
+    }
+    return 'en-vi'
+  })
   const [questions, setQuestions] = useState<QuizQuestion[]>(() =>
-    buildQuestions(words, allDeckWords)
+    buildQuestions(words, allDeckWords, direction)
   )
   const [currentIndex, setCurrentIndex] = useState(0)
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
@@ -122,12 +187,34 @@ export function QuizView({ words, allDeckWords, deckId, deckName, onBack }: Quiz
 
   const currentQ = questions[currentIndex]
 
-  // Auto speak word on load
+  // Auto speak word on load ONLY in English -> Vietnamese mode (don't spoil answer in Vi -> En!)
   useEffect(() => {
-    if (currentQ && !isCompleted) {
-      audioService.speakAuto(currentQ.targetWord.term)
+    if (currentQ && !isCompleted && direction === 'en-vi') {
+      void audioService.speakAuto(currentQ.targetWord.term)
     }
-  }, [currentIndex, currentQ, isCompleted])
+  }, [currentIndex, currentQ, isCompleted, direction])
+
+  const handleToggleDirection = () => {
+    audioService.playClick()
+    clearTransitionTimer()
+    const nextDir: QuizDirection = direction === 'en-vi' ? 'vi-en' : 'en-vi'
+    setDirection(nextDir)
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.setItem(QUIZ_DIR_STORAGE_KEY, nextDir)
+      } catch {}
+    }
+    // Rebuild remaining questions in the new direction without losing session progress
+    const remainingSource = questions.slice(currentIndex).map((q) => q.targetWord)
+    const rebuilt = buildQuestions(
+      remainingSource.length > 0 ? remainingSource : words,
+      allDeckWords,
+      nextDir
+    )
+    setQuestions([...questions.slice(0, currentIndex), ...rebuilt])
+    setSelectedOption(null)
+    setIsLocked(false)
+  }
 
   const handleSelect = useCallback(
     (index: number) => {
@@ -148,6 +235,9 @@ export function QuizView({ words, allDeckWords, deckId, deckName, onBack }: Quiz
         audioService.playSuccessChime()
         storageService.updateWordStatus(currentQ.targetWord.id, 'mastered')
         setStats((prev) => ({ ...prev, mastered: prev.mastered + 1 }))
+        if (direction === 'vi-en') {
+          void audioService.speakAuto(currentQ.targetWord.term, 0.9)
+        }
       } else {
         if (typeof navigator !== 'undefined' && navigator.vibrate) {
           try {
@@ -157,25 +247,28 @@ export function QuizView({ words, allDeckWords, deckId, deckName, onBack }: Quiz
         audioService.playErrorBuzz()
         storageService.updateWordStatus(currentQ.targetWord.id, 'learning')
         setStats((prev) => ({ ...prev, review: prev.review + 1 }))
+        if (direction === 'vi-en') {
+          void audioService.speakAuto(currentQ.targetWord.term, 0.9)
+        }
 
-        // Re-queue missed word once with re-shuffled options
+        // Re-queue missed word with re-shuffled options
         if (currentQ.repetitionCount < 2) {
           wasRequeued = true
-          const correctDef = currentQ.options[currentQ.correctOptionIndex]
+          const correctVal = currentQ.options[currentQ.correctOptionIndex]
           const reshuffledOptions = shuffleArray(currentQ.options)
           setQuestions((prev) => [
             ...prev,
             {
               targetWord: currentQ.targetWord,
               options: reshuffledOptions,
-              correctOptionIndex: reshuffledOptions.indexOf(correctDef),
+              correctOptionIndex: reshuffledOptions.indexOf(correctVal),
               repetitionCount: currentQ.repetitionCount + 1,
             },
           ])
         }
       }
 
-      const delay = isCorrect ? 800 : 1700
+      const delay = isCorrect ? 850 : 1750
       const nextTotal = questions.length + (wasRequeued ? 1 : 0)
 
       clearTransitionTimer()
@@ -190,16 +283,27 @@ export function QuizView({ words, allDeckWords, deckId, deckName, onBack }: Quiz
         }
       }, delay)
     },
-    [isLocked, currentQ, questions.length, currentIndex, clearTransitionTimer]
+    [isLocked, currentQ, direction, questions.length, currentIndex, clearTransitionTimer]
   )
 
-  // Desktop keyboard shortcuts 1, 2, 3, 4
+  // Desktop keyboard shortcuts: 1-4 answer, Space replay audio, Escape exit
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (isLocked || isCompleted || !currentQ) return
-      const key = e.key
-      if (['1', '2', '3', '4'].includes(key)) {
-        const optionIndex = parseInt(key, 10) - 1
+      if (isCompleted || !currentQ) return
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        onBack()
+        return
+      }
+      if (e.code === 'Space') {
+        if (direction === 'en-vi' || isLocked) {
+          e.preventDefault()
+          void audioService.speak(currentQ.targetWord.term, 0.9)
+        }
+        return
+      }
+      if (!isLocked && ['1', '2', '3', '4'].includes(e.key)) {
+        const optionIndex = parseInt(e.key, 10) - 1
         if (optionIndex < currentQ.options.length) {
           handleSelect(optionIndex)
         }
@@ -207,11 +311,11 @@ export function QuizView({ words, allDeckWords, deckId, deckName, onBack }: Quiz
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isLocked, isCompleted, currentQ, handleSelect])
+  }, [isLocked, isCompleted, currentQ, direction, handleSelect, onBack])
 
   const resetQuiz = (sourceWords: WordItem[]) => {
     clearTransitionTimer()
-    setQuestions(buildQuestions(sourceWords, allDeckWords))
+    setQuestions(buildQuestions(sourceWords, allDeckWords, direction))
     setCurrentIndex(0)
     setSelectedOption(null)
     setIsLocked(false)
@@ -252,14 +356,15 @@ export function QuizView({ words, allDeckWords, deckId, deckName, onBack }: Quiz
   return (
     <div className="w-full flex flex-col my-auto max-w-md sm:max-w-lg mx-auto px-3.5 py-2 select-none">
       {/* Top Bar */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between gap-2 mb-4">
         <button
           onClick={onBack}
-          title="Quay lại"
-          className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+          title="Quay lại (Esc)"
+          className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors shrink-0"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
+
         <div className="flex flex-col items-center">
           <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
             Câu {currentIndex + 1} / {questions.length}
@@ -271,41 +376,72 @@ export function QuizView({ words, allDeckWords, deckId, deckName, onBack }: Quiz
             />
           </div>
         </div>
-        <div className="w-9" />
+
+        <button
+          type="button"
+          onClick={handleToggleDirection}
+          title="Đổi chiều câu hỏi: Anh → Việt hoặc Việt → Anh"
+          className="py-1.5 px-2.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/25 text-indigo-600 dark:text-indigo-400 text-[11px] font-bold flex items-center gap-1 whitespace-nowrap shrink-0 active:scale-95 transition-all"
+        >
+          <ArrowLeftRight className="w-3 h-3 shrink-0" />
+          <span>{direction === 'en-vi' ? 'Anh → Việt' : 'Việt → Anh'}</span>
+        </button>
       </div>
 
-      {/* Target Word Card */}
+      {/* Target Prompt Card */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 text-center border border-slate-200 dark:border-slate-800 shadow-sm mb-5 relative">
         <div className="flex items-center justify-between mb-2">
           <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-            Chọn nghĩa tiếng Việt đúng
+            {direction === 'en-vi' ? 'Chọn nghĩa tiếng Việt đúng' : 'Chọn từ tiếng Anh đúng'}
           </span>
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => audioService.speak(currentQ.targetWord.term, 0.6)}
-              className="h-8 px-2.5 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
-              title="Nghe chậm (0.6x)"
-            >
-              0.6x
-            </button>
-            <button
-              onClick={() => audioService.speak(currentQ.targetWord.term, 0.9)}
-              className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
-              title="Phát âm chuẩn"
-            >
-              <Volume2 className="w-4 h-4" />
-            </button>
-          </div>
+
+          {direction === 'en-vi' || isLocked ? (
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => void audioService.speak(currentQ.targetWord.term, 0.6)}
+                className="h-8 px-2.5 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+                title="Nghe chậm (0.6x)"
+              >
+                0.6x
+              </button>
+              <button
+                onClick={() => void audioService.speak(currentQ.targetWord.term, 0.9)}
+                className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+                title="Phát âm chuẩn (Space)"
+              >
+                <Volume2 className="w-4 h-4" />
+              </button>
+            </div>
+          ) : currentQ.targetWord.partOfSpeech ? (
+            <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 uppercase">
+              {currentQ.targetWord.partOfSpeech}
+            </span>
+          ) : null}
         </div>
 
-        <h2 className="text-3xl font-extrabold text-slate-900 dark:text-slate-50 tracking-tight break-words mt-1">
-          {currentQ.targetWord.term}
-        </h2>
-
-        {currentQ.targetWord.ipa && (
-          <p className="text-sm font-sans font-medium tracking-wide text-slate-400 dark:text-slate-500 mt-1">
-            {currentQ.targetWord.ipa}
-          </p>
+        {direction === 'en-vi' ? (
+          <>
+            <h2 className="text-3xl font-extrabold text-slate-900 dark:text-slate-50 tracking-tight break-words mt-1">
+              {currentQ.targetWord.term}
+            </h2>
+            {currentQ.targetWord.ipa && (
+              <p className="text-sm font-sans font-medium tracking-wide text-slate-400 dark:text-slate-500 mt-1">
+                {currentQ.targetWord.ipa}
+              </p>
+            )}
+          </>
+        ) : (
+          <>
+            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-slate-50 leading-snug break-words mt-1">
+              {currentQ.targetWord.definition}
+            </h2>
+            {isLocked && (
+              <p className="text-sm font-sans font-semibold text-indigo-600 dark:text-indigo-400 mt-1.5 animate-fadeIn">
+                {currentQ.targetWord.term}
+                {currentQ.targetWord.ipa ? ` ${currentQ.targetWord.ipa}` : ''}
+              </p>
+            )}
+          </>
         )}
 
         {isLocked && selectedOption !== currentQ.correctOptionIndex && currentQ.targetWord.example && (
@@ -347,7 +483,13 @@ export function QuizView({ words, allDeckWords, deckId, deckName, onBack }: Quiz
                 <span className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-xs font-semibold text-slate-500 dark:text-slate-400 shrink-0">
                   {idx + 1}
                 </span>
-                <span className="leading-snug break-words line-clamp-3">{option}</span>
+                <span
+                  className={`leading-snug break-words line-clamp-3 ${
+                    direction === 'vi-en' ? 'font-bold text-base' : ''
+                  }`}
+                >
+                  {option}
+                </span>
               </div>
 
               {isLocked && isCorrect && <Check className="w-5 h-5 text-emerald-500 shrink-0 ml-2" />}

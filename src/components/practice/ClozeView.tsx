@@ -218,6 +218,7 @@ export function ClozeView({
       setSelectedOption(index)
 
       const isCorrect = index === currentQ.correctOptionIndex
+      let wasRequeued = false
 
       if (isCorrect) {
         if (typeof navigator !== 'undefined' && navigator.vibrate) {
@@ -229,8 +230,8 @@ export function ClozeView({
         storageService.updateWordStatus(currentQ.targetWord.id, 'mastered')
         setStats((prev) => ({ ...prev, mastered: prev.mastered + 1 }))
 
-        // Auto read full sentence on correct completion for reinforcement
-        void audioService.speak(currentQ.sentence, 0.95)
+        // Auto read full sentence on correct completion for reinforcement (respects mute)
+        void audioService.speakAuto(currentQ.sentence, 0.95)
       } else {
         if (typeof navigator !== 'undefined' && navigator.vibrate) {
           try {
@@ -242,6 +243,7 @@ export function ClozeView({
         setStats((prev) => ({ ...prev, review: prev.review + 1 }))
 
         if (currentQ.repetitionCount < 2) {
+          wasRequeued = true
           const reshuffledOptions = shuffleArray(currentQ.options)
           const targetKey = currentQ.targetWord.term.trim().toLowerCase()
           setQuestions((prev) => [
@@ -258,11 +260,12 @@ export function ClozeView({
         }
       }
 
+      const nextTotal = questions.length + (wasRequeued ? 1 : 0)
       clearTransitionTimer()
       transitionTimerRef.current = window.setTimeout(
         () => {
           if (!mountedRef.current) return
-          if (currentIndex < questions.length - 1) {
+          if (currentIndex + 1 < nextTotal) {
             setCurrentIndex((prev) => prev + 1)
             setSelectedOption(null)
             setIsLocked(false)
@@ -277,13 +280,20 @@ export function ClozeView({
     [clearTransitionTimer, currentIndex, currentQ, isLocked, questions.length]
   )
 
-  // Keyboard controls: 1-4 to pick option, Space for audio, Esc to exit
+  // Keyboard controls: 1-4 to pick option, Space for audio, H for hint, Esc to exit
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isCompleted) return
 
       if (e.key === 'Escape') {
+        e.preventDefault()
         onBack()
+        return
+      }
+
+      if (e.code === 'Space') {
+        e.preventDefault()
+        void handlePlaySentenceAudio()
         return
       }
 
@@ -301,7 +311,7 @@ export function ClozeView({
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleSelect, isCompleted, onBack])
+  }, [handlePlaySentenceAudio, handleSelect, isCompleted, onBack])
 
   if (isCompleted || !currentQ) {
     const sessionStats: StudySessionStats = {

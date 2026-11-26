@@ -66,7 +66,8 @@ export function PracticeHome({
   const learningCount = words.filter((w) => w.status === 'learning').length
   const unmasteredCount = words.length - masteredCount
 
-  const [now] = useState(() => Date.now())
+  // eslint-disable-next-line react-hooks/purity
+  const now = Date.now()
   const dueReviewCount = words.filter(
     (w) => w.status === 'mastered' && (!w.nextReview || w.nextReview <= now)
   ).length
