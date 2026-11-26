@@ -100,7 +100,7 @@
   animation: pulse-success 0.3s ease-in-out;
 }
 
-/* Smooth fade-in entrance */
+/* Smooth fade-in entrance (no fill-mode retention so position:fixed children stay viewport-anchored!) */
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -108,12 +108,12 @@
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
   }
 }
 
 .animate-fadeIn {
-  animation: fade-in 0.18s ease-out both;
+  animation: fade-in 0.18s ease-out;
 }
 
 /* Crisp arcade tile pop-in */
@@ -128,12 +128,12 @@
   }
   100% {
     opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: none;
   }
 }
 
 .animate-popIn {
-  animation: pop-in 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: pop-in 0.22s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* Floating score rise */
