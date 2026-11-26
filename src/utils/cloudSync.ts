@@ -20,6 +20,8 @@ const NICKNAME_STORAGE_KEY = 'vocabflow_nickname'
 const LAST_SYNCED_AT_KEY = 'vocabflow_last_synced_at'
 const SHARED_DECK_IDS_KEY = 'vocabflow_shared_deck_ids'
 
+export const OFFICIAL_DAILY_DECK_ID = 'caaadfe1aa3f_daily-english-live'
+
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // 32 unambiguous chars (no 0/O/1/I)
 const SYNC_CODE_REGEX = /^VF-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/
 
@@ -227,7 +229,37 @@ class CloudSyncManager {
       }
     }
 
+    // 3. Auto-ingest any brand-new lessons published by the Daily-English automation bot!
+    const addedDailyCount = await this.pullOfficialDailyFeed()
+    if (addedDailyCount > 0) {
+      onRemoteHydrated()
+      return {
+        ok: true,
+        message: `Đã tự động đồng bộ ${addedDailyCount} từ mới hôm nay từ sổ tay Daily-English!`,
+      }
+    }
+
     return null
+  }
+
+  public async pullOfficialDailyFeed(): Promise<number> {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return 0
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/community_decks?id=eq.${encodeURIComponent(
+          OFFICIAL_DAILY_DECK_ID
+        )}&select=*&limit=1`,
+        {
+          headers: { apikey: SUPABASE_KEY },
+        }
+      )
+      if (!res.ok) return 0
+      const rows = await res.json()
+      if (!Array.isArray(rows) || rows.length === 0) return 0
+      return storageService.ingestOfficialDailyFeed(rows[0] as CommunityDeck)
+    } catch {
+      return 0
+    }
   }
 
   public schedulePush(): void {

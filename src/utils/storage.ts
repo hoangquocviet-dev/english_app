@@ -1087,6 +1087,57 @@ class SafeStorageService {
     return localDeckId
   }
 
+  // AUTO-INGEST OFFICIAL DAILY-ENGLISH CLOUD FEED (Only adds net-new daily words!)
+  public ingestOfficialDailyFeed(commDeck: CommunityDeck): number {
+    if (!Array.isArray(commDeck.words) || commDeck.words.length === 0) return 0
+    const allWords = this.getWords()
+    const existingTerms = new Set(allWords.map((w) => w.term.trim().toLowerCase()))
+    const LIVE_DECK_ID = 'commdeck-daily-auto'
+
+    const freshItems: WordItem[] = []
+    for (let i = 0; i < commDeck.words.length; i++) {
+      const cw = commDeck.words[i]
+      const cleanTerm = (cw.term || '').trim()
+      const cleanDef = (cw.definition || '').trim()
+      if (!cleanTerm || !cleanDef) continue
+      const key = cleanTerm.toLowerCase()
+      if (existingTerms.has(key)) continue
+      existingTerms.add(key)
+
+      const slug = key.replace(/[^a-z0-9]+/g, '-').slice(0, 28)
+      freshItems.push({
+        id: `commword-daily-${slug}-${i}`,
+        deckId: LIVE_DECK_ID,
+        term: cleanTerm,
+        ipa: cw.ipa?.trim() || undefined,
+        definition: cleanDef,
+        example: cw.example?.trim() || undefined,
+        partOfSpeech: cw.partOfSpeech || (cleanTerm.includes(' ') ? 'phrase' : 'noun'),
+        status: 'new',
+        reviewCount: 0,
+      })
+    }
+
+    if (freshItems.length === 0) return 0
+
+    const decks = this.getDecks()
+    if (!decks.some((d) => d.id === LIVE_DECK_ID)) {
+      const autoDeck: Deck = {
+        id: LIVE_DECK_ID,
+        name: '📅 Bài Mới Daily-English',
+        description: 'Tự động cập nhật từ mới mỗi chiều từ bot Daily-English của bạn',
+        isBuiltIn: false,
+        createdAt: Date.now(),
+      }
+      const nextDecks = [decks[0], autoDeck, ...decks.slice(1)]
+      this.decksCache = nextDecks
+      this.set(STORAGE_KEYS.DECKS, nextDecks)
+    }
+
+    this.commitWordsCache([...freshItems, ...allWords], true, false)
+    return freshItems.length
+  }
+
   // FULL OFFLINE PROFILE SNAPSHOT EXPORT / IMPORT (.json)
   public exportFullProfileSnapshot(): string {
     const allWords = this.getWords()

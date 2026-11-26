@@ -20,7 +20,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CommunityDeck, Deck, StudyMode, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
-import { cloudSyncService } from '../../utils/cloudSync'
+import { cloudSyncService, OFFICIAL_DAILY_DECK_ID } from '../../utils/cloudSync'
 import { storageService } from '../../utils/storage'
 import { ImportExportModal } from './ImportExportModal'
 
@@ -497,6 +497,11 @@ export function LibraryView({
                         <span className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
                           {cd.name}
                         </span>
+                        {cd.id === OFFICIAL_DAILY_DECK_ID && (
+                          <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
+                            ⚡ Tự động
+                          </span>
+                        )}
                         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
                           {cd.word_count} từ
                         </span>

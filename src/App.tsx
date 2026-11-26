@@ -314,6 +314,14 @@ export function App() {
   useEffect(() => {
     if (isFullScreenSession || isCloudModalOpen || isStatsModalOpen) return
     const onKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement | null)?.tagName
+      const isTyping = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
+      if (!isTyping && e.key === '?' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault()
+        audioService.playClick()
+        setIsStatsModalOpen(true)
+        return
+      }
       if (!e.altKey || e.ctrlKey || e.metaKey) return
       const tabMap: Record<string, ActiveTab> = {
         '1': 'practice',

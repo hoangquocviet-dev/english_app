@@ -368,6 +368,39 @@ export function StatsModal({
             ))}
           </div>
         </div>
+
+        {/* Desktop Keyboard Shortcuts Cheat-Sheet (Hidden on mobile so 360px stays ultra-compact) */}
+        <div className="hidden sm:block pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
+            Phím tắt nhanh trên máy tính (Nhấn ? để mở nhanh)
+          </span>
+          <div className="grid grid-cols-3 gap-1.5 text-[11px] text-slate-600 dark:text-slate-300">
+            <div className="p-1.5 px-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between">
+              <span>Đổi Tab</span>
+              <kbd className="font-mono font-bold text-indigo-600 dark:text-indigo-400">Alt+1–4</kbd>
+            </div>
+            <div className="p-1.5 px-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between">
+              <span>Lật / Nghe</span>
+              <kbd className="font-mono font-bold text-indigo-600 dark:text-indigo-400">Space</kbd>
+            </div>
+            <div className="p-1.5 px-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between">
+              <span>Chọn đáp án</span>
+              <kbd className="font-mono font-bold text-indigo-600 dark:text-indigo-400">1 – 4</kbd>
+            </div>
+            <div className="p-1.5 px-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between">
+              <span>Tự chạy / Mic</span>
+              <kbd className="font-mono font-bold text-indigo-600 dark:text-indigo-400">A / M</kbd>
+            </div>
+            <div className="p-1.5 px-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between">
+              <span>Đánh dấu sao</span>
+              <kbd className="font-mono font-bold text-indigo-600 dark:text-indigo-400">S</kbd>
+            </div>
+            <div className="p-1.5 px-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between">
+              <span>Hoàn tác thẻ</span>
+              <kbd className="font-mono font-bold text-indigo-600 dark:text-indigo-400">Ctrl+Z</kbd>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
