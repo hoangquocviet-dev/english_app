@@ -1,4 +1,4 @@
-import { AlertCircle, Check, Copy, Download, FileText, FolderOpen, Sparkles, Upload, X } from 'lucide-react'
+import { AlertCircle, Check, Copy, Download, FileText, FolderOpen, Share2, Sparkles, Upload, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Deck, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
@@ -11,6 +11,8 @@ import {
   parseDailyEnglish,
 } from '../../utils/parser'
 import { storageService } from '../../utils/storage'
+import { useChildModalBack } from '../../utils/useChildModalBack'
+import { SheetGrabber } from '../common/SheetGrabber'
 
 interface ImportExportModalProps {
   isOpen: boolean
@@ -49,6 +51,8 @@ export function ImportExportModal({
     format?: string
   } | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+  useChildModalBack(isOpen, onClose)
 
   useEffect(() => {
     if (!isOpen) return
@@ -207,7 +211,9 @@ export function ImportExportModal({
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col max-h-[90dvh] overflow-hidden pb-[env(safe-area-inset-bottom,0px)]"
       >
-        <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto mt-2.5 -mb-1 sm:hidden shrink-0" />
+        <div className="pt-2.5 sm:hidden shrink-0">
+          <SheetGrabber onDismiss={onClose} />
+        </div>
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2 min-w-0">
@@ -354,7 +360,7 @@ export function ImportExportModal({
                 <button
                   type="button"
                   onClick={handleCopy}
-                  className="py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs whitespace-nowrap flex items-center justify-center gap-1.5 transition-transform active:scale-95"
+                  className="min-h-10 py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs whitespace-nowrap flex items-center justify-center gap-1.5 transition-transform active:scale-95"
                 >
                   {isCopied ? (
                     <Check className="w-4 h-4 shrink-0" />
@@ -367,12 +373,31 @@ export function ImportExportModal({
                 <button
                   type="button"
                   onClick={handleDownload}
-                  className="py-2.5 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs whitespace-nowrap flex items-center justify-center gap-1.5 transition-transform active:scale-95 border border-slate-200 dark:border-slate-700"
+                  className="min-h-10 py-2.5 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs whitespace-nowrap flex items-center justify-center gap-1.5 transition-transform active:scale-95 border border-slate-200 dark:border-slate-700"
                 >
                   <Download className="w-4 h-4 shrink-0" />
                   <span>Tải file .{exportFormat}</span>
                 </button>
               </div>
+
+              {typeof navigator !== 'undefined' && typeof navigator.share === 'function' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    audioService.playClick()
+                    void navigator
+                      .share({
+                        title: exportLabel || activeDeck.name,
+                        text: exportedText,
+                      })
+                      .catch(() => {})
+                  }}
+                  className="w-full min-h-10 py-2 px-3 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/18 border border-indigo-500/25 text-indigo-600 dark:text-indigo-400 font-bold text-xs flex items-center justify-center gap-1.5 active:scale-98 transition-all"
+                >
+                  <Share2 className="w-3.5 h-3.5 shrink-0" />
+                  <span>Chia sẻ nhanh danh sách từ</span>
+                </button>
+              )}
             </div>
           ) : (
             <div className="space-y-3.5">

@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   ChevronRight,
   Clock,
+  Download,
   FileText,
   Flame,
   Headphones,
@@ -15,11 +16,15 @@ import {
   Sparkles,
   Star,
   Trophy,
+  X,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { Deck, StudyMode, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
+import { pwaInstallManager } from '../../utils/pwaInstall'
 import { type DailyProgress, storageService } from '../../utils/storage'
+import { useChildModalBack } from '../../utils/useChildModalBack'
+import { SheetGrabber } from '../common/SheetGrabber'
 
 const DAILY_GOAL_PRESETS = [10, 20, 30, 50]
 
@@ -64,15 +69,25 @@ export function PracticeHome({
   onGoToLibrary,
 }: PracticeHomeProps) {
   const [showResetConfirm, setShowResetConfirm] = useState(false)
+  const [canInstallPwa, setCanInstallPwa] = useState(() => pwaInstallManager.canInstall())
   const [voiceAccent, setVoiceAccent] = useState(() => audioService.getVoiceAccent())
   const [filterMode, setFilterMode] = useState<
     'all' | 'learning' | 'global-learning' | 'due' | 'global-due' | 'starred'
   >('all')
 
+  useChildModalBack(showResetConfirm, () => setShowResetConfirm(false))
+
   useEffect(() => {
-    return audioService.subscribeAccent(() => {
+    const unsubAccent = audioService.subscribeAccent(() => {
       setVoiceAccent(audioService.getVoiceAccent())
     })
+    const unsubInstall = pwaInstallManager.subscribe(() => {
+      setCanInstallPwa(pwaInstallManager.canInstall())
+    })
+    return () => {
+      unsubAccent()
+      unsubInstall()
+    }
   }, [])
 
   const masteredCount = words.filter((w) => w.status === 'mastered').length
@@ -857,7 +872,7 @@ export function PracticeHome({
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors truncate">
-                    5. Điền từ vào câu (Cloze Test)
+                    5. Điền từ vào câu (Cloze)
                   </h4>
                   <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 shrink-0">
                     MỚI
@@ -873,13 +888,55 @@ export function PracticeHome({
         </div>
       )}
 
-      {/* Daily Tip Card */}
-      <div className="rounded-2xl p-4 bg-gradient-to-r from-indigo-500/10 via-sky-500/10 to-transparent border border-indigo-500/15 flex items-center gap-3">
-        <Sparkles className="w-5 h-5 text-indigo-500 shrink-0" />
-        <p className="text-xs text-slate-600 dark:text-slate-300 leading-snug">
-          Thẻ bạn đánh dấu <strong>Đã thuộc</strong> sẽ tự động ẩn đi. Bất cứ lúc nào muốn ôn lại toàn bộ, chỉ cần bấm nút <strong>Reset</strong>!
-        </p>
-      </div>
+      {/* 1-Tap PWA Home Screen Install Card (Shown only when mobile browser offers native install!) */}
+      {canInstallPwa ? (
+        <div className="rounded-2xl p-3.5 bg-gradient-to-r from-indigo-600/12 via-violet-500/10 to-sky-500/10 border border-indigo-500/30 flex items-center justify-between gap-2.5 animate-fadeIn">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+              <Download className="w-4.5 h-4.5" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-extrabold text-slate-900 dark:text-slate-100 leading-snug">
+                Cài app lên màn hình chính
+              </div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
+                Mở toàn màn hình & học offline
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                audioService.playClick()
+                void pwaInstallManager.triggerInstall()
+              }}
+              className="min-h-9 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold whitespace-nowrap active:scale-95 transition-transform"
+            >
+              Cài ngay
+            </button>
+            <button
+              type="button"
+              aria-label="Ẩn gợi ý cài đặt"
+              onClick={() => {
+                audioService.playClick()
+                pwaInstallManager.dismissBanner()
+              }}
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 active:scale-95"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-2xl p-4 bg-gradient-to-r from-indigo-500/10 via-sky-500/10 to-transparent border border-indigo-500/15 flex items-center gap-3">
+          <Sparkles className="w-5 h-5 text-indigo-500 shrink-0" />
+          <p className="text-xs text-slate-600 dark:text-slate-300 leading-snug">
+            Thẻ bạn đánh dấu <strong>Đã thuộc</strong> sẽ tự động ẩn đi. Bất cứ lúc nào muốn ôn lại toàn bộ, chỉ cần bấm nút <strong>Reset</strong>!
+          </p>
+        </div>
+      )}
 
       {/* Reset Confirmation Modal (Mobile Bottom-Sheet) */}
       {showResetConfirm && (
@@ -894,7 +951,7 @@ export function PracticeHome({
             onClick={(e) => e.stopPropagation()}
             className="w-full sm:max-w-xs bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] space-y-4 text-center"
           >
-            <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto -mt-1 mb-1 sm:hidden" />
+            <SheetGrabber onDismiss={() => setShowResetConfirm(false)} />
             <div className="w-12 h-12 rounded-2xl bg-amber-500/15 text-amber-500 flex items-center justify-center mx-auto">
               <RotateCcw className="w-6 h-6" />
             </div>

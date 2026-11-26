@@ -16,6 +16,7 @@ import { audioService } from './utils/audio'
 import { cloudSyncService } from './utils/cloudSync'
 import { forceReloadApp } from './utils/reload'
 import { GLOBAL_SRS_DECK_ID, storageService } from './utils/storage'
+import { consumeTopChildModalBack, hasOpenChildModal } from './utils/useChildModalBack'
 
 function lazyWithRetry<T extends ComponentType<any>>(
   importer: () => Promise<{ default: T }>
@@ -388,23 +389,35 @@ export function App() {
 
   // Mobile System Back Button / iOS Edge-Swipe Back Protection (closes modals -> sessions -> tabs instead of exiting PWA!)
   useEffect(() => {
-    if (typeof window === 'undefined' || !hasBackLayer) return
+    if (typeof window === 'undefined') return
 
-    if (!window.history.state?.vocabflowOverlay) {
+    if (hasBackLayer && !window.history.state?.vocabflowOverlay) {
       window.history.pushState({ vocabflowOverlay: true }, '')
     }
 
     const onPopState = () => {
       if (isCloudModalOpen) {
         setIsCloudModalOpen(false)
-        if (isStatsModalOpen || activeStudyMode || activeGame || activeTab !== 'practice') {
+        if (
+          isStatsModalOpen ||
+          hasOpenChildModal() ||
+          activeStudyMode ||
+          activeGame ||
+          activeTab !== 'practice'
+        ) {
           window.history.pushState({ vocabflowOverlay: true }, '')
         }
         return
       }
       if (isStatsModalOpen) {
         setIsStatsModalOpen(false)
-        if (activeStudyMode || activeGame || activeTab !== 'practice') {
+        if (hasOpenChildModal() || activeStudyMode || activeGame || activeTab !== 'practice') {
+          window.history.pushState({ vocabflowOverlay: true }, '')
+        }
+        return
+      }
+      if (consumeTopChildModalBack()) {
+        if ((hasBackLayer || hasOpenChildModal()) && !window.history.state?.vocabflowOverlay) {
           window.history.pushState({ vocabflowOverlay: true }, '')
         }
         return

@@ -17,6 +17,7 @@ import { useEffect, useMemo } from 'react'
 import type { Deck, GameHighScores, StudyMode, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
 import { storageService } from '../../utils/storage'
+import { SheetGrabber } from './SheetGrabber'
 
 interface StatsModalProps {
   isOpen: boolean
@@ -189,7 +190,7 @@ export function StatsModal({
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md sm:max-w-lg max-h-[90dvh] overflow-y-auto bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-4 sm:p-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] space-y-4"
       >
-        <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto -mt-0.5 mb-1 sm:hidden" />
+        <SheetGrabber onDismiss={onClose} />
         {/* Header */}
         <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2.5 min-w-0">

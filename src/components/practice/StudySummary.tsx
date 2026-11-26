@@ -16,6 +16,8 @@ import { useEffect, useMemo, useState } from 'react'
 import type { StudyMode, StudySessionStats, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
 import { storageService } from '../../utils/storage'
+import { useChildModalBack } from '../../utils/useChildModalBack'
+import { SheetGrabber } from '../common/SheetGrabber'
 
 interface StudySummaryProps {
   stats: StudySessionStats
@@ -45,6 +47,8 @@ export function StudySummary({
 }: StudySummaryProps) {
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [showRemainingList, setShowRemainingList] = useState(false)
+
+  useChildModalBack(showResetConfirm, () => setShowResetConfirm(false))
   const [starredIds, setStarredIds] = useState<Set<string>>(() => {
     const combined = [...(stats.remainingWords || []), ...(sessionWords || [])]
     const liveIds = new Set(
@@ -361,7 +365,7 @@ export function StudySummary({
             className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-t-3xl sm:rounded-3xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] sm:max-w-xs w-full space-y-4 shadow-2xl text-left"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto -mt-1 mb-1 sm:hidden" />
+            <SheetGrabber onDismiss={() => setShowResetConfirm(false)} />
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-amber-500">
                 <div className="w-9 h-9 rounded-xl bg-amber-500/15 flex items-center justify-center shrink-0">

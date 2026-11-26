@@ -10,6 +10,7 @@ import {
   Link2,
   QrCode,
   RefreshCw,
+  Share2,
   ShieldCheck,
   User,
   X,
@@ -19,6 +20,7 @@ import { useEffect, useRef, useState } from 'react'
 import { audioService } from '../../utils/audio'
 import { cloudSyncService, type SyncStateSnapshot } from '../../utils/cloudSync'
 import { storageService } from '../../utils/storage'
+import { SheetGrabber } from './SheetGrabber'
 
 interface CloudSyncModalProps {
   isOpen: boolean
@@ -166,7 +168,7 @@ export function CloudSyncModal({ isOpen, onClose, onDataRestored }: CloudSyncMod
         className="w-full max-w-md max-h-[92dvh] overflow-y-auto bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-4 sm:p-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] space-y-3.5"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto -mt-0.5 mb-1 sm:hidden" />
+        <SheetGrabber onDismiss={onClose} />
         {/* Modal Header */}
         <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -255,7 +257,7 @@ export function CloudSyncModal({ isOpen, onClose, onDataRestored }: CloudSyncMod
                 <button
                   type="button"
                   onClick={handleCopyCode}
-                  className="py-2 px-2.5 rounded-xl bg-white text-slate-900 hover:bg-indigo-50 font-bold text-xs flex items-center justify-center gap-1.5 whitespace-nowrap active:scale-98 transition-all"
+                  className="min-h-10 py-2 px-2.5 rounded-xl bg-white text-slate-900 hover:bg-indigo-50 font-bold text-xs flex items-center justify-center gap-1.5 whitespace-nowrap active:scale-98 transition-all"
                 >
                   {copiedCode ? (
                     <>
@@ -273,7 +275,7 @@ export function CloudSyncModal({ isOpen, onClose, onDataRestored }: CloudSyncMod
                 <button
                   type="button"
                   onClick={handleCopyMagicLink}
-                  className="py-2 px-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/20 font-semibold text-xs flex items-center justify-center gap-1.5 whitespace-nowrap active:scale-98 transition-all"
+                  className="min-h-10 py-2 px-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/20 font-semibold text-xs flex items-center justify-center gap-1.5 whitespace-nowrap active:scale-98 transition-all"
                 >
                   {copiedLink ? (
                     <>
@@ -288,6 +290,27 @@ export function CloudSyncModal({ isOpen, onClose, onDataRestored }: CloudSyncMod
                   )}
                 </button>
               </div>
+
+              {typeof navigator !== 'undefined' && typeof navigator.share === 'function' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    audioService.playClick()
+                    const magicUrl = `${window.location.origin}/?sync=${encodeURIComponent(snapshot.syncCode)}`
+                    void navigator
+                      .share({
+                        title: 'VocabFlow — Đồng bộ tiến độ học từ vựng',
+                        text: `Mã ID VocabFlow của tôi: ${snapshot.syncCode}`,
+                        url: magicUrl,
+                      })
+                      .catch(() => {})
+                  }}
+                  className="w-full min-h-9 py-2 px-3 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 border border-amber-300/30 text-amber-200 font-bold text-xs flex items-center justify-center gap-1.5 active:scale-98 transition-all"
+                >
+                  <Share2 className="w-3.5 h-3.5 shrink-0" />
+                  <span>Gửi nhanh qua AirDrop / Zalo / Telegram</span>
+                </button>
+              )}
             </div>
 
             {/* Instant QR Transfer Row */}

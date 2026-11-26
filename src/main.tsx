@@ -2,11 +2,13 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import { pwaInstallManager } from './utils/pwaInstall'
 import { forceReloadApp } from './utils/reload'
 
 const CHUNK_RELOAD_KEY = 'vocabflow_chunk_reload_at'
 
 if (typeof window !== 'undefined') {
+  pwaInstallManager.init()
   // Automatically recover if user had an old tab open when a new deployment replaced lazy chunk hashes
   window.addEventListener('vite:preloadError', (event) => {
     const lastReload = Number(window.sessionStorage.getItem(CHUNK_RELOAD_KEY) || '0')

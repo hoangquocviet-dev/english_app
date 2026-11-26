@@ -23,6 +23,8 @@ import { audioService } from '../../utils/audio'
 import { cloudSyncService, OFFICIAL_DAILY_DECK_ID } from '../../utils/cloudSync'
 import { normalizeImportedTerm, normalizePartOfSpeech } from '../../utils/parser'
 import { storageService } from '../../utils/storage'
+import { useChildModalBack } from '../../utils/useChildModalBack'
+import { SheetGrabber } from '../common/SheetGrabber'
 import { ImportExportModal } from './ImportExportModal'
 
 const PAGE_SIZE = 30
@@ -103,6 +105,14 @@ export function LibraryView({
     isDanger?: boolean
     onConfirm: () => void
   } | null>(null)
+
+  useChildModalBack(Boolean(editingWord || confirmAction), () => {
+    if (confirmAction) {
+      setConfirmAction(null)
+    } else if (editingWord) {
+      setEditingWord(null)
+    }
+  })
 
   const nowMs = storageService.getNowMs()
   const sourceWords = searchAllDecks ? allWords : words
@@ -1190,7 +1200,7 @@ export function LibraryView({
             onSubmit={handleSaveEdit}
             className="w-full sm:max-w-sm max-h-[90dvh] overflow-y-auto bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] space-y-3.5"
           >
-            <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto -mt-1 mb-1 sm:hidden" />
+            <SheetGrabber onDismiss={() => setEditingWord(null)} />
             <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
               <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
                 Chỉnh sửa thẻ từ vựng
@@ -1320,7 +1330,7 @@ export function LibraryView({
             onClick={(e) => e.stopPropagation()}
             className="w-full sm:max-w-xs bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] space-y-4 text-center"
           >
-            <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto -mt-1 mb-1 sm:hidden" />
+            <SheetGrabber onDismiss={() => setConfirmAction(null)} />
             <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
               {confirmAction.title}
             </h3>
