@@ -29,10 +29,29 @@ class AudioManager {
       } catch {}
     }
     this.initVoices()
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.onvoiceschanged = () => {
-        this.initVoices()
+    if (typeof window !== 'undefined') {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.onvoiceschanged = () => {
+          this.initVoices()
+        }
       }
+
+      // One-time mobile touch unlock for iOS Safari / Android WebView AudioContext & SpeechSynthesis
+      const unlockMobileAudio = () => {
+        try {
+          this.getAudioContext()
+          if ('speechSynthesis' in window) {
+            if (this.voices.length === 0) this.initVoices()
+            if (window.speechSynthesis.paused) {
+              window.speechSynthesis.resume()
+            }
+          }
+        } catch {}
+        window.removeEventListener('touchstart', unlockMobileAudio)
+        window.removeEventListener('pointerdown', unlockMobileAudio)
+      }
+      window.addEventListener('touchstart', unlockMobileAudio, { passive: true, once: true })
+      window.addEventListener('pointerdown', unlockMobileAudio, { passive: true, once: true })
     }
   }
 
@@ -474,6 +493,9 @@ class AudioManager {
         utterance.rate = rate
         utterance.pitch = 1.0
 
+        if (this.voices.length === 0) {
+          this.initVoices()
+        }
         const chosenVoice =
           this.voiceAccent === 'en-GB'
             ? this.preferredVoiceGB || this.preferredVoiceUS
@@ -505,6 +527,11 @@ class AudioManager {
         }
 
         this.getAudioContext()
+        if (window.speechSynthesis.paused) {
+          try {
+            window.speechSynthesis.resume()
+          } catch {}
+        }
         window.speechSynthesis.speak(utterance)
       } catch {
         this.clearActiveSpeechState()

@@ -769,12 +769,12 @@ export function FlashcardView({
                 ) : null}
               </div>
 
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-center gap-1.5 shrink-0">
                 {canUseSpeechRec && (
                   <button
                     type="button"
                     onClick={handleStartPronunciationCheck}
-                    className={`h-8 px-2.5 rounded-full text-[11px] font-bold flex items-center gap-1 transition-transform active:scale-95 ${
+                    className={`h-9 px-3 rounded-full text-[11px] font-bold flex items-center gap-1 transition-transform active:scale-95 ${
                       isListeningMic
                         ? 'bg-rose-500 text-white animate-pulse'
                         : 'bg-emerald-500/12 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20'
@@ -788,14 +788,14 @@ export function FlashcardView({
 
                 <button
                   onClick={(e) => handleSpeak(e, 0.6)}
-                  className="h-8 px-2 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+                  className="h-9 px-2.5 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
                   title="Nghe chậm (0.6x)"
                 >
                   0.6x
                 </button>
                 <button
                   onClick={(e) => handleSpeak(e, 0.9)}
-                  className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+                  className="w-9 h-9 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
                   title="Phát âm chuẩn"
                 >
                   <Volume2 className="w-4 h-4" />
@@ -824,7 +824,7 @@ export function FlashcardView({
                     void audioService.speak(currentWord.term, 0.9)
                   }}
                   title="Đổi giọng đọc Anh-Mỹ (US) / Anh-Anh (UK)"
-                  className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700/70 hover:bg-indigo-500/15 text-[11px] font-bold text-slate-600 dark:text-slate-300 transition-colors"
+                  className="min-h-8 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700/70 hover:bg-indigo-500/15 text-[11px] font-bold text-slate-600 dark:text-slate-300 flex items-center transition-all active:scale-95"
                 >
                   {voiceAccent === 'en-US' ? '🇺🇸 US' : '🇬🇧 UK'}
                 </button>
@@ -878,21 +878,21 @@ export function FlashcardView({
                     audioService.playClick()
                     void audioService.speak(currentWord.term, 0.9)
                   }}
-                  className="h-8 px-2 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+                  className="h-9 px-2.5 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
                   title="Đổi giọng đọc Anh-Mỹ (US) / Anh-Anh (UK)"
                 >
                   {voiceAccent === 'en-US' ? '🇺🇸 US' : '🇬🇧 UK'}
                 </button>
                 <button
                   onClick={(e) => handleSpeak(e, 0.6)}
-                  className="h-8 px-2.5 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+                  className="h-9 px-2.5 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
                   title="Nghe chậm (0.6x)"
                 >
                   0.6x
                 </button>
                 <button
                   onClick={(e) => handleSpeak(e, 0.9)}
-                  className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+                  className="w-9 h-9 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
                   title="Phát âm chuẩn"
                 >
                   <Volume2 className="w-4 h-4" />

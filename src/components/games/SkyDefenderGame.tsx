@@ -1433,16 +1433,23 @@ export function SkyDefenderGame({
             {missedWords.length > 0 && (
               <div className="w-full max-w-xs mb-3 text-left bg-slate-900/95 rounded-2xl p-2.5 border border-slate-800 space-y-1">
                 <div className="text-[10px] font-extrabold uppercase tracking-wider text-rose-400">
-                  Mục tiêu vừa sẩy chân (Chạm 🔊 để nhớ)
+                  Mục tiêu sẩy chân (Chạm để nghe)
                 </div>
                 {missedWords.map((mw) => (
                   <div key={mw.id} className="flex items-center justify-between gap-2 text-xs py-0.5">
-                    <div className="min-w-0">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        void audioService.speak(mw.term, 0.9)
+                      }}
+                      className="min-w-0 flex-1 text-left active:opacity-75"
+                    >
                       <span className="font-extrabold text-white">{mw.term}</span>
                       <span className="text-slate-400 block truncate text-[11px]">
                         {formatArcadeMeaning(mw.definition, 54)}
                       </span>
-                    </div>
+                    </button>
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         type="button"
@@ -1457,13 +1464,13 @@ export function SkyDefenderGame({
                           )
                         }}
                         title="Đánh dấu sao từ này"
-                        className={`p-1.5 rounded-lg transition-colors ${
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-92 ${
                           mw.starred
                             ? 'bg-amber-500/20 text-amber-400'
                             : 'bg-slate-800 text-slate-400 hover:text-amber-400'
                         }`}
                       >
-                        <StarIcon className={`w-3.5 h-3.5 ${mw.starred ? 'fill-amber-400' : ''}`} />
+                        <StarIcon className={`w-4 h-4 ${mw.starred ? 'fill-amber-400' : ''}`} />
                       </button>
                       <button
                         type="button"
@@ -1471,9 +1478,10 @@ export function SkyDefenderGame({
                           e.stopPropagation()
                           void audioService.speak(mw.term, 0.9)
                         }}
-                        className="p-1.5 rounded-lg bg-indigo-500/20 text-cyan-300"
+                        className="w-9 h-9 rounded-xl bg-indigo-500/20 text-cyan-300 flex items-center justify-center active:scale-92 transition-transform"
+                        title="Nghe phát âm"
                       >
-                        <Volume2 className="w-3.5 h-3.5" />
+                        <Volume2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>

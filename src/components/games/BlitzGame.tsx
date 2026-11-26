@@ -667,9 +667,9 @@ export function BlitzGame({ words, deckName, onStudyMissedWords, onBack }: Blitz
               type="button"
               onMouseDown={(e) => e.stopPropagation()}
               onTouchStart={(e) => e.stopPropagation()}
-              onClick={() => audioService.speak(prompt.word.term, 0.95)}
+              onClick={() => void audioService.speak(prompt.word.term, 0.95)}
               title="Nghe phát âm (Space)"
-              className="absolute top-3.5 right-3.5 p-2 rounded-xl bg-slate-100 dark:bg-slate-700/70 text-slate-500 dark:text-slate-300 hover:text-indigo-500 transition-colors"
+              className="absolute top-3.5 right-3.5 w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-700/70 text-slate-500 dark:text-slate-300 hover:text-indigo-500 flex items-center justify-center transition-all active:scale-92"
             >
               <Volume2 className="w-4 h-4" />
             </button>
@@ -815,16 +815,20 @@ export function BlitzGame({ words, deckName, onStudyMissedWords, onBack }: Blitz
           {missedWords.length > 0 && (
             <div className="w-full max-w-xs mb-4 text-left bg-slate-50 dark:bg-slate-900/70 rounded-2xl p-3 border border-slate-200 dark:border-slate-800 space-y-1.5">
               <div className="text-[11px] font-extrabold uppercase tracking-wider text-rose-500">
-                Từ vừa mắc bẫy (Chạm 🔊 để nhớ ngay)
+                Từ vừa mắc bẫy (Chạm để nghe)
               </div>
               {missedWords.map((mw) => (
                 <div key={mw.id} className="flex items-center justify-between gap-2 text-xs py-1">
-                  <div className="min-w-0">
+                  <button
+                    type="button"
+                    onClick={() => void audioService.speak(mw.term, 0.9)}
+                    className="min-w-0 flex-1 text-left active:opacity-75"
+                  >
                     <span className="font-extrabold text-slate-900 dark:text-white">{mw.term}</span>
                     <span className="text-slate-500 dark:text-slate-400 block truncate text-[11px]">
                       {mw.definition}
                     </span>
-                  </div>
+                  </button>
                   <div className="flex items-center gap-1 shrink-0">
                     <button
                       type="button"
@@ -836,21 +840,21 @@ export function BlitzGame({ words, deckName, onStudyMissedWords, onBack }: Blitz
                         )
                       }}
                       title="Đánh dấu sao từ này"
-                      className={`p-1.5 rounded-lg transition-colors ${
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-92 ${
                         mw.starred
                           ? 'bg-amber-500/15 text-amber-500'
                           : 'bg-slate-200/60 dark:bg-slate-800 text-slate-400 hover:text-amber-500'
                       }`}
                     >
-                      <Star className={`w-3.5 h-3.5 ${mw.starred ? 'fill-amber-400' : ''}`} />
+                      <Star className={`w-4 h-4 ${mw.starred ? 'fill-amber-400' : ''}`} />
                     </button>
                     <button
                       type="button"
                       onClick={() => void audioService.speak(mw.term, 0.9)}
-                      className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-500"
+                      className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center active:scale-92 transition-transform"
                       title="Nghe phát âm"
                     >
-                      <Volume2 className="w-3.5 h-3.5" />
+                      <Volume2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>

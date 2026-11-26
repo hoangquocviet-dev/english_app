@@ -917,14 +917,18 @@ export function SpeedMatchGame({
               </div>
               {missedWords.map((mw) => (
                 <div key={mw.id} className="flex items-center justify-between gap-2 py-1 text-xs">
-                  <div className="min-w-0">
+                  <button
+                    type="button"
+                    onClick={() => void audioService.speak(mw.term)}
+                    className="min-w-0 flex-1 text-left active:opacity-75"
+                  >
                     <span className="font-extrabold text-slate-900 dark:text-slate-100">
                       {mw.term}
                     </span>
                     <span className="text-slate-500 dark:text-slate-400 block truncate text-[11px]">
                       {formatArcadeMeaning(mw.definition, 60)}
                     </span>
-                  </div>
+                  </button>
                   <div className="flex items-center gap-1 shrink-0">
                     <button
                       type="button"
@@ -935,22 +939,22 @@ export function SpeedMatchGame({
                           prev.map((item) => (item.id === mw.id ? { ...item, starred: next } : item))
                         )
                       }}
-                      className={`p-1 rounded-lg transition-colors ${
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-92 ${
                         mw.starred
-                          ? 'text-amber-500 bg-amber-500/10'
-                          : 'text-slate-400 hover:text-amber-500'
+                          ? 'text-amber-500 bg-amber-500/12'
+                          : 'bg-slate-200/60 dark:bg-slate-800 text-slate-400 hover:text-amber-500'
                       }`}
                       title="Đánh dấu sao từ này"
                     >
-                      <Star className={`w-3.5 h-3.5 ${mw.starred ? 'fill-amber-400' : ''}`} />
+                      <Star className={`w-4 h-4 ${mw.starred ? 'fill-amber-400' : ''}`} />
                     </button>
                     <button
                       type="button"
                       onClick={() => void audioService.speak(mw.term)}
-                      className="p-1 rounded-lg text-indigo-500 hover:bg-indigo-500/10"
+                      className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center active:scale-92 transition-transform"
                       title="Nghe phát âm"
                     >
-                      <Volume2 className="w-3.5 h-3.5" />
+                      <Volume2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>

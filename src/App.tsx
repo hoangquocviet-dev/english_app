@@ -379,6 +379,75 @@ export function App() {
   const studyPoolWords = isGlobalSrsSession ? allWords : words
   const isFullScreenSession = Boolean(activeStudyMode || activeGame)
   const globalDueCount = storageService.getDueReviewWords().length
+  const hasBackLayer =
+    isCloudModalOpen ||
+    isStatsModalOpen ||
+    Boolean(activeStudyMode) ||
+    Boolean(activeGame) ||
+    activeTab !== 'practice'
+
+  // Mobile System Back Button / iOS Edge-Swipe Back Protection (closes modals -> sessions -> tabs instead of exiting PWA!)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !hasBackLayer) return
+
+    if (!window.history.state?.vocabflowOverlay) {
+      window.history.pushState({ vocabflowOverlay: true }, '')
+    }
+
+    const onPopState = () => {
+      if (isCloudModalOpen) {
+        setIsCloudModalOpen(false)
+        if (isStatsModalOpen || activeStudyMode || activeGame || activeTab !== 'practice') {
+          window.history.pushState({ vocabflowOverlay: true }, '')
+        }
+        return
+      }
+      if (isStatsModalOpen) {
+        setIsStatsModalOpen(false)
+        if (activeStudyMode || activeGame || activeTab !== 'practice') {
+          window.history.pushState({ vocabflowOverlay: true }, '')
+        }
+        return
+      }
+      if (activeStudyMode) {
+        audioService.stopSpeech()
+        setActiveStudyMode(null)
+        setCustomSessionLabel(null)
+        setSessionFilterMode('all')
+        setIsGlobalSrsSession(false)
+        refreshData()
+        if (activeTab !== 'practice') {
+          window.history.pushState({ vocabflowOverlay: true }, '')
+        }
+        return
+      }
+      if (activeGame) {
+        audioService.stopSpeech()
+        setActiveGame(null)
+        refreshData()
+        if (activeTab !== 'practice') {
+          window.history.pushState({ vocabflowOverlay: true }, '')
+        }
+        return
+      }
+      if (activeTab !== 'practice') {
+        audioService.stopSpeech()
+        setActiveTab('practice')
+        refreshData()
+      }
+    }
+
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [
+    hasBackLayer,
+    isCloudModalOpen,
+    isStatsModalOpen,
+    activeStudyMode,
+    activeGame,
+    activeTab,
+    refreshData,
+  ])
 
   useEffect(() => {
     if (isFullScreenSession || isCloudModalOpen || isStatsModalOpen) return
