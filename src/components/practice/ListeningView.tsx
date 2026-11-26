@@ -11,7 +11,7 @@ import {
   X,
 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { StudyFilterMode, StudySessionStats, WordItem } from '../../types'
+import type { StudyFilterMode, StudyMode, StudySessionStats, WordItem } from '../../types'
 import { formatArcadeMeaning } from '../../utils/arcadeText'
 import { audioService } from '../../utils/audio'
 import { GLOBAL_SRS_DECK_ID, storageService } from '../../utils/storage'
@@ -26,6 +26,7 @@ interface ListeningViewProps {
   deckId: string
   deckName: string
   filterMode?: StudyFilterMode
+  onSwitchStudyMode?: (nextMode: StudyMode, targetWords: WordItem[]) => void
   onBack: () => void
 }
 
@@ -137,7 +138,7 @@ function buildListeningQuestions(
     }
   })
 
-  return shuffleArray(generated)
+  return generated
 }
 
 export function ListeningView({
@@ -146,6 +147,7 @@ export function ListeningView({
   deckId,
   deckName,
   filterMode = 'all',
+  onSwitchStudyMode,
   onBack,
 }: ListeningViewProps) {
   const [questions, setQuestions] = useState<ListeningQuestion[]>(() =>
@@ -210,7 +212,7 @@ export function ListeningView({
 
   useEffect(() => {
     if (currentQ && !isCompleted) {
-      void audioService.speak(currentQ.targetWord.term, 0.9)
+      void audioService.speakAuto(currentQ.targetWord.term, 0.9)
     }
   }, [currentIndex, currentQ, isCompleted])
 
@@ -223,6 +225,7 @@ export function ListeningView({
   const recordOutcomeAndAdvance = useCallback(
     (isCorrect: boolean, customDelayMs?: number) => {
       if (!currentQ) return
+      const isFirstAttempt = currentQ.repetitionCount === 0
       let wasRequeued = false
 
       if (isCorrect) {
@@ -232,8 +235,12 @@ export function ListeningView({
           } catch {}
         }
         audioService.playSuccessChime()
-        storageService.updateWordStatus(currentQ.targetWord.id, 'mastered')
-        setStats((prev) => ({ ...prev, mastered: prev.mastered + 1 }))
+        if (isFirstAttempt) {
+          storageService.updateWordStatus(currentQ.targetWord.id, 'mastered')
+          setStats((prev) => ({ ...prev, mastered: prev.mastered + 1 }))
+        } else {
+          storageService.recordDailyActivity(true)
+        }
       } else {
         if (typeof navigator !== 'undefined' && navigator.vibrate) {
           try {
@@ -241,8 +248,10 @@ export function ListeningView({
           } catch {}
         }
         audioService.playErrorBuzz()
-        storageService.updateWordStatus(currentQ.targetWord.id, 'learning')
-        setStats((prev) => ({ ...prev, review: prev.review + 1 }))
+        if (isFirstAttempt) {
+          storageService.updateWordStatus(currentQ.targetWord.id, 'learning')
+          setStats((prev) => ({ ...prev, review: prev.review + 1 }))
+        }
 
         if (currentQ.repetitionCount < 2) {
           wasRequeued = true
@@ -339,6 +348,19 @@ export function ListeningView({
       const isTypingInBox =
         typeof document !== 'undefined' && document.activeElement === inputRef.current
 
+      if (!isTypingInBox && (e.key === 's' || e.key === 'S') && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault()
+        audioService.playClick()
+        const next = storageService.toggleWordStar(currentQ.targetWord.id)
+        setStarredIds((prev) => {
+          const copy = new Set(prev)
+          if (next) copy.add(currentQ.targetWord.id)
+          else copy.delete(currentQ.targetWord.id)
+          return copy
+        })
+        return
+      }
+
       if (e.code === 'Space' && !isTypingInBox) {
         e.preventDefault()
         void playAudio(0.9)
@@ -360,7 +382,11 @@ export function ListeningView({
 
   const resetListening = (sourceWords: WordItem[]) => {
     clearTransitionTimer()
-    setQuestions(buildListeningQuestions(sourceWords, allDeckWords))
+    const ordered =
+      storageService.getStudyPreferences().shuffle && filterMode !== 'global-learning'
+        ? shuffleArray(sourceWords)
+        : sourceWords
+    setQuestions(buildListeningQuestions(ordered, allDeckWords))
     setCurrentIndex(0)
     setSelectedOption(null)
     setTypedInput('')
@@ -384,7 +410,9 @@ export function ListeningView({
     return (
       <StudySummary
         stats={sessionStats}
+        sessionWords={words}
         onContinueRemaining={(rem) => resetListening(rem)}
+        onSwitchMode={onSwitchStudyMode}
         onResetDeck={
           deckId === GLOBAL_SRS_DECK_ID || filterMode !== 'all'
             ? undefined
@@ -414,7 +442,12 @@ export function ListeningView({
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center min-w-0">
+          {filterMode !== 'all' && (
+            <span className="text-[10px] font-bold text-violet-600 dark:text-violet-400 truncate max-w-[170px] leading-tight mb-0.5">
+              {deckName}
+            </span>
+          )}
           <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
             Nghe {currentIndex + 1} / {questions.length}
           </span>

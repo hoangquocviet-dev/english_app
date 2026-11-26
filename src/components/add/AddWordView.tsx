@@ -13,6 +13,7 @@ import {
 import { useState } from 'react'
 import type { Deck, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
+import { normalizeImportedTerm } from '../../utils/parser'
 import { storageService } from '../../utils/storage'
 
 interface AddWordViewProps {
@@ -48,11 +49,29 @@ export function AddWordView({
     .filter((w) => w.id.startsWith('w-'))
     .slice(0, 5)
 
+  const crossDeckMatch = (() => {
+    const normalizedPreview = normalizeImportedTerm(term).term.trim().toLowerCase()
+    if (!normalizedPreview || normalizedPreview.length < 2) return null
+    const found = storageService
+      .getWords()
+      .find(
+        (w) =>
+          w.deckId !== selectedDeckId && w.term.trim().toLowerCase() === normalizedPreview
+      )
+    if (!found) return null
+    const foundDeck = decks.find((d) => d.id === found.deckId)
+    return { word: found, deckName: foundDeck?.name || 'kho từ hệ thống' }
+  })()
+
   const handleLookup = async () => {
-    const cleanTerm = term.trim().toLowerCase()
+    const { term: normalizedTerm, partOfSpeech: posFromSuffix } = normalizeImportedTerm(term)
+    const cleanTerm = normalizedTerm.trim().toLowerCase()
     if (!cleanTerm) {
       setErrorMsg('Vui lòng nhập từ tiếng Anh trước khi tra cứu.')
       return
+    }
+    if (normalizedTerm !== term.trim()) {
+      setTerm(normalizedTerm)
     }
 
     setIsLoading(true)
@@ -73,7 +92,10 @@ export function AddWordView({
       ])
 
       let nextIpa = ''
-      let nextPos = localMatch?.partOfSpeech || (cleanTerm.includes(' ') ? 'phrase' : 'noun')
+      let nextPos =
+        posFromSuffix ||
+        localMatch?.partOfSpeech ||
+        (cleanTerm.includes(' ') ? 'phrase' : 'noun')
       let nextHint = ''
       let nextExample = ''
 
@@ -100,10 +122,12 @@ export function AddWordView({
 
             if (Array.isArray(entry.meanings)) {
               for (const m of entry.meanings) {
-                if (m.partOfSpeech && nextPos === 'noun' && m.partOfSpeech !== 'noun') {
-                  nextPos = posMap[m.partOfSpeech] || nextPos
-                } else if (m.partOfSpeech && entry === data[0] && m === entry.meanings[0]) {
-                  nextPos = posMap[m.partOfSpeech] || 'phrase'
+                if (!posFromSuffix && !localMatch?.partOfSpeech) {
+                  if (m.partOfSpeech && nextPos === 'noun' && m.partOfSpeech !== 'noun') {
+                    nextPos = posMap[m.partOfSpeech] || nextPos
+                  } else if (m.partOfSpeech && entry === data[0] && m === entry.meanings[0]) {
+                    nextPos = posMap[m.partOfSpeech] || 'phrase'
+                  }
                 }
 
                 if (Array.isArray(m.definitions)) {
@@ -125,12 +149,12 @@ export function AddWordView({
         }
       }
 
-      // Enrich missing IPA or example from built-in curated dictionary when available
-      if (!nextIpa && localMatch?.ipa) nextIpa = localMatch.ipa
-      if (!nextExample && localMatch?.example) nextExample = localMatch.example
+      // Prefer our curated 1,144-word dictionary first (clean IPA, accurate Vietnamese meaning & modern example!), falling back to public APIs for brand-new words
+      if (localMatch?.ipa) nextIpa = localMatch.ipa
+      if (localMatch?.example) nextExample = localMatch.example
 
-      let nextViDef = ''
-      if (transRes.status === 'fulfilled' && transRes.value.ok) {
+      let nextViDef = localMatch?.definition || ''
+      if (!nextViDef && transRes.status === 'fulfilled' && transRes.value.ok) {
         const transData = await transRes.value.json()
         const translatedText = transData?.responseData?.translatedText
         if (
@@ -140,9 +164,6 @@ export function AddWordView({
         ) {
           nextViDef = translatedText.trim()
         }
-      }
-      if (!nextViDef && localMatch?.definition) {
-        nextViDef = localMatch.definition
       }
 
       setIpa(nextIpa)
@@ -181,7 +202,10 @@ export function AddWordView({
     setErrorMsg('')
     setSuccessMsg('')
 
-    const cleanTerm = term.trim()
+    const { term: cleanTerm, partOfSpeech: inferredPos } = normalizeImportedTerm(
+      term,
+      partOfSpeech
+    )
     const cleanDef = definition.trim()
 
     if (!cleanTerm) {
@@ -208,7 +232,7 @@ export function AddWordView({
       deckId: selectedDeckId,
       term: cleanTerm,
       ipa: ipa.trim() || undefined,
-      partOfSpeech: partOfSpeech.trim() || undefined,
+      partOfSpeech: inferredPos || partOfSpeech.trim() || undefined,
       definition: cleanDef,
       example: example.trim() || undefined,
     }
@@ -270,7 +294,7 @@ export function AddWordView({
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !definition.trim() && term.trim()) {
                   e.preventDefault()
-                  handleLookup()
+                  void handleLookup()
                 }
               }}
               placeholder="Ví dụ: resilient, agile..."
@@ -279,7 +303,7 @@ export function AddWordView({
             <button
               type="button"
               disabled={isLoading || !term.trim()}
-              onClick={handleLookup}
+              onClick={() => void handleLookup()}
               className="py-2.5 px-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-medium text-xs flex items-center gap-1.5 shrink-0 shadow-xs transition-transform active:scale-95"
             >
               {isLoading ? (
@@ -290,6 +314,28 @@ export function AddWordView({
               <span>Tra từ</span>
             </button>
           </div>
+          {crossDeckMatch && !definition.trim() && (
+            <div className="mt-2 p-2 px-2.5 rounded-xl bg-indigo-500/8 dark:bg-indigo-500/12 border border-indigo-500/20 flex items-center justify-between gap-2 text-[11px]">
+              <span className="text-slate-600 dark:text-slate-300 truncate">
+                Có sẵn trong <strong>{crossDeckMatch.deckName}</strong>: {crossDeckMatch.word.definition}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  const { term: cleanT, partOfSpeech: suffixPos } = normalizeImportedTerm(term)
+                  setTerm(cleanT || crossDeckMatch.word.term)
+                  setIpa(crossDeckMatch.word.ipa || '')
+                  setPartOfSpeech(suffixPos || crossDeckMatch.word.partOfSpeech || 'noun')
+                  setDefinition(crossDeckMatch.word.definition)
+                  setExample(crossDeckMatch.word.example || '')
+                  audioService.playClick()
+                }}
+                className="py-1 px-2 rounded-lg bg-indigo-600 text-white font-bold whitespace-nowrap shrink-0 active:scale-95"
+              >
+                Điền nhanh
+              </button>
+            </div>
+          )}
         </div>
 
         {/* IPA & Part of Speech */}

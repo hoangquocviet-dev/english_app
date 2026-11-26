@@ -11,7 +11,7 @@ import {
   X,
 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { StudyFilterMode, StudySessionStats, WordItem } from '../../types'
+import type { StudyFilterMode, StudyMode, StudySessionStats, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
 import { GLOBAL_SRS_DECK_ID, storageService } from '../../utils/storage'
 import { StudySummary } from './StudySummary'
@@ -25,6 +25,7 @@ interface ClozeViewProps {
   deckId: string
   deckName: string
   filterMode?: StudyFilterMode
+  onSwitchStudyMode?: (nextMode: StudyMode, targetWords: WordItem[]) => void
   onBack: () => void
 }
 
@@ -326,7 +327,7 @@ function buildClozeQuestions(
     }
   })
 
-  return shuffleArray(questions)
+  return questions
 }
 
 export function ClozeView({
@@ -335,6 +336,7 @@ export function ClozeView({
   deckId,
   deckName,
   filterMode = 'all',
+  onSwitchStudyMode,
   onBack,
 }: ClozeViewProps) {
   const [questions, setQuestions] = useState<ClozeQuestion[]>(() =>
@@ -410,6 +412,7 @@ export function ClozeView({
   const recordResultAndAdvance = useCallback(
     (isCorrect: boolean, delayOverrideMs?: number) => {
       if (!currentQ) return
+      const isFirstAttempt = currentQ.repetitionCount === 0
       let wasRequeued = false
 
       if (isCorrect) {
@@ -419,8 +422,12 @@ export function ClozeView({
           } catch {}
         }
         audioService.playSuccessChime()
-        storageService.updateWordStatus(currentQ.targetWord.id, 'mastered')
-        setStats((prev) => ({ ...prev, mastered: prev.mastered + 1 }))
+        if (isFirstAttempt) {
+          storageService.updateWordStatus(currentQ.targetWord.id, 'mastered')
+          setStats((prev) => ({ ...prev, mastered: prev.mastered + 1 }))
+        } else {
+          storageService.recordDailyActivity(true)
+        }
         void audioService.speakAuto(currentQ.sentence, 0.95)
       } else {
         if (typeof navigator !== 'undefined' && navigator.vibrate) {
@@ -429,8 +436,10 @@ export function ClozeView({
           } catch {}
         }
         audioService.playErrorBuzz()
-        storageService.updateWordStatus(currentQ.targetWord.id, 'learning')
-        setStats((prev) => ({ ...prev, review: prev.review + 1 }))
+        if (isFirstAttempt) {
+          storageService.updateWordStatus(currentQ.targetWord.id, 'learning')
+          setStats((prev) => ({ ...prev, review: prev.review + 1 }))
+        }
 
         if (currentQ.repetitionCount < 2) {
           wasRequeued = true
@@ -519,7 +528,7 @@ export function ClozeView({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (isCompleted) return
+      if (isCompleted || !currentQ) return
 
       if (e.key === 'Escape') {
         e.preventDefault()
@@ -530,6 +539,19 @@ export function ClozeView({
       const isTypingBox =
         typeof document !== 'undefined' && document.activeElement === inputRef.current
       if (isTypingBox) return
+
+      if ((e.key === 's' || e.key === 'S') && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault()
+        audioService.playClick()
+        const next = storageService.toggleWordStar(currentQ.targetWord.id)
+        setStarredIds((prev) => {
+          const copy = new Set(prev)
+          if (next) copy.add(currentQ.targetWord.id)
+          else copy.delete(currentQ.targetWord.id)
+          return copy
+        })
+        return
+      }
 
       if (e.code === 'Space') {
         e.preventDefault()
@@ -553,11 +575,15 @@ export function ClozeView({
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [clozeStyle, handlePlaySentenceAudio, handleSelect, isCompleted, onBack])
+  }, [clozeStyle, currentQ, handlePlaySentenceAudio, handleSelect, isCompleted, onBack])
 
   const resetClozeSession = (nextWords: WordItem[]) => {
     clearTransitionTimer()
-    setQuestions(buildClozeQuestions(nextWords, allDeckWords))
+    const ordered =
+      storageService.getStudyPreferences().shuffle && filterMode !== 'global-learning'
+        ? shuffleArray(nextWords)
+        : nextWords
+    setQuestions(buildClozeQuestions(ordered, allDeckWords))
     setCurrentIndex(0)
     setSelectedOption(null)
     setTypedInput('')
@@ -581,8 +607,10 @@ export function ClozeView({
     return (
       <StudySummary
         stats={sessionStats}
+        sessionWords={words}
         onBackToHome={onBack}
         onContinueRemaining={(remaining) => resetClozeSession(remaining)}
+        onSwitchMode={onSwitchStudyMode}
         onResetDeck={
           deckId === GLOBAL_SRS_DECK_ID || filterMode !== 'all'
             ? undefined
@@ -616,10 +644,12 @@ export function ClozeView({
           <ArrowLeft className="w-5 h-5" />
         </button>
 
-        <div className="flex-1 flex flex-col items-center">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-slate-200">
-            <FileText className="w-3.5 h-3.5 text-indigo-500" />
-            <span>Điền từ vào câu (Cloze)</span>
+        <div className="flex-1 flex flex-col items-center min-w-0">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 max-w-full">
+            <FileText className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+            <span className="truncate">
+              {filterMode !== 'all' ? deckName : 'Điền từ vào câu (Cloze)'}
+            </span>
           </div>
           <span className="text-[11px] text-slate-400 font-medium">
             Câu {currentIndex + 1} / {questions.length}

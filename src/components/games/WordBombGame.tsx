@@ -315,6 +315,9 @@ export function WordBombGame({ words, deckName, onBack }: WordBombGameProps) {
     setMissedWords((prev) =>
       prev.some((w) => w.id === cur.word.id) ? prev : [...prev.slice(-3), cur.word]
     )
+    if (cur.word.status === 'new') {
+      storageService.updateWordStatus(cur.word.id, 'learning', false)
+    }
 
     audioService.playExplosion(false)
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
@@ -339,6 +342,19 @@ export function WordBombGame({ words, deckName, onBack }: WordBombGameProps) {
       }
     }, 900)
   }, [clearTimer, commitBomb, finishGame, isGameOver, spawnNextBomb, syncFuseDom])
+
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.hidden && !isGameOver && !lockedRef.current) {
+        setIsPaused(true)
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility)
+      clearTimer()
+    }
+  }, [isGameOver, clearTimer])
 
   // 60fps Fuse Countdown Loop
   useEffect(() => {

@@ -1,6 +1,12 @@
 import { ArrowLeft, Check, HelpCircle, Lightbulb, RotateCcw, Star, Volume2 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { SpellingTile, StudyFilterMode, StudySessionStats, WordItem } from '../../types'
+import type {
+  SpellingTile,
+  StudyFilterMode,
+  StudyMode,
+  StudySessionStats,
+  WordItem,
+} from '../../types'
 import { audioService } from '../../utils/audio'
 import { GLOBAL_SRS_DECK_ID, storageService } from '../../utils/storage'
 import { StudySummary } from './StudySummary'
@@ -10,6 +16,7 @@ interface SpellingViewProps {
   deckId: string
   deckName: string
   filterMode?: StudyFilterMode
+  onSwitchStudyMode?: (nextMode: StudyMode, targetWords: WordItem[]) => void
   onBack: () => void
 }
 
@@ -71,6 +78,7 @@ export function SpellingView({
   deckId,
   deckName,
   filterMode = 'all',
+  onSwitchStudyMode,
   onBack,
 }: SpellingViewProps) {
   const initialQueue = words.map((w) => ({ word: w, repetitionCount: 0 }))
@@ -162,9 +170,11 @@ export function SpellingView({
         setIsSuccess(true)
         setIsWrong(false)
         audioService.playSuccessChime()
-        if (!hadMistakeRef.current) {
+        if (!hadMistakeRef.current && currentItem.repetitionCount === 0) {
           storageService.updateWordStatus(currentWord.id, 'mastered')
           setStats((prev) => ({ ...prev, mastered: prev.mastered + 1 }))
+        } else {
+          storageService.recordDailyActivity(true)
         }
         void audioService.speakAuto(currentWord.term)
 
@@ -183,8 +193,10 @@ export function SpellingView({
         audioService.playErrorBuzz()
         if (!hadMistakeRef.current) {
           hadMistakeRef.current = true
-          storageService.updateWordStatus(currentWord.id, 'learning')
-          setStats((prev) => ({ ...prev, review: prev.review + 1 }))
+          if (currentItem.repetitionCount === 0) {
+            storageService.updateWordStatus(currentWord.id, 'learning')
+            setStats((prev) => ({ ...prev, review: prev.review + 1 }))
+          }
 
           if (currentItem.repetitionCount < 3) {
             commitQueue([
@@ -358,8 +370,10 @@ export function SpellingView({
 
     if (!hadMistakeRef.current) {
       hadMistakeRef.current = true
-      storageService.updateWordStatus(currentWord.id, 'learning')
-      setStats((prev) => ({ ...prev, review: prev.review + 1 }))
+      if (currentItem.repetitionCount === 0) {
+        storageService.updateWordStatus(currentWord.id, 'learning')
+        setStats((prev) => ({ ...prev, review: prev.review + 1 }))
+      }
 
       if (currentItem.repetitionCount < 3) {
         commitQueue([
@@ -407,7 +421,9 @@ export function SpellingView({
     return (
       <StudySummary
         stats={sessionStats}
+        sessionWords={words}
         onContinueRemaining={(rem) => startSessionWithWords(rem)}
+        onSwitchMode={onSwitchStudyMode}
         onResetDeck={
           deckId === GLOBAL_SRS_DECK_ID || filterMode !== 'all'
             ? undefined
@@ -461,7 +477,12 @@ export function SpellingView({
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center min-w-0">
+          {filterMode !== 'all' && (
+            <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 truncate max-w-[170px] leading-tight mb-0.5">
+              {deckName}
+            </span>
+          )}
           <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
             Từ {currentIndex + 1} / {queue.length}
           </span>

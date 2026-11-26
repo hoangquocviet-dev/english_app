@@ -5,6 +5,7 @@ import {
   ChevronDown,
   ChevronUp,
   RotateCcw,
+  Sparkles,
   Star,
   Target,
   Trophy,
@@ -12,20 +13,32 @@ import {
   X,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import type { StudySessionStats, WordItem } from '../../types'
+import type { StudyMode, StudySessionStats, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
 import { storageService } from '../../utils/storage'
 
 interface StudySummaryProps {
   stats: StudySessionStats
+  sessionWords?: WordItem[]
   onContinueRemaining?: (remainingWords: WordItem[]) => void
+  onSwitchMode?: (nextMode: StudyMode, targetWords: WordItem[]) => void
   onResetDeck?: () => void
   onBackToHome: () => void
 }
 
+const MODE_LABELS: Array<{ mode: StudyMode; label: string }> = [
+  { mode: 'flashcard', label: 'Flashcard' },
+  { mode: 'quiz', label: 'Trắc nghiệm' },
+  { mode: 'spelling', label: 'Ghép chữ' },
+  { mode: 'listening', label: 'Luyện nghe' },
+  { mode: 'cloze', label: 'Điền câu' },
+]
+
 export function StudySummary({
   stats,
+  sessionWords,
   onContinueRemaining,
+  onSwitchMode,
   onResetDeck,
   onBackToHome,
 }: StudySummaryProps) {
@@ -239,6 +252,40 @@ export function StudySummary({
             <span>Học tiếp {remainingWords.length} thẻ chưa thuộc</span>
           </button>
         )}
+
+        {/* 1-Tap Cross-Mode Drill Switcher (Drill remaining weak cards OR reinforce completed batch in another mode!) */}
+        {onSwitchMode &&
+          (remainingWords.length > 0 || (sessionWords && sessionWords.length > 0)) && (
+            <div className="p-3 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-800 space-y-2 text-left">
+              <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                <Sparkles className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                <span>
+                  {remainingWords.length > 0
+                    ? `Đổi chế độ ôn ${remainingWords.length} thẻ chưa thuộc:`
+                    : `Luyện sâu lại ${sessionWords?.length || stats.totalWords} thẻ vừa học qua:`}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                {MODE_LABELS.filter((m) => m.mode !== stats.mode).map((item) => {
+                  const targetPool =
+                    remainingWords.length > 0 ? remainingWords : sessionWords || []
+                  return (
+                    <button
+                      key={item.mode}
+                      type="button"
+                      onClick={() => {
+                        audioService.playClick()
+                        onSwitchMode(item.mode, targetPool)
+                      }}
+                      className="py-1.5 px-2 rounded-xl bg-indigo-500/10 hover:bg-indigo-600 hover:text-white text-indigo-600 dark:text-indigo-400 dark:hover:text-white border border-indigo-500/20 text-[11px] font-bold text-center whitespace-nowrap transition-colors active:scale-95"
+                    >
+                      {item.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
         <button
           onClick={onBackToHome}

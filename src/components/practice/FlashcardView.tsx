@@ -11,7 +11,7 @@ import {
   X,
 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { StudyFilterMode, StudySessionStats, WordItem } from '../../types'
+import type { StudyFilterMode, StudyMode, StudySessionStats, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
 import { GLOBAL_SRS_DECK_ID, storageService } from '../../utils/storage'
 import { StudySummary } from './StudySummary'
@@ -21,6 +21,7 @@ interface FlashcardViewProps {
   deckId: string
   deckName: string
   filterMode?: StudyFilterMode
+  onSwitchStudyMode?: (nextMode: StudyMode, targetWords: WordItem[]) => void
   onBack: () => void
 }
 
@@ -121,6 +122,7 @@ export function FlashcardView({
   deckId,
   deckName,
   filterMode = 'all',
+  onSwitchStudyMode,
   onBack,
 }: FlashcardViewProps) {
   const [queue, setQueue] = useState<QueuedWord[]>(() =>
@@ -530,7 +532,9 @@ export function FlashcardView({
     return (
       <StudySummary
         stats={sessionStats}
+        sessionWords={words}
         onContinueRemaining={(rem) => startSessionWithWords(rem)}
+        onSwitchMode={onSwitchStudyMode}
         onResetDeck={
           deckId === GLOBAL_SRS_DECK_ID || filterMode !== 'all'
             ? undefined

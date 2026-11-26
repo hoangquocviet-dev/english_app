@@ -306,6 +306,13 @@ export function App() {
     setActiveStudyMode(mode)
   }
 
+  const handleSwitchStudyMode = (nextMode: StudyMode, targetWords: WordItem[]) => {
+    if (targetWords.length === 0) return
+    audioService.stopSpeech()
+    setSessionWords(targetWords)
+    setActiveStudyMode(nextMode)
+  }
+
   const handleExitStudy = () => {
     audioService.stopSpeech()
     setActiveStudyMode(null)
@@ -449,53 +456,63 @@ export function App() {
               {/* Active Study Mode Screens */}
               {activeStudyMode === 'flashcard' && activeDeck && (
                 <FlashcardView
+                  key={`fc-${sessionFilterMode}-${sessionWords.length}-${sessionWords[0]?.id || '0'}`}
                   words={sessionWords}
                   deckId={studyDeckId}
                   deckName={studyDeckName}
                   filterMode={sessionFilterMode}
+                  onSwitchStudyMode={handleSwitchStudyMode}
                   onBack={handleExitStudy}
                 />
               )}
 
               {activeStudyMode === 'quiz' && activeDeck && (
                 <QuizView
+                  key={`qz-${sessionFilterMode}-${sessionWords.length}-${sessionWords[0]?.id || '0'}`}
                   words={sessionWords}
                   allDeckWords={studyPoolWords}
                   deckId={studyDeckId}
                   deckName={studyDeckName}
                   filterMode={sessionFilterMode}
+                  onSwitchStudyMode={handleSwitchStudyMode}
                   onBack={handleExitStudy}
                 />
               )}
 
               {activeStudyMode === 'spelling' && activeDeck && (
                 <SpellingView
+                  key={`sp-${sessionFilterMode}-${sessionWords.length}-${sessionWords[0]?.id || '0'}`}
                   words={sessionWords}
                   deckId={studyDeckId}
                   deckName={studyDeckName}
                   filterMode={sessionFilterMode}
+                  onSwitchStudyMode={handleSwitchStudyMode}
                   onBack={handleExitStudy}
                 />
               )}
 
               {activeStudyMode === 'listening' && activeDeck && (
                 <ListeningView
+                  key={`ls-${sessionFilterMode}-${sessionWords.length}-${sessionWords[0]?.id || '0'}`}
                   words={sessionWords}
                   allDeckWords={studyPoolWords}
                   deckId={studyDeckId}
                   deckName={studyDeckName}
                   filterMode={sessionFilterMode}
+                  onSwitchStudyMode={handleSwitchStudyMode}
                   onBack={handleExitStudy}
                 />
               )}
 
               {activeStudyMode === 'cloze' && activeDeck && (
                 <ClozeView
+                  key={`cl-${sessionFilterMode}-${sessionWords.length}-${sessionWords[0]?.id || '0'}`}
                   words={sessionWords}
                   allDeckWords={studyPoolWords}
                   deckId={studyDeckId}
                   deckName={studyDeckName}
                   filterMode={sessionFilterMode}
+                  onSwitchStudyMode={handleSwitchStudyMode}
                   onBack={handleExitStudy}
                 />
               )}

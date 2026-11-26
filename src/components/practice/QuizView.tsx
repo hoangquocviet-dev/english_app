@@ -1,6 +1,6 @@
 import { ArrowLeft, ArrowLeftRight, Check, Star, Volume2, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { StudyFilterMode, StudySessionStats, WordItem } from '../../types'
+import type { StudyFilterMode, StudyMode, StudySessionStats, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
 import { GLOBAL_SRS_DECK_ID, storageService } from '../../utils/storage'
 import { StudySummary } from './StudySummary'
@@ -15,6 +15,7 @@ interface QuizViewProps {
   deckId: string
   deckName: string
   filterMode?: StudyFilterMode
+  onSwitchStudyMode?: (nextMode: StudyMode, targetWords: WordItem[]) => void
   onBack: () => void
 }
 
@@ -163,7 +164,7 @@ function buildQuestions(
     }
   })
 
-  return shuffleArray(generated)
+  return generated
 }
 
 export function QuizView({
@@ -172,6 +173,7 @@ export function QuizView({
   deckId,
   deckName,
   filterMode = 'all',
+  onSwitchStudyMode,
   onBack,
 }: QuizViewProps) {
   const [direction, setDirection] = useState<QuizDirection>(() => {
@@ -228,12 +230,15 @@ export function QuizView({
       } catch {}
     }
     // Rebuild remaining questions in the new direction without losing session progress
-    const remainingSource = questions.slice(currentIndex).map((q) => q.targetWord)
+    const remainingSlice = questions.slice(currentIndex)
     const rebuilt = buildQuestions(
-      remainingSource.length > 0 ? remainingSource : words,
+      remainingSlice.length > 0 ? remainingSlice.map((q) => q.targetWord) : words,
       allDeckWords,
       nextDir
-    )
+    ).map((q, idx) => ({
+      ...q,
+      repetitionCount: remainingSlice[idx]?.repetitionCount ?? 0,
+    }))
     setQuestions([...questions.slice(0, currentIndex), ...rebuilt])
     setSelectedOption(null)
     setIsLocked(false)
@@ -247,6 +252,7 @@ export function QuizView({
       setSelectedOption(index)
 
       const isCorrect = index === currentQ.correctOptionIndex
+      const isFirstAttempt = currentQ.repetitionCount === 0
       let wasRequeued = false
 
       if (isCorrect) {
@@ -256,8 +262,12 @@ export function QuizView({
           } catch {}
         }
         audioService.playSuccessChime()
-        storageService.updateWordStatus(currentQ.targetWord.id, 'mastered')
-        setStats((prev) => ({ ...prev, mastered: prev.mastered + 1 }))
+        if (isFirstAttempt) {
+          storageService.updateWordStatus(currentQ.targetWord.id, 'mastered')
+          setStats((prev) => ({ ...prev, mastered: prev.mastered + 1 }))
+        } else {
+          storageService.recordDailyActivity(true)
+        }
         if (direction === 'vi-en') {
           void audioService.speakAuto(currentQ.targetWord.term, 0.9)
         }
@@ -268,8 +278,10 @@ export function QuizView({
           } catch {}
         }
         audioService.playErrorBuzz()
-        storageService.updateWordStatus(currentQ.targetWord.id, 'learning')
-        setStats((prev) => ({ ...prev, review: prev.review + 1 }))
+        if (isFirstAttempt) {
+          storageService.updateWordStatus(currentQ.targetWord.id, 'learning')
+          setStats((prev) => ({ ...prev, review: prev.review + 1 }))
+        }
         if (direction === 'vi-en') {
           void audioService.speakAuto(currentQ.targetWord.term, 0.9)
         }
@@ -309,13 +321,25 @@ export function QuizView({
     [isLocked, currentQ, direction, questions.length, currentIndex, clearTransitionTimer]
   )
 
-  // Desktop keyboard shortcuts: 1-4 answer, Space replay audio, Escape exit
+  // Desktop keyboard shortcuts: 1-4 answer, Space replay audio, S star, Escape exit
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isCompleted || !currentQ) return
       if (e.key === 'Escape') {
         e.preventDefault()
         onBack()
+        return
+      }
+      if ((e.key === 's' || e.key === 'S') && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault()
+        audioService.playClick()
+        const next = storageService.toggleWordStar(currentQ.targetWord.id)
+        setStarredIds((prev) => {
+          const copy = new Set(prev)
+          if (next) copy.add(currentQ.targetWord.id)
+          else copy.delete(currentQ.targetWord.id)
+          return copy
+        })
         return
       }
       if (e.code === 'Space') {
@@ -338,7 +362,11 @@ export function QuizView({
 
   const resetQuiz = (sourceWords: WordItem[]) => {
     clearTransitionTimer()
-    setQuestions(buildQuestions(sourceWords, allDeckWords, direction))
+    const ordered =
+      storageService.getStudyPreferences().shuffle && filterMode !== 'global-learning'
+        ? shuffleArray(sourceWords)
+        : sourceWords
+    setQuestions(buildQuestions(ordered, allDeckWords, direction))
     setCurrentIndex(0)
     setSelectedOption(null)
     setIsLocked(false)
@@ -359,7 +387,9 @@ export function QuizView({
     return (
       <StudySummary
         stats={sessionStats}
+        sessionWords={words}
         onContinueRemaining={(rem) => resetQuiz(rem)}
+        onSwitchMode={onSwitchStudyMode}
         onResetDeck={
           deckId === GLOBAL_SRS_DECK_ID || filterMode !== 'all'
             ? undefined
@@ -390,7 +420,12 @@ export function QuizView({
           <ArrowLeft className="w-5 h-5" />
         </button>
 
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center min-w-0">
+          {filterMode !== 'all' && (
+            <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 truncate max-w-[170px] leading-tight mb-0.5">
+              {deckName}
+            </span>
+          )}
           <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
             Câu {currentIndex + 1} / {questions.length}
           </span>
