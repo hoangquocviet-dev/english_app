@@ -93,6 +93,7 @@ export function SpellingView({
   const queueRef = useRef<QueuedSpelling[]>(queue)
   const poolRef = useRef<SpellingTile[]>(poolTiles)
   const placedRef = useRef<Array<SpellingTile | null>>(placedTiles)
+  const hadMistakeRef = useRef(false)
   const transitionTimerRef = useRef<number | null>(null)
 
   const commitQueue = useCallback((next: QueuedSpelling[]) => {
@@ -130,6 +131,7 @@ export function SpellingView({
   const advanceToIndex = useCallback(
     (nextIdx: number) => {
       const latestQueue = queueRef.current
+      hadMistakeRef.current = false
       if (nextIdx >= latestQueue.length) {
         setIsCompleted(true)
       } else {
@@ -160,8 +162,10 @@ export function SpellingView({
         setIsSuccess(true)
         setIsWrong(false)
         audioService.playSuccessChime()
-        storageService.updateWordStatus(currentWord.id, 'mastered')
-        setStats((prev) => ({ ...prev, mastered: prev.mastered + 1 }))
+        if (!hadMistakeRef.current) {
+          storageService.updateWordStatus(currentWord.id, 'mastered')
+          setStats((prev) => ({ ...prev, mastered: prev.mastered + 1 }))
+        }
         void audioService.speakAuto(currentWord.term)
 
         clearTransitionTimer()
@@ -177,14 +181,17 @@ export function SpellingView({
         }
         setIsWrong(true)
         audioService.playErrorBuzz()
-        storageService.updateWordStatus(currentWord.id, 'learning')
-        setStats((prev) => ({ ...prev, review: prev.review + 1 }))
+        if (!hadMistakeRef.current) {
+          hadMistakeRef.current = true
+          storageService.updateWordStatus(currentWord.id, 'learning')
+          setStats((prev) => ({ ...prev, review: prev.review + 1 }))
 
-        if (currentItem.repetitionCount < 3) {
-          commitQueue([
-            ...queueRef.current,
-            { word: currentWord, repetitionCount: currentItem.repetitionCount + 1 },
-          ])
+          if (currentItem.repetitionCount < 3) {
+            commitQueue([
+              ...queueRef.current,
+              { word: currentWord, repetitionCount: currentItem.repetitionCount + 1 },
+            ])
+          }
         }
       }
     },
@@ -349,14 +356,17 @@ export function SpellingView({
     setIsWrong(false)
     setIsSuccess(true)
 
-    storageService.updateWordStatus(currentWord.id, 'learning')
-    setStats((prev) => ({ ...prev, review: prev.review + 1 }))
+    if (!hadMistakeRef.current) {
+      hadMistakeRef.current = true
+      storageService.updateWordStatus(currentWord.id, 'learning')
+      setStats((prev) => ({ ...prev, review: prev.review + 1 }))
 
-    if (currentItem.repetitionCount < 3) {
-      commitQueue([
-        ...queueRef.current,
-        { word: currentWord, repetitionCount: currentItem.repetitionCount + 1 },
-      ])
+      if (currentItem.repetitionCount < 3) {
+        commitQueue([
+          ...queueRef.current,
+          { word: currentWord, repetitionCount: currentItem.repetitionCount + 1 },
+        ])
+      }
     }
 
     void audioService.speakAuto(currentWord.term)
@@ -370,6 +380,7 @@ export function SpellingView({
 
   const startSessionWithWords = (targetWords: WordItem[]) => {
     clearTransitionTimer()
+    hadMistakeRef.current = false
     const newQueue = targetWords.map((w) => ({ word: w, repetitionCount: 0 }))
     commitQueue(newQueue)
     if (targetWords[0]) {

@@ -6816,7 +6816,7 @@ export const INITIAL_WORDS: WordItem[] = [
     "term": "polyfill",
     "ipa": "/ˈpɒlifɪl/",
     "definition": "Đoạn mã bổ trợ tính năng mới cho trình duyệt đời cũ",
-    "example": "Use a fallback helper instead of relying on unsupported APIs.",
+    "example": "Load a polyfill so legacy browsers can run modern JavaScript APIs.",
     "partOfSpeech": "noun",
     "status": "new",
     "reviewCount": 0

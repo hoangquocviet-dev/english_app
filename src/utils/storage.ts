@@ -9,7 +9,7 @@ import type {
   WordItem,
 } from '../types'
 
-const CURRENT_SEED_VERSION = 8
+const CURRENT_SEED_VERSION = 9
 
 export const GLOBAL_SRS_DECK_ID = '__global_srs__'
 
@@ -454,6 +454,11 @@ class SafeStorageService {
   ): WordItem[] {
     const now = Date.now()
     const sessionIdSet = new Set(sessionWords.map((w) => w.id))
+
+    if (filterMode === 'custom') {
+      const source = deckId === GLOBAL_SRS_DECK_ID ? this.getWords() : this.getWords(deckId)
+      return source.filter((w) => sessionIdSet.has(w.id) && w.status === 'learning')
+    }
 
     if (deckId === GLOBAL_SRS_DECK_ID || filterMode === 'global-due') {
       return this.getWords().filter(

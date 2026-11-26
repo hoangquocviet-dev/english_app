@@ -420,53 +420,56 @@ export function QuizView({
             {direction === 'en-vi' ? 'Chọn nghĩa tiếng Việt đúng' : 'Chọn từ tiếng Anh đúng'}
           </span>
 
-            {direction === 'en-vi' || isLocked ? (
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => {
-                  audioService.playClick()
-                  const next = storageService.toggleWordStar(currentQ.targetWord.id)
-                  setStarredIds((prev) => {
-                    const copy = new Set(prev)
-                    if (next) copy.add(currentQ.targetWord.id)
-                    else copy.delete(currentQ.targetWord.id)
-                    return copy
-                  })
-                }}
-                title="Đánh dấu sao từ quan trọng"
-                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-                  starredIds.has(currentQ.targetWord.id)
-                    ? 'bg-amber-500/15 text-amber-500'
-                    : 'bg-slate-100 dark:bg-slate-700/70 text-slate-400 hover:text-amber-500'
+          <div className="flex items-center gap-1.5">
+            {direction === 'vi-en' && !isLocked && currentQ.targetWord.partOfSpeech && (
+              <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 uppercase">
+                {currentQ.targetWord.partOfSpeech}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                audioService.playClick()
+                const next = storageService.toggleWordStar(currentQ.targetWord.id)
+                setStarredIds((prev) => {
+                  const copy = new Set(prev)
+                  if (next) copy.add(currentQ.targetWord.id)
+                  else copy.delete(currentQ.targetWord.id)
+                  return copy
+                })
+              }}
+              title="Đánh dấu sao từ quan trọng"
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                starredIds.has(currentQ.targetWord.id)
+                  ? 'bg-amber-500/15 text-amber-500'
+                  : 'bg-slate-100 dark:bg-slate-700/70 text-slate-400 hover:text-amber-500'
+              }`}
+            >
+              <Star
+                className={`w-4 h-4 ${
+                  starredIds.has(currentQ.targetWord.id) ? 'fill-amber-400' : ''
                 }`}
-              >
-                <Star
-                  className={`w-4 h-4 ${
-                    starredIds.has(currentQ.targetWord.id) ? 'fill-amber-400' : ''
-                  }`}
-                />
-              </button>
-              <button
-                onClick={() => void audioService.speak(currentQ.targetWord.term, 0.6)}
-                className="h-8 px-2.5 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
-                title="Nghe chậm (0.6x)"
-              >
-                0.6x
-              </button>
-              <button
-                onClick={() => void audioService.speak(currentQ.targetWord.term, 0.9)}
-                className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
-                title="Phát âm chuẩn (Space)"
-              >
-                <Volume2 className="w-4 h-4" />
-              </button>
-            </div>
-          ) : currentQ.targetWord.partOfSpeech ? (
-            <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 uppercase">
-              {currentQ.targetWord.partOfSpeech}
-            </span>
-          ) : null}
+              />
+            </button>
+            {(direction === 'en-vi' || isLocked) && (
+              <>
+                <button
+                  onClick={() => void audioService.speak(currentQ.targetWord.term, 0.6)}
+                  className="h-8 px-2.5 rounded-full bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 text-[11px] font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+                  title="Nghe chậm (0.6x)"
+                >
+                  0.6x
+                </button>
+                <button
+                  onClick={() => void audioService.speak(currentQ.targetWord.term, 0.9)}
+                  className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+                  title="Phát âm chuẩn (Space)"
+                >
+                  <Volume2 className="w-4 h-4" />
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {direction === 'en-vi' ? (

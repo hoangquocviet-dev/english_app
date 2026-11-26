@@ -101,6 +101,7 @@ export function App() {
   const [sessionWords, setSessionWords] = useState<WordItem[]>([])
   const [sessionFilterMode, setSessionFilterMode] = useState<StudyFilterMode>('all')
   const [isGlobalSrsSession, setIsGlobalSrsSession] = useState(false)
+  const [customSessionLabel, setCustomSessionLabel] = useState<string | null>(null)
   const [isCloudModalOpen, setIsCloudModalOpen] = useState(false)
   const [syncToast, setSyncToast] = useState<{ ok: boolean; message: string } | null>(null)
 
@@ -239,8 +240,30 @@ export function App() {
       targetList = targetList.slice(0, studyPrefs.batchSize)
     }
 
+    setCustomSessionLabel(null)
     setSessionFilterMode(filterMode)
     setIsGlobalSrsSession(filterMode === 'global-due')
+    setSessionWords(targetList)
+    setActiveStudyMode(mode)
+  }
+
+  const handleStartCustomSession = (
+    customList: WordItem[],
+    mode: StudyMode,
+    label: string,
+    isCrossDeck: boolean
+  ) => {
+    if (customList.length === 0) return
+    let targetList = [...customList]
+    if (studyPrefs.shuffle) {
+      targetList = shuffleWords(targetList)
+    }
+    if (studyPrefs.batchSize > 0 && targetList.length > studyPrefs.batchSize) {
+      targetList = targetList.slice(0, studyPrefs.batchSize)
+    }
+    setCustomSessionLabel(label)
+    setSessionFilterMode('custom')
+    setIsGlobalSrsSession(isCrossDeck)
     setSessionWords(targetList)
     setActiveStudyMode(mode)
   }
@@ -248,6 +271,7 @@ export function App() {
   const handleExitStudy = () => {
     audioService.stopSpeech()
     setActiveStudyMode(null)
+    setCustomSessionLabel(null)
     setSessionFilterMode('all')
     setIsGlobalSrsSession(false)
     refreshData()
@@ -261,9 +285,9 @@ export function App() {
 
   const activeDeck = decks.find((d) => d.id === activeDeckId) || decks[0] || null
   const studyDeckId = isGlobalSrsSession ? GLOBAL_SRS_DECK_ID : activeDeck?.id || ''
-  const studyDeckName = isGlobalSrsSession
-    ? 'Ôn tập SRS Toàn kho'
-    : activeDeck?.name || 'Kho từ vựng'
+  const studyDeckName =
+    customSessionLabel ||
+    (isGlobalSrsSession ? 'Ôn tập SRS Toàn kho' : activeDeck?.name || 'Kho từ vựng')
   const studyPoolWords = isGlobalSrsSession ? allWords : words
   const isFullScreenSession = Boolean(activeStudyMode || activeGame)
 
@@ -504,6 +528,7 @@ export function App() {
                       onSelectDeck={handleSelectDeck}
                       onDataChanged={refreshData}
                       onGoToAddWord={() => setActiveTab('add')}
+                      onStartFilteredStudy={handleStartCustomSession}
                     />
                   )}
                 </>

@@ -1,6 +1,6 @@
 export type StudyMode = 'flashcard' | 'quiz' | 'spelling' | 'listening' | 'cloze'
 
-export type StudyFilterMode = 'all' | 'learning' | 'due' | 'global-due' | 'starred'
+export type StudyFilterMode = 'all' | 'learning' | 'due' | 'global-due' | 'starred' | 'custom'
 
 export type ArcadeGameId = 'sky-defender' | 'speed-match' | 'blitz-2s' | 'word-bomb'
 

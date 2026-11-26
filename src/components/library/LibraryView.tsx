@@ -3,12 +3,14 @@ import {
   Download,
   FileText,
   Globe,
+  Layers,
   Pencil,
   Plus,
   RefreshCw,
   RotateCcw,
   Search,
   Share2,
+  Sparkles,
   Star,
   Trash2,
   Users,
@@ -16,13 +18,21 @@ import {
   X,
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { CommunityDeck, Deck, WordItem } from '../../types'
+import type { CommunityDeck, Deck, StudyMode, WordItem } from '../../types'
 import { audioService } from '../../utils/audio'
 import { cloudSyncService } from '../../utils/cloudSync'
 import { storageService } from '../../utils/storage'
 import { ImportExportModal } from './ImportExportModal'
 
 const PAGE_SIZE = 30
+
+function stripAccents(str: string): string {
+  return str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+}
 
 interface LibraryViewProps {
   decks: Deck[]
@@ -32,6 +42,12 @@ interface LibraryViewProps {
   onSelectDeck: (deckId: string) => void
   onDataChanged: () => void
   onGoToAddWord: () => void
+  onStartFilteredStudy?: (
+    customWords: WordItem[],
+    mode: StudyMode,
+    label: string,
+    isCrossDeck: boolean
+  ) => void
 }
 
 export function LibraryView({
@@ -42,6 +58,7 @@ export function LibraryView({
   onSelectDeck,
   onDataChanged,
   onGoToAddWord,
+  onStartFilteredStudy,
 }: LibraryViewProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchAllDecks, setSearchAllDecks] = useState(false)
@@ -87,13 +104,25 @@ export function LibraryView({
 
   const filteredWords = useMemo(() => {
     const q = searchQuery.trim().toLowerCase()
+    const qPlain = q ? stripAccents(q) : ''
+    const useAccentFree = Boolean(q && q === qPlain)
+    const deckNames = searchAllDecks
+      ? new Map(decks.map((d) => [d.id, d.name.toLowerCase()]))
+      : null
+
     return sourceWords.filter((w) => {
       if (q) {
-        const matchesSearch =
+        const matchesDirect =
           w.term.toLowerCase().includes(q) ||
           w.definition.toLowerCase().includes(q) ||
-          (w.ipa && w.ipa.toLowerCase().includes(q))
-        if (!matchesSearch) return false
+          Boolean(w.example && w.example.toLowerCase().includes(q)) ||
+          Boolean(w.ipa && w.ipa.toLowerCase().includes(q)) ||
+          Boolean(deckNames && deckNames.get(w.deckId)?.includes(q))
+
+        const matchesUnaccented =
+          !matchesDirect && useAccentFree && stripAccents(w.definition).includes(qPlain)
+
+        if (!matchesDirect && !matchesUnaccented) return false
       }
 
       if (statusFilter === 'starred') return Boolean(w.starred)
@@ -104,7 +133,7 @@ export function LibraryView({
       if (statusFilter === 'review') return w.status === 'learning' || w.status === 'new'
       return true
     })
-  }, [sourceWords, searchQuery, statusFilter, nowMs])
+  }, [sourceWords, searchQuery, searchAllDecks, decks, statusFilter, nowMs])
 
   const visibleWords = useMemo(
     () => filteredWords.slice(0, visibleLimit),
@@ -845,6 +874,49 @@ export function LibraryView({
             </button>
           )}
         </div>
+
+        {/* Instant Focused Study Bar when user searches or filters words in Library */}
+        {onStartFilteredStudy &&
+          filteredWords.length > 0 &&
+          (Boolean(searchQuery.trim()) || statusFilter !== 'all' || searchAllDecks) && (
+            <div className="p-2.5 px-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/25 flex items-center justify-between gap-2 flex-wrap animate-fadeIn">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-700 dark:text-indigo-300">
+                <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                <span>Luyện nhanh {filteredWords.length.toLocaleString()} thẻ đang lọc:</span>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                {(
+                  [
+                    { mode: 'flashcard', label: 'Flashcard' },
+                    { mode: 'quiz', label: 'Quiz' },
+                    { mode: 'cloze', label: 'Cloze' },
+                  ] as const
+                ).map((item) => {
+                  const customLabel = searchQuery.trim()
+                    ? `Tìm kiếm: "${searchQuery.trim()}"`
+                    : searchAllDecks
+                    ? 'Lọc Toàn kho'
+                    : `${activeDeck.name} (Đã lọc)`
+
+                  return (
+                    <button
+                      key={item.mode}
+                      type="button"
+                      onClick={() => {
+                        audioService.playClick()
+                        onStartFilteredStudy(filteredWords, item.mode, customLabel, searchAllDecks)
+                      }}
+                      className="py-1 px-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold flex items-center gap-1 whitespace-nowrap active:scale-95 transition-all"
+                    >
+                      {item.mode === 'flashcard' && <Layers className="w-3 h-3" />}
+                      <span>{item.label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
       </div>
 
       {/* Words List (Windowed progressive rendering for zero lag at 10,000+ words) */}
